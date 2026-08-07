@@ -35,4 +35,12 @@ build/
 
 # prisma
 server/prisma/*.db
+server/src/generated/prisma
 
+# AI Agents & Local Tooling
+.agents/
+.agent/
+.claude/
+.windsurf/
+.opencode/
+skills-lock.json
