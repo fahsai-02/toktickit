@@ -1,0 +1,46 @@
+# logs & OS
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.DS_Store
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# env & secrets
+.env
+*.env
+!.env.example
+
+# build output
+dist/
+build/
+
+# prisma
+server/prisma/*.db
+server/src/generated/prisma
+
+# AI Agents & Local Tooling
+.agents/
+.agent/
+.claude/
+.windsurf/
+.opencode/
+skills-lock.json
