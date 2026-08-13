@@ -11,6 +11,7 @@
 | 4 | แบ่ง subtask ของ issue 2 แล้ว commit ทีละอัน ควรแบ่งยังไง | แบ่งเป็น feat(route) → test → docs แยก commit ตามชั้น | ใช้เป็น checklist ทำงานทีละชั้นและ commit แยกไฟล์ |
 | 5 | ไฟล์ injected env จาก .env ใน output vitest คืออะไร ปกติไหม | เป็น feature ของ Vitest v4 ที่โหลด .env อัตโนมัติ ไม่ใช่ error | ปล่อยไว้เฉยๆ ไม่ต้องแก้ไข |
 | 6 | ควรลบ app.test.ts ไหม และข้อดีข้อเสีย | เก็บไว้ได้เพราะตรวจ unknown route แต่ไม่อยู่ในแผน lab → ลบได้ | ตัดสินใจลบตามข้อเสนอ เพราะ health.test.ts ครอบคลุมแล้ว |
+| 7 | รัน seed แล้ว error "driver adapter is required" คืออะไร | Prisma 7 ต้องใช้ driver adapter (PrismaPg) ต่อ DB | ติดตั้ง @prisma/adapter-pg และใส่ adapter ใน PrismaClient |
 
 ## Reflection
 Two or three sentences: what made your prompts better, and one place you had to
