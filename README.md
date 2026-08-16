@@ -26,7 +26,7 @@ toktickit/
 │   ├── prisma/        # schema + migrations
 │   ├── src/
 │   └── tests/lab-01/
-├── docs/lab-01/       # lab sheet, test plan, AI-use & peer-review records
+├── docs/lab-01/       # lab sheet, test plan & evidence, AI-use & peer-review records
 ├── docker-compose.yml # PostgreSQL 17
 ├── .gitignore
 └── README.md
@@ -66,11 +66,12 @@ toktickit/
    docker compose up -d
    ```
 
-4. **Generate the Prisma client and create tables** (in `server/`):
+4. **Generate the Prisma client, create tables and seed the categories** (in `server/`):
 
    ```sh
    pnpm exec prisma generate
    pnpm exec prisma migrate dev
+   pnpm exec prisma db seed
    ```
 
 ## Run
@@ -98,6 +99,9 @@ cd client && pnpm test    # Vitest UI tests
 
 Test files live in `server/tests/lab-01/` and `client/tests/lab-01/`
 (not colocated with source).
+
+Note: the server's `GET /api/categories` test reads from the real database,
+so start PostgreSQL and run the seed step above before `pnpm test` in `server/`.
 
 ## Git Workflow
 

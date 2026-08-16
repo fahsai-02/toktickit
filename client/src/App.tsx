@@ -7,7 +7,6 @@ type UiState = "idle" | "loading" | "success" | "error";
 export default function App() {
   const [state, setState] = useState<UiState>("idle");
   const [categories, setCategories] = useState<Category[]>([]);
-  void categories;
 
   async function handleCheck() {
     setState("loading");
@@ -30,14 +29,36 @@ export default function App() {
         {state === "loading" ? "Loading…" : "Check System"}
       </button>
 
+      {state === "loading" && (
+        <div className="d-flex align-items-center gap-2 mt-3 text-muted">
+          <span
+            className="spinner-border spinner-border-sm"
+            role="status"
+            aria-hidden="true"
+          />
+          Checking system…
+        </div>
+      )}
+
       {state === "success" && (
-        <p className="mt-3 mb-0 text-success">System Status: Online</p>
+        <div className="mt-4">
+          <p className="mb-3 text-success">System Status: Online</p>
+          <h2 className="h5">Supported Request Categories</h2>
+          <ol className="list-group list-group-numbered">
+            {categories.map((category) => (
+              <li key={category.id} className="list-group-item">
+                {category.name}
+              </li>
+            ))}
+          </ol>
+        </div>
       )}
 
       {state === "error" && (
-        <p className="mt-3 mb-0 text-danger">
-          System Status: Offline — Could not reach the server.
-        </p>
+        <div className="mt-4">
+          <p className="mb-1 text-danger">System Status: Offline</p>
+          <p className="mb-0 text-danger">Unable to connect to TokTickIT API</p>
+        </div>
       )}
     </div>
   );
