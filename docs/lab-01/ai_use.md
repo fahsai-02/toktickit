@@ -1,6 +1,6 @@
 # Lab 1 — AI Use and Reflection
 
-**LLM/agent used:** opencode
+**LLM/agent used:** opencode coding agent local CLI, opencode/deepseek-v4-flash-free as the LLM.
 
 ## Selected key prompts (6–10)
 | # | Prompt (summarised) | AI Answer | What I did with the result |

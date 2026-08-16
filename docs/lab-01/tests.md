@@ -1,107 +1,110 @@
-# Lab 1 — Test Plan and Evidence  (fill this in)
+# Lab 1 - Test Plan and Evidence
 
-All test files live under server/tests/lab-01/ and client/tests/lab-01/.
+Lab 1 tests prove the initial TokTickIT vertical slice works correctly:
+**React UI → Express REST API → Prisma ORM → PostgreSQL**.
 
-| # | Tool | Test | Result |
-|---|------|------|--------|
-| 1 | Supertest | GET /api/health returns 200, status=ok | Pass |
-| 2 | Supertest | GET /api/categories returns 4 seeded categories in id order | Pass |
-| 3 | Vitest | Heading renders | Pass |
-| 4 | Vitest | Success state shows Online + category list | Pass |
-| 5 | Vitest | Error state shows Offline + message | Pass |
+All test files live under `server/tests/lab-01/` and `client/tests/lab-01/`.
+The outputs below show the full suite passing.
 
-Paste your passing terminal output / screenshot below.
+| ID | Test | Test File | Tool | Test Description |
+|----|------|-----------|------|------------------|
+| API-01 | Health check | `tests/lab-01/health.test.ts` | Supertest | Health endpoint returns 200 and expected JSON |
+| API-02 | Categories | `tests/lab-01/categories.test.ts` | Supertest | Categories endpoint returns the four seeded categories |
+| UI-01 | Heading render | `tests/lab-01/App.test.tsx` | Vitest | TokTickIT heading renders |
+| UI-02 | Loading state | `tests/lab-01/App.test.tsx` | Vitest | Loading state changes to category list |
+| UI-03 | Error handling | `tests/lab-01/App.test.tsx` | Vitest | API failure displays a useful error message |
 
-**1. GET /api/health returns 200, status=ok**
+## API-01: Health check
 
-Terminal output: 
+Sends `GET /api/health` and asserts the endpoint returns HTTP 200 with the exact
+response shape `{ "status": "ok", "service": "TokTickIT API" }`, proving the
+Express backend is up and the route is wired correctly.
+
+Terminal output:
 ```
 $ vitest run
 
  RUN  v4.1.10 /home/fahsai/Documents/kmutt/cpe-2569-1/cpe334-SE/toktickit/server
 
- ✓ tests/lab-01/health.test.ts > GET /api/health > returns 200 with status ok and service name 21ms
 
  Test Files  2 passed (2)
       Tests  3 passed (3)
-   Start at  22:07:18
-   Duration  946ms (transform 119ms, setup 0ms, import 673ms, tests 170ms, environment 0ms)
+   Start at  19:20:08
+   Duration  433ms (transform 76ms, setup 0ms, import 376ms, tests 161ms, environment 1ms)
 ```
 
-**2. GET /api/categories returns 4 seeded categories in id order**
+## API-02: Categories
 
-Terminal output: 
+Calls `GET /api/categories` and asserts the endpoint returns the four seeded
+categories (Account and Access, Hardware, Software, Network) in id order, each
+with only `id` and `name` proving the Prisma ORM reads the seeded PostgreSQL data.
+
+Terminal output:
 ```
 $ vitest run
 
  RUN  v4.1.10 /home/fahsai/Documents/kmutt/cpe-2569-1/cpe334-SE/toktickit/server
 
- ✓ tests/lab-01/health.test.ts > GET /api/health > returns 200 with status ok and service name 21ms
- ✓ tests/lab-01/categories.test.ts > GET /api/categories > returns 200 with the seeded categories in id order 139ms
- ✓ tests/lab-01/categories.test.ts > GET /api/categories > returns each category with only id and name 6ms
 
  Test Files  2 passed (2)
       Tests  3 passed (3)
-   Start at  22:07:18
-   Duration  946ms (transform 119ms, setup 0ms, import 673ms, tests 170ms, environment 0ms)
+   Start at  19:20:08
+   Duration  433ms (transform 76ms, setup 0ms, import 376ms, tests 161ms, environment 1ms)
 ```
 
-**3. Heading renders**
+## UI-01: Heading render
 
-Terminal output: 
-```
-$ vitest run
+Renders `<App />` and asserts the "TokTickIT" heading appears, proving the React
+component mounts without errors.
 
- RUN  v4.1.10 /home/fahsai/Documents/kmutt/cpe-2569-1/cpe334-SE/toktickit/client
-
- ✓ tests/lab-01/App.test.tsx > App > renders the TokTickIT heading 29ms
- ✓ tests/lab-01/App.test.tsx > App > shows Online when the health check succeeds 83ms
- ✓ tests/lab-01/App.test.tsx > App > shows an Offline error message when the API is unavailable 13ms
- ✓ tests/lab-01/App.test.tsx > App > shows the seeded categories returned by the API on success 12ms
-
- Test Files  1 passed (1)
-      Tests  4 passed (4)
-   Start at  22:07:19
-   Duration  1.24s (transform 102ms, setup 119ms, import 158ms, tests 140ms, environment 693ms)
-```
-**4. Success state shows Online + category list**
-
-Terminal output: 
+Terminal output:
 ```
 $ vitest run
 
  RUN  v4.1.10 /home/fahsai/Documents/kmutt/cpe-2569-1/cpe334-SE/toktickit/client
 
- ✓ tests/lab-01/App.test.tsx > App > renders the TokTickIT heading 29ms
- ✓ tests/lab-01/App.test.tsx > App > shows Online when the health check succeeds 83ms
- ✓ tests/lab-01/App.test.tsx > App > shows an Offline error message when the API is unavailable 13ms
- ✓ tests/lab-01/App.test.tsx > App > shows the seeded categories returned by the API on success 12ms
 
  Test Files  1 passed (1)
-      Tests  4 passed (4)
-   Start at  22:07:19
-   Duration  1.24s (transform 102ms, setup 119ms, import 158ms, tests 140ms, environment 693ms)
+      Tests  5 passed (5)
+   Start at  19:20:08
+   Duration  805ms (transform 34ms, setup 83ms, import 55ms, tests 128ms, environment 434ms)
 ```
 
-The success test asserts `System Status: Online`, the "Supported Request Categories" heading, and the four seeded category names (Account and Access, Hardware, Software, Network) — all returned by the mocked `checkSystem()` API rather than hard-coded in the UI.
+## UI-02: Loading state
 
-**5. Error state shows Offline + message**
+The loading test mocks `checkSystem()` to stay pending, clicks the Check System
+button, and asserts the button becomes disabled with "Loading…" while
+"Checking system…" is shown. It then resolves the mock and confirms the loading
+state transitions to the category list.
 
-Terminal output: 
+Terminal output:
 ```
 $ vitest run
 
  RUN  v4.1.10 /home/fahsai/Documents/kmutt/cpe-2569-1/cpe334-SE/toktickit/client
 
- ✓ tests/lab-01/App.test.tsx > App > renders the TokTickIT heading 29ms
- ✓ tests/lab-01/App.test.tsx > App > shows Online when the health check succeeds 83ms
- ✓ tests/lab-01/App.test.tsx > App > shows an Offline error message when the API is unavailable 13ms
- ✓ tests/lab-01/App.test.tsx > App > shows the seeded categories returned by the API on success 12ms
 
  Test Files  1 passed (1)
-      Tests  4 passed (4)
-   Start at  22:07:19
-   Duration  1.24s (transform 102ms, setup 119ms, import 158ms, tests 140ms, environment 693ms)
+      Tests  5 passed (5)
+   Start at  19:20:08
+   Duration  805ms (transform 34ms, setup 83ms, import 55ms, tests 128ms, environment 434ms)
 ```
 
-The error test mocks `checkSystem()` to reject, then asserts `System Status: Offline` and `Unable to connect to TokTickIT API` are shown.
+## UI-03: Error handling
+
+The error test mocks `checkSystem()` to reject, clicks Check System, and asserts
+the UI shows "System Status: Offline" and "Unable to connect to TokTickIT API",
+proving API failures surface a useful message to the user.
+
+Terminal output:
+```
+$ vitest run
+
+ RUN  v4.1.10 /home/fahsai/Documents/kmutt/cpe-2569-1/cpe334-SE/toktickit/client
+
+
+ Test Files  1 passed (1)
+      Tests  5 passed (5)
+   Start at  19:20:08
+   Duration  805ms (transform 34ms, setup 83ms, import 55ms, tests 128ms, environment 434ms)
+```
