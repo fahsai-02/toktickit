@@ -55,7 +55,7 @@ Reviewer approved comment :
 **Peer reviewer:** Onsinee Chotchuangsakulchai — 67070501078 — GitHub: @justfepwx12
 
 Reviewer approved comment :  
-<img src="./images/peer-reviews/my-pr/feature/3-category-seed/comment-approved.png" width="600" />
+<img src="./images/peer-reviews/my-pr/feature/4-category-list/comment-approved.png" width="600" />
 
 ---
 
