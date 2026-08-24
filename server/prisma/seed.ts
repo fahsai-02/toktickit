@@ -48,6 +48,7 @@ const requesters = [
     email: "napat.chaiwong@toktickit.dev",
     isActive: true,
   },
+  // NOTE: isActive is intentionally false; re-seeding resets manual status changes (e.g. reactivation) back to seed values.
   {
     name: "Robert Brown",
     email: "robert.brown@toktickit.dev",
@@ -59,7 +60,7 @@ async function main() {
   for (const category of categories) {
     await prisma.category.upsert({
       where: { name: category.name },
-      update: {},
+      update: category,
       create: category,
     });
   }
@@ -68,9 +69,13 @@ async function main() {
   const categoryIdByName = new Map(categoryRows.map((c) => [c.name, c.id]));
 
   for (const system of relatedSystems) {
-    const categoryId = system.categoryName
-      ? categoryIdByName.get(system.categoryName) ?? null
-      : null;
+    let categoryId: number | null = null;
+    if (system.categoryName) {
+      categoryId = categoryIdByName.get(system.categoryName) ?? null;
+      if (categoryId === null) {
+        throw new Error(`Category "${system.categoryName}" not found for related system "${system.name}"`);
+      }
+    }
     const data = { name: system.name, categoryId, isActive: true };
     await prisma.relatedSystem.upsert({
       where: { name: system.name },
