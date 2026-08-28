@@ -49,6 +49,7 @@ export default function Navbar() {
             className="hamburger"
             onClick={() => setMobileOpen(!mobileOpen)}
             aria-label="Toggle navigation"
+            title="Toggle navigation"
           >
             ☰
           </button>

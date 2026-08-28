@@ -69,7 +69,8 @@ export async function fetchCategories(): Promise<Category[]> {
 export async function fetchRelatedSystems(
   categoryId?: number
 ): Promise<RelatedSystem[]> {
-  const url = new URL(`${API_URL}/api/related-systems`);
+  const base = API_URL || window.location.origin;
+  const url = new URL("/api/related-systems", base);
   if (categoryId !== undefined) {
     url.searchParams.set("categoryId", String(categoryId));
   }

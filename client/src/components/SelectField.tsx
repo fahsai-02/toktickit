@@ -31,7 +31,13 @@ export default function SelectField({
           </span>
         )}
       </label>
-      <select id={id} className="field-select" {...rest}>
+      <select
+        id={id}
+        className="field-select"
+        {...rest}
+        required={required}
+        aria-required={required ? "true" : undefined}
+      >
         {placeholder && <option value="">{placeholder}</option>}
         {options.map((opt) => (
           <option key={opt.value} value={opt.value}>

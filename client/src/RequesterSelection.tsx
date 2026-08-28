@@ -42,7 +42,7 @@ export default function RequesterSelection() {
         <p className="selection-info">
           This is a development testing mechanism to simulate different
           requesters. It is <strong>not</strong> a login screen.
-          Authentication will be introduced in a later lab.
+          Authentication will be introduced in Lab 3.
         </p>
 
         {state === "loading" && (
