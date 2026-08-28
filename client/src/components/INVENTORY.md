@@ -10,7 +10,6 @@ Reusable components ที่สร้างแล้ว นำกลับม�
 | `SelectField` | `components/SelectField.tsx` | `label`, `required`, `options: {value, label}[]`, `placeholder`, `id`, plus native select attrs | RequesterSelection |
 | `Spinner` | `components/Spinner.tsx` | `className?` | RequesterSelection, Button (loading state) |
 | `Navbar` | `components/Navbar.tsx` | `page: Page`, `onNavigate: (p) => void` | AppShell |
-| `NavLink` | `components/NavLink.tsx` | `page: Page`, `active: boolean`, `onNavigate`, `onCloseMobile` | Navbar |
 
 ## Planned (รอ Issue 8+)
 

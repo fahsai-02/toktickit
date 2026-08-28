@@ -4,7 +4,7 @@
 | :--- | :--- |
 | **Project** | Tok TickIT — IT Service Desk |
 | **Sprint** | Lab 2: Requester Ticketing MVP |
-| **Version** | v1.0 APPROVED — student-reviewed, baseline for implementation |
+| **Version** | v1.1 APPROVED — student-reviewed, baseline for implementation (v1.0 + §1 dev-proxy correction) |
 | **Date** | 2026-08-21 |
 | **Contract source** | `specification.md` v1.0 (BR/FR/AC references below trace to it) |
 
@@ -12,7 +12,7 @@
 
 ## 1. Conventions
 
-- **Base URL:** `http://localhost:5000` in development. The port comes from the `PORT` environment variable of `server/.env` and defaults to `5000` when unset (`PORT || 5000`). The Vite client runs on `http://localhost:5173` and targets the API through `VITE_API_URL` in `client/.env` (e.g. `VITE_API_URL=http://localhost:5000`) — no dev proxy is configured, so the full origin must be set. Because client and API are different origins, the server enables CORS for the client origin in development.
+- **Base URL:** `http://localhost:5000` in development. The port comes from the `PORT` environment variable of `server/.env` and defaults to `5000` when unset (`PORT || 5000`). The Vite client runs on `http://localhost:5173` and reaches the API in either of two ways: (a) same-origin via the dev proxy — `client/vite.config.ts` forwards `/api` to the backend target (`process.env.VITE_API_URL` or `http://localhost:5000` by default), and `client/src/api.ts` uses relative `/api` paths when `VITE_API_URL` is unset; or (b) direct cross-origin calls when `VITE_API_URL` is set in `client/.env` (e.g. `VITE_API_URL=http://localhost:5000`) or the client is served elsewhere (e.g. a production build). The server enables CORS in development so direct cross-origin calls work from either setup.
 - **Identity transport (AD-02):** all **ticket and attachment endpoints (2.4–2.9)** require `requesterId` — as a **query parameter** on `GET`, as a **JSON body field** on `POST`/`DELETE`, and as a **form field** on the multipart upload. The reference endpoints (2.1–2.3) serve unauthenticated dropdown data and take **no** `requesterId`. There is no session or token in Lab 2 (BR-03); `requesterId` is a testing convenience and provides no security.
 - **Content types:** `application/json` for all requests/responses except attachment upload (`multipart/form-data`) and download (`application/octet-stream`).
 - **IDs:** positive integers. Malformed ID (non-numeric, zero, negative) → `400`.
@@ -421,3 +421,5 @@ Note: **AC-02** (missing summary blocks submission) and **AC-06** (invalid stage
 *Changes to this contract require a matching change to `specification.md` and student approval.*
 
 **Approval:** Reviewed and approved by the student on 2026-08-21. Query params aligned with field names; staged attachment flow and error envelope confirmed. This version is the implementation baseline.
+
+**Revision v1.1 (2026-08-29):** §1 Base URL reworded to document the Vite dev proxy added in Issue 7 (same-origin `/api` forwarding vs. direct `VITE_API_URL` calls). No endpoint behavior changed; approved by the student.
