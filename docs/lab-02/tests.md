@@ -59,8 +59,8 @@ Status legend: `Planned` → written before implementation · updated to `Pass`/
 | API-19 | API | AC-24 | Download removed/unavailable file | Removed → 410 GONE | `attachments.api.test.ts` | Planned |
 | API-20 | API | AC-23, BR-15 | Remove validation | No reason or <3 chars (>200) → 400 field error; valid reason removes softly | `attachments.api.test.ts` | Planned |
 | API-21 | API | AC-23 | Soft-remove side effects | Metadata retained with removal timestamp + reason; **disk file still present** (BR-09 retention); second remove of same id → 400 | `attachments.api.test.ts` | Planned |
-| API-22 | API | BR-04, FR-05 | Requester reference list | Only active requesters; inactive absent | `reference.api.test.ts` | Planned |
-| API-23 | API | FR-06 | Categories & related systems | Active-only; general systems returned without categoryId filter; system list filtered by categoryId | `reference.api.test.ts` | Planned |
+| API-22 | API | BR-04, FR-05 | Requester reference list | Only active requesters; inactive absent | `requesters.test.ts` | Planned |
+| API-23 | API | FR-06 | Categories & related systems | Active-only; general systems returned without categoryId filter; system list filtered by categoryId | `categories.test.ts`, `related-systems.test.ts` | Planned |
 | API-24 | API | AC-15 | List param edge cases | Unknown enum values, page=0, negative pageSize → 400 with field codes | `my-tickets.api.test.ts` | Planned |
 
 ### UI component (client/tests/lab-02)
@@ -85,10 +85,10 @@ Status legend: `Planned` → written before implementation · updated to `Pass`/
 | UI-16 | UI component | AC-24 | Removed row presentation | Muted style, reason caption, Download disabled with tooltip | `AttachmentSection.test.tsx` | Planned |
 | UI-17 | UI component | AC-23, BR-15 | Remove dialog gating | Confirm disabled until reason 3–200 chars; success updates row in place | `AttachmentSection.test.tsx` | Planned |
 | UI-18 | UI component | AC-20 | Limit reached UX | Add-attachment hidden/disabled with hint at 5 active files | `AttachmentSection.test.tsx` | Planned |
-| UI-19 | UI component | AC-07 | Guard redirect | Deep-linking screens without selected requester bounces to selection screen | `RequesterSelect.test.tsx` | Planned |
-| UI-20 | UI component | AC-08 | Requester dropdown contents | Lists active requesters only; loading/empty/error states handled | `RequesterSelect.test.tsx` | Planned |
-| UI-21 | UI component | AC-09 | Switch requester | Change Requester clears selection and reloads data scoped to new requester | `RequesterSelect.test.tsx` | Planned |
-| UI-22 | UI component | AC-10 | Selection persistence | Reload keeps last chosen requester via localStorage | `RequesterSelect.test.tsx` | Planned |
+| UI-19 | UI component | AC-07 | Guard redirect | Deep-linking screens without selected requester bounces to selection screen | `App.test.tsx` | Planned |
+| UI-20 | UI component | AC-08 | Requester dropdown contents | Lists active requesters only; loading/empty/error states handled | `RequesterSelection.test.tsx` | Planned |
+| UI-21 | UI component | AC-09 | Switch requester | Change Requester clears selection and reloads data scoped to new requester | `App.test.tsx`, `RequesterContext.test.tsx` | Planned |
+| UI-22 | UI component | AC-10 | Selection persistence | Reload keeps last chosen requester via localStorage | `RequesterContext.test.tsx` | Planned |
 
 ### UI style (client/tests/lab-02)
 
