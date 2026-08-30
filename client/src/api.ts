@@ -101,7 +101,7 @@ export interface Ticket {
   ticketDate: string;
   requester: TicketRequester;
   category: Category;
-  relatedSystem: RelatedSystem;
+  relatedSystem: Pick<RelatedSystem, "id" | "name">;
   createdAt: string;
   updatedAt: string;
 }

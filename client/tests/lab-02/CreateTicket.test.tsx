@@ -57,7 +57,7 @@ const validTicket: api.Ticket = {
   ticketDate: "2026-08-29T10:00:00.000Z",
   requester: { id: 1, name: "Jennifer Anderson" },
   category: { id: 2, name: "Hardware" },
-  relatedSystem: { id: 7, name: "Corporate Laptop", categoryId: 2 },
+  relatedSystem: { id: 7, name: "Corporate Laptop" },
   createdAt: "2026-08-29T10:00:00.000Z",
   updatedAt: "2026-08-29T10:00:00.000Z",
 };

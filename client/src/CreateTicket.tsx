@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { CheckCircle2 } from "lucide-react";
 import {
   fetchCategories,
   fetchRelatedSystems,
@@ -75,13 +76,13 @@ export default function CreateTicket() {
 
   const ticketDate = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
-  async function loadReferenceData() {
+  async function loadReferenceData(systemCategoryId?: number | null) {
     setDataLoading(true);
     setLoadError(null);
     try {
       const [cats, systems] = await Promise.all([
         fetchCategories(),
-        fetchRelatedSystems(),
+        fetchRelatedSystems(systemCategoryId ?? undefined),
       ]);
       setCategories(cats);
       setRelatedSystems(systems);
@@ -144,6 +145,10 @@ export default function CreateTicket() {
       });
     }
 
+    if (nextRejected.length > 0) {
+      setRejectedFiles(nextRejected);
+    }
+
     if (stagedFiles.length + accepted.length > MAX_FILES) {
       setSubmitError(
         `You can add up to ${MAX_FILES} files. Remove a file to add another.`
@@ -153,9 +158,6 @@ export default function CreateTicket() {
 
     if (accepted.length > 0) {
       setStagedFiles((prev) => [...prev, ...accepted]);
-    }
-    if (nextRejected.length > 0) {
-      setRejectedFiles(nextRejected);
     }
   }
 
@@ -206,7 +208,7 @@ export default function CreateTicket() {
         });
       }
       setSubmitError(
-        err instanceof Error
+        err instanceof ApiError
           ? err.message
           : "Could not save your ticket. Please try again."
       );
@@ -232,9 +234,12 @@ export default function CreateTicket() {
     return (
       <div className="container create-ticket">
         <Callout variant="success">
-          <strong>
-            Ticket created: {successTicket.ticketNumber}
-          </strong>
+          <div className="success-header">
+            <CheckCircle2 size={24} aria-hidden="true" />
+            <strong>
+              Ticket created: {successTicket.ticketNumber}
+            </strong>
+          </div>
           <p>
             Your ticket has been submitted. The support team will look into it.
           </p>
@@ -265,7 +270,7 @@ export default function CreateTicket() {
           style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}
         >
           <span>{loadError}</span>
-          <Button variant="secondary" onClick={() => void loadReferenceData()}> Retry </Button>
+          <Button variant="secondary" onClick={() => void loadReferenceData(categoryId)}> Retry </Button>
         </Callout>
       )}
 
@@ -378,7 +383,15 @@ export default function CreateTicket() {
           <label className="attach-label" htmlFor="attachments">
             Attachments
           </label>
-          <label className="attach-drop" htmlFor="attachments">
+          <label
+            className="attach-drop"
+            htmlFor="attachments"
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              e.preventDefault();
+              handleFileChange(e.dataTransfer.files);
+            }}
+          >
             <span>Drag files here or browse</span>
             <span className="attach-hint">
               JPG, PNG, WEBP, PDF · max 5 MB · up to 5 files (not uploaded yet)
@@ -388,6 +401,7 @@ export default function CreateTicket() {
             id="attachments"
             type="file"
             multiple
+            accept=".jpg,.jpeg,.png,.webp,.pdf"
             data-testid="file-input"
             onChange={(e) => {
               handleFileChange(e.target.files);
