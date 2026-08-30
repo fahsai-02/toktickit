@@ -26,9 +26,12 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 const MAX_FILES = 5;
 
 interface StagedFile {
+  id: number;
   name: string;
   size: number;
 }
+
+let stagedFileSeq = 0;
 
 interface FieldErrors {
   category?: string;
@@ -134,11 +137,17 @@ export default function CreateTicket() {
         nextRejected.push(`${file.name}: file exceeds 5 MB`);
         continue;
       }
-      accepted.push({ name: file.name, size: file.size });
+      accepted.push({
+        id: ++stagedFileSeq,
+        name: file.name,
+        size: file.size,
+      });
     }
 
     if (stagedFiles.length + accepted.length > MAX_FILES) {
-      setSubmitError(`You can attach up to ${MAX_FILES} files in this lab.`);
+      setSubmitError(
+        `You can add up to ${MAX_FILES} files. Remove a file to add another.`
+      );
       return;
     }
 
@@ -150,8 +159,8 @@ export default function CreateTicket() {
     }
   }
 
-  function removeStagedFile(name: string) {
-    setStagedFiles((prev) => prev.filter((f) => f.name !== name));
+  function removeStagedFile(id: number) {
+    setStagedFiles((prev) => prev.filter((f) => f.id !== id));
   }
 
   function validate(): FieldErrors {
@@ -251,11 +260,12 @@ export default function CreateTicket() {
       <h1 className="page-title">Create Ticket</h1>
 
       {loadError && (
-        <Callout variant="error">
+        <Callout 
+          variant="error" 
+          style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}
+        >
           <span>{loadError}</span>
-          <Button variant="secondary" onClick={() => void loadReferenceData()}>
-            Retry
-          </Button>
+          <Button variant="secondary" onClick={() => void loadReferenceData()}> Retry </Button>
         </Callout>
       )}
 
@@ -398,14 +408,14 @@ export default function CreateTicket() {
           {stagedFiles.length > 0 && (
             <ul className="staged-list">
               {stagedFiles.map((f) => (
-                <li key={f.name} className="staged-chip">
+                <li key={f.id} className="staged-chip">
                   <span className="staged-name">{f.name}</span>
                   <span className="staged-size">{formatBytes(f.size)}</span>
                   <button
                     type="button"
-                    aria-label={`Remove ${f.name}`}
+                    aria-label={`Remove ${f.name} (file #${f.id})`}
                     className="staged-remove"
-                    onClick={() => removeStagedFile(f.name)}
+                    onClick={() => removeStagedFile(f.id)}
                   >
                     ×
                   </button>

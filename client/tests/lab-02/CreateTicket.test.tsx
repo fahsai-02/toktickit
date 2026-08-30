@@ -204,8 +204,31 @@ describe("CreateTicket", () => {
     expect(screen.getByText(/virus\.exe: only JPG, PNG, WEBP, or PDF/)).toBeInTheDocument();
     expect(screen.getByText(/big\.png: file exceeds 5 MB/)).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Remove report.pdf" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: /Remove report\.pdf/ })
+    );
     expect(screen.queryByText("report.pdf")).not.toBeInTheDocument();
+  });
+
+  it("stages two files with the same name and removes only one (UI-06b)", async () => {
+    await renderTicket();
+
+    const input = screen.getByTestId("file-input");
+    fireEvent.change(input, {
+      target: {
+        files: [
+          createFile("notes.pdf", "application/pdf", 1024),
+          createFile("notes.pdf", "application/pdf", 2048),
+        ],
+      },
+    });
+
+    expect(screen.getAllByText("notes.pdf")).toHaveLength(2);
+
+    fireEvent.click(
+      screen.getAllByRole("button", { name: /Remove notes\.pdf/ })[0]
+    );
+    expect(screen.getAllByText("notes.pdf")).toHaveLength(1);
   });
 
   it("reloads the related-system options when the category changes (UI-07)", async () => {
