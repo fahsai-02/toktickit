@@ -1,4 +1,4 @@
-import { type ReactNode } from "react";
+import { type ReactNode, type HTMLAttributes } from "react";
 
 type Variant = "error" | "success" | "info";
 
@@ -14,7 +14,7 @@ const variantRole: Record<Variant, "alert" | "status"> = {
   info: "status",
 };
 
-interface CalloutProps {
+interface CalloutProps extends HTMLAttributes<HTMLDivElement> {
   variant?: Variant;
   children: ReactNode;
 }
@@ -22,9 +22,14 @@ interface CalloutProps {
 export default function Callout({
   variant = "info",
   children,
+  ...rest
 }: CalloutProps) {
   return (
-    <div role={variantRole[variant]} className={`callout ${variantClass[variant]}`.trim()}>
+    <div
+      role={variantRole[variant]}
+      className={`callout ${variantClass[variant]}`.trim()}
+      {...rest}
+    >
       {children}
     </div>
   );

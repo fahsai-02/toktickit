@@ -185,12 +185,14 @@
   }
 
   .field-input.field-error,
-  .field-textarea.field-error {
+  .field-textarea.field-error,
+  .field-select.field-select-error {
     border-color: var(--color-error);
   }
 
   .field-input.field-error:focus,
-  .field-textarea.field-error:focus {
+  .field-textarea.field-error:focus,
+  .field-select.field-select-error:focus {
     box-shadow: 0 0 0 2px var(--color-error), 0 0 0 4px rgba(185, 28, 28, 0.15);
     border-color: var(--color-error);
   }

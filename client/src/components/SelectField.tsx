@@ -10,6 +10,7 @@ interface SelectFieldProps extends SelectHTMLAttributes<HTMLSelectElement> {
   required?: boolean;
   options: SelectOption[];
   placeholder?: string;
+  error?: string;
 }
 
 export default function SelectField({
@@ -17,10 +18,12 @@ export default function SelectField({
   required = false,
   options,
   placeholder,
+  error,
   id,
   className = "",
   ...rest
 }: SelectFieldProps) {
+  const errorId = error ? `${id}-error` : undefined;
   return (
     <div className={`field-group ${className}`.trim()}>
       <label htmlFor={id} className="field-label">
@@ -33,10 +36,12 @@ export default function SelectField({
       </label>
       <select
         id={id}
-        className="field-select"
+        className={`field-select ${error ? "field-select-error" : ""}`.trim()}
         {...rest}
         required={required}
         aria-required={required ? "true" : undefined}
+        aria-invalid={error ? "true" : undefined}
+        aria-describedby={errorId}
       >
         {placeholder && <option value="">{placeholder}</option>}
         {options.map((opt) => (
@@ -45,6 +50,11 @@ export default function SelectField({
           </option>
         ))}
       </select>
+      {error && (
+        <p id={errorId} className="field-error-msg">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
