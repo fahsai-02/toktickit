@@ -231,6 +231,29 @@ describe("CreateTicket", () => {
     expect(screen.getAllByText("notes.pdf")).toHaveLength(1);
   });
 
+  it("dismisses the file-limit message and shows it again when the limit is exceeded (UI-06c)", async () => {
+    await renderTicket();
+
+    const input = screen.getByTestId("file-input");
+    const beyondLimit = Array.from({ length: 6 }, () =>
+      createFile("notes.pdf", "application/pdf", 1024)
+    );
+
+    fireEvent.change(input, { target: { files: beyondLimit } });
+
+    expect(
+      screen.getByText(/You can add up to 5 files/)
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Dismiss error" }));
+    expect(screen.queryByText(/You can add up to 5 files/)).not.toBeInTheDocument();
+
+    fireEvent.change(input, { target: { files: beyondLimit } });
+    expect(
+      screen.getByText(/You can add up to 5 files/)
+    ).toBeInTheDocument();
+  });
+
   it("reloads the related-system options when the category changes (UI-07)", async () => {
     await renderTicket();
 

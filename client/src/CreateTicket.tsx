@@ -427,7 +427,17 @@ export default function CreateTicket() {
 
         {submitError && (
           <Callout variant="error" data-testid="submit-error">
-            <span>{submitError}</span>
+            <div className="callout-dismiss">
+              <span>{submitError}</span>
+              <button
+                type="button"
+                className="callout-close"
+                aria-label="Dismiss error"
+                onClick={() => setSubmitError(null)}
+              >
+                ×
+              </button>
+            </div>
           </Callout>
         )}
 
