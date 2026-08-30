@@ -31,11 +31,13 @@ export default function TextField({
         id={id}
         className={`field-input ${error ? "field-error" : ""}`.trim()}
         aria-invalid={error ? "true" : undefined}
+        aria-required={required ? "true" : undefined}
         aria-describedby={errorId}
+        required={required}
         {...rest}
       />
       {counter && (
-        <div className="field-counter" data-testid="field-counter">
+        <div className="field-counter" data-testid={`field-counter-${id}`}>
           {counter.value}/{counter.max}
         </div>
       )}

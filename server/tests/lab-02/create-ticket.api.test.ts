@@ -158,4 +158,67 @@ describe("POST /api/tickets", () => {
     expect(res.body.error.code).toBe("VALIDATION_ERROR");
     expect(res.body.error.fields.requestedPriority).toBeTruthy();
   });
+
+  it("trims whitespace around requestedPriority before validating", async () => {
+    const res = await request(app)
+      .post("/api/tickets")
+      .send({ ...validBody, requestedPriority: "  MEDIUM  " });
+
+    expect(res.status).toBe(201);
+    expect(res.body.data.requestedPriority).toBe("MEDIUM");
+    createdTicketIds.push(res.body.data.id);
+  });
+
+  it("rejects malformed numeric ids (1e2, true, 1.5)", async () => {
+    const sci = await request(app)
+      .post("/api/tickets")
+      .send({ ...validBody, requesterId: "1e2" });
+    expect(sci.status).toBe(400);
+    expect(sci.body.error.fields.requesterId).toBeTruthy();
+
+    const bool = await request(app)
+      .post("/api/tickets")
+      .send({ ...validBody, requesterId: true });
+    expect(bool.status).toBe(400);
+    expect(bool.body.error.fields.requesterId).toBeTruthy();
+
+    const float = await request(app)
+      .post("/api/tickets")
+      .send({ ...validBody, requesterId: 1.5 });
+    expect(float.status).toBe(400);
+    expect(float.body.error.fields.requesterId).toBeTruthy();
+  });
+
+  it("returns a JSON error envelope for malformed JSON body (no stack trace)", async () => {
+    const res = await request(app)
+      .post("/api/tickets")
+      .set("Content-Type", "application/json")
+      .send("{bad json");
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe("VALIDATION_ERROR");
+    expect(typeof res.text).toBe("string");
+    expect(res.headers["content-type"]).toMatch(/application\/json/);
+  });
+
+  it("creates all tickets uniquely under concurrent submissions", async () => {
+    const results = await Promise.all(
+      Array.from({ length: 8 }, (_, i) =>
+        request(app)
+          .post("/api/tickets")
+          .send({
+            ...validBody,
+            summary: `Concurrent ticket ${i}`,
+            description: `Body ${i}`,
+          })
+      )
+    );
+
+    for (const res of results) {
+      expect(res.status).toBe(201);
+    }
+    const numbers = results.map((r) => r.body.data.ticketNumber);
+    expect(new Set(numbers).size).toBe(numbers.length);
+    createdTicketIds.push(...results.map((r) => r.body.data.id));
+  });
 });

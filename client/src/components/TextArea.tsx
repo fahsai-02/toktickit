@@ -31,11 +31,13 @@ export default function TextArea({
         id={id}
         className={`field-textarea ${error ? "field-error" : ""}`.trim()}
         aria-invalid={error ? "true" : undefined}
+        aria-required={required ? "true" : undefined}
         aria-describedby={errorId}
+        required={required}
         {...rest}
       />
       {counter && (
-        <div className="field-counter" data-testid="field-counter">
+        <div className="field-counter" data-testid={`field-counter-${id}`}>
           {counter.value}/{counter.max}
         </div>
       )}

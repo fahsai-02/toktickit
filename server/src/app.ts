@@ -104,31 +104,39 @@ function validationError(
   });
 }
 
+function parsePositiveInt(value: unknown): number | null {
+  if (typeof value === "number") {
+    return Number.isInteger(value) && value > 0 ? value : null;
+  }
+  if (typeof value === "string" && /^\d+$/.test(value)) {
+    const n = Number(value);
+    return Number.isSafeInteger(n) && n > 0 ? n : null;
+  }
+  return null;
+}
+
 app.post("/api/tickets", async (req: Request, res: Response) => {
   const body = req.body ?? {};
   const fields: Record<string, string> = {};
 
-  const requesterId = Number(body.requesterId);
-  const categoryId = Number(body.categoryId);
-  const relatedSystemId = Number(body.relatedSystemId);
+  const requesterId = parsePositiveInt(body.requesterId);
+  const categoryId = parsePositiveInt(body.categoryId);
+  const relatedSystemId = parsePositiveInt(body.relatedSystemId);
 
-  if (
-    !Number.isInteger(requesterId) ||
-    requesterId <= 0 ||
-    !Number.isFinite(requesterId)
-  ) {
+  if (requesterId === null) {
     fields.requesterId = "Requester is required.";
   }
-  if (!Number.isInteger(categoryId) || categoryId <= 0) {
+  if (categoryId === null) {
     fields.categoryId = "Category is required.";
   }
-  if (!Number.isInteger(relatedSystemId) || relatedSystemId <= 0) {
+  if (relatedSystemId === null) {
     fields.relatedSystemId = "Related system is required.";
   }
 
-  const requestedPriority = typeof body.requestedPriority === "string"
-    ? body.requestedPriority
-    : "";
+  const requestedPriority =
+    typeof body.requestedPriority === "string"
+      ? body.requestedPriority.trim()
+      : "";
   if (!PRIORITIES.includes(requestedPriority)) {
     fields.requestedPriority = "Priority must be LOW, MEDIUM, HIGH, or URGENT.";
   }
@@ -145,6 +153,14 @@ app.post("/api/tickets", async (req: Request, res: Response) => {
   }
 
   if (Object.keys(fields).length > 0) {
+    validationError(res, fields);
+    return;
+  }
+  if (
+    requesterId === null ||
+    categoryId === null ||
+    relatedSystemId === null
+  ) {
     validationError(res, fields);
     return;
   }
@@ -191,7 +207,7 @@ app.post("/api/tickets", async (req: Request, res: Response) => {
 
     const year = new Date().getFullYear();
     let ticket = null;
-    for (let attempt = 0; attempt < 3; attempt += 1) {
+    for (let attempt = 0; attempt < 100; attempt += 1) {
       try {
         ticket = await db.$transaction(async (tx) => {
           const existing = await tx.ticket.findMany({
@@ -256,5 +272,40 @@ app.post("/api/tickets", async (req: Request, res: Response) => {
     });
   }
 });
+
+app.use((_req: Request, res: Response) => {
+  res.status(404).json({
+    error: { code: "NOT_FOUND", message: "Resource not found" },
+  });
+});
+
+app.use(
+  (
+    err: unknown,
+    _req: Request,
+    res: Response,
+    _next: (err?: unknown) => void
+  ) => {
+    if (
+      err instanceof SyntaxError &&
+      "status" in err &&
+      (err as { status?: number }).status === 400
+    ) {
+      res.status(400).json({
+        error: {
+          code: "VALIDATION_ERROR",
+          message: "Malformed JSON in request body",
+        },
+      });
+      return;
+    }
+    res.status(500).json({
+      error: {
+        code: "INTERNAL_ERROR",
+        message: "Internal server error",
+      },
+    });
+  }
+);
 
 export default app;

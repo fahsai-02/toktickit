@@ -184,12 +184,15 @@
     box-shadow: 0 0 0 2px var(--color-secondary), 0 0 0 4px rgba(11, 122, 70, 0.15);
   }
 
-  .field-error {
-    border-color: var(--color-error) !important;
+  .field-input.field-error,
+  .field-textarea.field-error {
+    border-color: var(--color-error);
   }
 
-  .field-error:focus {
+  .field-input.field-error:focus,
+  .field-textarea.field-error:focus {
     box-shadow: 0 0 0 2px var(--color-error), 0 0 0 4px rgba(185, 28, 28, 0.15);
+    border-color: var(--color-error);
   }
 
   .field-error-msg {

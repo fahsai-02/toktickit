@@ -8,6 +8,12 @@ const variantClass: Record<Variant, string> = {
   info: "callout-info",
 };
 
+const variantRole: Record<Variant, "alert" | "status"> = {
+  error: "alert",
+  success: "status",
+  info: "status",
+};
+
 interface CalloutProps {
   variant?: Variant;
   children: ReactNode;
@@ -18,7 +24,7 @@ export default function Callout({
   children,
 }: CalloutProps) {
   return (
-    <div role="alert" className={`callout ${variantClass[variant]}`.trim()}>
+    <div role={variantRole[variant]} className={`callout ${variantClass[variant]}`.trim()}>
       {children}
     </div>
   );
