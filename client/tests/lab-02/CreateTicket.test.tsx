@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { RequesterProvider } from "../../src/RequesterContext.js";
 import CreateTicket from "../../src/CreateTicket.js";
@@ -148,7 +148,9 @@ describe("CreateTicket", () => {
     await renderTicket();
 
     fillValidForm();
-    submit();
+    await act(async () => {
+      submit();
+    });
 
     expect(screen.getByTestId("submit-ticket")).toBeDisabled();
     expect(document.querySelector(".spinner")).toBeInTheDocument();

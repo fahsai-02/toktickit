@@ -328,6 +328,7 @@ export default function CreateTicket() {
             required
             placeholder="— Select priority —"
             data-testid="priority"
+            disabled={dataLoading}
             value={priority}
             onChange={(e) =>
               setPriority(e.target.value as RequestedPriority | "")
