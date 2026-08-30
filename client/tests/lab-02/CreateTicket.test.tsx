@@ -183,7 +183,7 @@ describe("CreateTicket", () => {
     submit();
 
     expect(
-      await screen.findByText(/Ticket created — TKT-2026-000012/)
+      await screen.findByText(/Ticket created: TKT-2026-000012/)
     ).toBeInTheDocument();
     expect(screen.getByTestId("go-to-my-tickets")).toBeInTheDocument();
   });

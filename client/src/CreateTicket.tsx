@@ -233,7 +233,7 @@ export default function CreateTicket() {
       <div className="container create-ticket">
         <Callout variant="success">
           <strong>
-            Ticket created — {successTicket.ticketNumber}
+            Ticket created: {successTicket.ticketNumber}
           </strong>
           <p>
             Your ticket has been submitted. The support team will look into it.
