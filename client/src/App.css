@@ -32,6 +32,9 @@
     font-weight: 600;
     color: #fff;
     white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
   }
 
   /* Navigation */
@@ -53,6 +56,9 @@
     border-bottom: 3px solid transparent;
     transition: color 0.15s, border-color 0.15s;
     text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
   }
 
   .nav-link:hover {
