@@ -40,7 +40,7 @@ export default function PaginationBar({
   return (
     <div className="pagination-bar" data-testid="pagination-bar">
       <span className="pagination-info">
-        Showing {start}\u2013{end} of {total}
+        Showing {start}–{end} of {total}
       </span>
 
       <div className="pagination-controls">

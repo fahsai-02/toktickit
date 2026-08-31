@@ -12,7 +12,7 @@ interface TicketTableProps {
   onRowClick: (ticket: TicketListItem) => void;
 }
 
-const SORTABLE_FIELDS = ["ticketNumber", "updatedAt", "createdAt", "requestedPriority"] as const;
+const SORTABLE_FIELDS = ["ticketNumber", "updatedAt", "createdAt", "requestedPriority"];
 
 function SortArrow({
   field,
@@ -21,7 +21,7 @@ function SortArrow({
   field: string;
   sort: SortConfig;
 }) {
-  if (!SORTABLE_FIELDS.includes(field as typeof SORTABLE_FIELDS[number])) {
+  if (!(SORTABLE_FIELDS as string[]).includes(field)) {
     return null;
   }
   const active = sort.sortBy === field;
