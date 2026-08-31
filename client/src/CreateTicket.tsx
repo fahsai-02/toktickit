@@ -23,6 +23,7 @@ import Spinner from "./components/Spinner.js";
 const PRIORITIES: RequestedPriority[] = ["LOW", "MEDIUM", "HIGH", "URGENT"];
 
 const ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "webp", "pdf"];
+const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 const MAX_FILES = 5;
 
@@ -131,6 +132,10 @@ export default function CreateTicket() {
     for (const file of Array.from(files)) {
       const ext = fileExtension(file.name);
       if (!ALLOWED_EXTENSIONS.includes(ext)) {
+        nextRejected.push(`${file.name}: only JPG, PNG, WEBP, or PDF allowed`);
+        continue;
+      }
+      if (file.type && !ALLOWED_MIME_TYPES.includes(file.type)) {
         nextRejected.push(`${file.name}: only JPG, PNG, WEBP, or PDF allowed`);
         continue;
       }
@@ -307,7 +312,7 @@ export default function CreateTicket() {
             label="Category"
             required
             placeholder="— Select category —"
-            disabled={dataLoading}
+            disabled={dataLoading || Boolean(loadError)}
             data-testid="category"
             value={categoryId ?? ""}
             onChange={(e) => {
@@ -323,7 +328,7 @@ export default function CreateTicket() {
             label="Related System"
             required
             placeholder="— Select system —"
-            disabled={dataLoading || categoryId === null}
+            disabled={dataLoading || Boolean(loadError) || categoryId === null}
             data-testid="relatedSystem"
             value={systemId ?? ""}
             onChange={(e) => {
@@ -343,7 +348,7 @@ export default function CreateTicket() {
             required
             placeholder="— Select priority —"
             data-testid="priority"
-            disabled={dataLoading}
+            disabled={dataLoading || Boolean(loadError)}
             value={priority}
             onChange={(e) =>
               setPriority(e.target.value as RequestedPriority | "")

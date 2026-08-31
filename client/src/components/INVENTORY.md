@@ -6,8 +6,8 @@ Reusable components ที่สร้างแล้ว นำกลับม�
 
 | Component | Path | Props | Used in |
 |---|---|---|---|
-| `Button` | `components/Button.tsx` | `variant: "primary" \| "secondary" \| "ghost"`, `disabled`, `loading`, `children` | RequesterSelection, AppShell |
-| `SelectField` | `components/SelectField.tsx` | `label`, `required`, `options: {value, label}[]`, `placeholder`, `id`, plus native select attrs | RequesterSelection |
+| `Button` | `components/Button.tsx` | `variant: "primary" \| "secondary" \| "ghost"`, `disabled`, `loading`, `children` | RequesterSelection, AppShell, Create Ticket |
+| `SelectField` | `components/SelectField.tsx` | `label`, `required`, `options: {value, label}[]`, `placeholder`, `error?: string`, `id`, plus native select attrs | RequesterSelection, Create Ticket |
 | `Spinner` | `components/Spinner.tsx` | `className?` | RequesterSelection, Button (loading state) |
 | `Navbar` | `components/Navbar.tsx` | `page: Page`, `onNavigate: (p) => void` | AppShell |
 | `TextField` | `components/TextField.tsx` | `label`, `required`, `error`, `counter {value,max}`, `id`, plus native input attrs | Create Ticket |

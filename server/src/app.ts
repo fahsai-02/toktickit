@@ -3,7 +3,6 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { db } from './db.js';
 import { buildNextTicketNumber } from './lib/ticketNumber.js';
-import { PrismaClientKnownRequestError } from './generated/prisma/internal/prismaNamespace.js';
 
 dotenv.config();
 
@@ -210,12 +209,13 @@ app.post("/api/tickets", async (req: Request, res: Response) => {
     for (let attempt = 0; attempt < 100; attempt += 1) {
       try {
         ticket = await db.$transaction(async (tx) => {
-          const existing = await tx.ticket.findMany({
+          const latest = await tx.ticket.findFirst({
             where: { ticketNumber: { startsWith: `TKT-${year}-` } },
+            orderBy: { ticketNumber: "desc" },
             select: { ticketNumber: true },
           });
           const ticketNumber = buildNextTicketNumber(
-            existing.map((t) => t.ticketNumber),
+            latest ? [latest.ticketNumber] : [],
             year
           );
           return tx.ticket.create({
@@ -234,8 +234,7 @@ app.post("/api/tickets", async (req: Request, res: Response) => {
         break;
       } catch (err) {
         if (
-          err instanceof PrismaClientKnownRequestError &&
-          err.code === "P2002"
+          (err as { code?: string }).code === "P2002"
         ) {
           continue;
         }
