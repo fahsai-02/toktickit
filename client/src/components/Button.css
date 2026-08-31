@@ -31,7 +31,9 @@
     outline-offset: 2px;
   }
 
-  .btn-primary:disabled {
+  .btn-primary:disabled,
+  .btn-secondary:disabled,
+  .btn-ghost:disabled {
     opacity: 0.45;
     cursor: not-allowed;
   }

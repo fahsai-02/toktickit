@@ -8,7 +8,8 @@
 |----|--------|------------------|
 | 45 | feature/5-sprint-specification | approved |
 | 46 | feature/6-db-seed | approved |
-| 47 | feature/7-requester-context | pending review |
+| 47 | feature/7-requester-context | approved |
+| 47 | feature/8-create-ticket | pending review |
 
 ### feature/5-sprint-specification #45
 
@@ -30,7 +31,27 @@ Reviewer approved comment:
 <img src="./images/peer-reviews/my-pr/feature/6-db-seed/comment-approved.png" width="600" />
 
 ---
+### feature/7-requester-context #47
+My comment:  
+<img src="./images/peer-reviews/my-pr/feature/7-requester-context/my-comment.png" width="600" />
 
+Reviewer comment I received:  
+<img src="./images/peer-reviews/my-pr/feature/7-requester-context/comment-received-1.png" width="600" />
+
+How I responded:  
+<img src="./images/peer-reviews/my-pr/feature/7-requester-context/comment-responded-1.png" width="600" />
+<img src="./images/peer-reviews/my-pr/feature/7-requester-context/comment-responded-2.png" width="600" />
+
+Reviewer approved comment:  
+<img src="./images/peer-reviews/my-pr/feature/7-requester-context/comment-approved.png" width="600" />
+
+How I responded:  
+<img src="./images/peer-reviews/my-pr/feature/7-requester-context/comment-responded-3.png" width="600" />
+
+---
+### feature/8-create-ticket #48
+
+---
 
 ## Pull Requests I reviewed for my partner
 

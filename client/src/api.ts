@@ -81,3 +81,77 @@ export async function fetchRelatedSystems(
   const { data } = (await res.json()) as { data: RelatedSystem[] };
   return data;
 }
+
+export type RequestedPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
+export type TicketStatus = "NEW";
+
+export interface TicketRequester {
+  id: number;
+  name: string;
+}
+
+export interface Ticket {
+  id: number;
+  ticketNumber: string;
+  summary: string;
+  description: string;
+  requestedPriority: RequestedPriority;
+  itPriority: RequestedPriority | null;
+  currentStatus: TicketStatus;
+  ticketDate: string;
+  requester: TicketRequester;
+  category: Category;
+  relatedSystem: Pick<RelatedSystem, "id" | "name">;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface NewTicketInput {
+  requesterId: number;
+  categoryId: number;
+  relatedSystemId: number;
+  requestedPriority: RequestedPriority;
+  summary: string;
+  description: string;
+}
+
+export class ApiError extends Error {
+  code: string;
+  fields?: Record<string, string>;
+
+  constructor(message: string, code: string, fields?: Record<string, string>) {
+    super(message);
+    this.name = "ApiError";
+    this.code = code;
+    this.fields = fields;
+  }
+}
+
+export async function createTicket(input: NewTicketInput): Promise<Ticket> {
+  const res = await fetch(`${API_URL}/api/tickets`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+
+  if (!res.ok) {
+    let message = `Failed to create ticket: ${res.status}`;
+    let code = "INTERNAL_ERROR";
+    let fields: Record<string, string> | undefined;
+    try {
+      const body = (await res.json()) as {
+        error?: { code?: string; message?: string; fields?: Record<string, string> };
+      };
+      code = body.error?.code ?? "INTERNAL_ERROR";
+      message = body.error?.message ?? message;
+      fields = body.error?.fields;
+    } catch {
+      // ignore malformed error body
+    }
+    throw new ApiError(message, code, fields);
+  }
+
+  const { data } = (await res.json()) as { data: Ticket };
+  return data;
+}
+
