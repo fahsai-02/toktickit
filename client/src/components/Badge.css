@@ -1,0 +1,47 @@
+@layer components {
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.4;
+    border-radius: 9999px;
+    white-space: nowrap;
+  }
+
+  .badge-status-new {
+    background: var(--color-pale);
+    color: var(--color-success);
+  }
+
+  .badge-priority-low {
+    background: #f3f4f6;
+    color: #374151;
+  }
+
+  .badge-priority-medium {
+    background: var(--color-pale);
+    color: var(--color-primary);
+  }
+
+  .badge-priority-high {
+    background: #fef3c7;
+    color: var(--color-warning);
+  }
+
+  .badge-priority-urgent {
+    background: rgba(185, 28, 28, 0.1);
+    color: var(--color-error);
+  }
+
+  .badge-it-priority {
+    background: #f3f4f6;
+    color: var(--color-text-muted);
+  }
+
+  .badge-neutral {
+    background: #f3f4f6;
+    color: var(--color-text-muted);
+  }
+}

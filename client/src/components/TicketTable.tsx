@@ -1,0 +1,122 @@
+import type { TicketListItem } from "../api.js";
+
+interface SortConfig {
+  sortBy: string;
+  sortOrder: "asc" | "desc";
+}
+
+interface TicketTableProps {
+  tickets: TicketListItem[];
+  sort: SortConfig;
+  onSort: (field: string) => void;
+  onRowClick: (ticket: TicketListItem) => void;
+}
+
+const SORTABLE_FIELDS = ["ticketNumber", "updatedAt", "createdAt", "requestedPriority"] as const;
+
+function SortArrow({
+  field,
+  sort,
+}: {
+  field: string;
+  sort: SortConfig;
+}) {
+  if (!SORTABLE_FIELDS.includes(field as typeof SORTABLE_FIELDS[number])) {
+    return null;
+  }
+  const active = sort.sortBy === field;
+  return (
+    <span className="sort-arrow" aria-hidden="true">
+      {active ? (sort.sortOrder === "asc" ? " \u25B2" : " \u25BC") : " \u25B4"}
+    </span>
+  );
+}
+
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+export default function TicketTable({
+  tickets,
+  sort,
+  onSort,
+  onRowClick,
+}: TicketTableProps) {
+  return (
+    <div className="ticket-table-wrap">
+      <table className="ticket-table" data-testid="ticket-table">
+        <thead>
+          <tr>
+            {(
+              [
+                "ticketNumber",
+                "summary",
+                "category",
+                "requestedPriority",
+                "itPriority",
+                "currentStatus",
+                "updatedAt",
+              ] as const
+            ).map((key) => {
+              const sortable = SORTABLE_FIELDS.includes(key);
+              const label =
+                key === "updatedAt"
+                  ? "Last Updated"
+                  : key === "ticketNumber"
+                    ? "Ticket Number"
+                    : key === "requestedPriority"
+                      ? "Requested Priority"
+                      : key === "itPriority"
+                        ? "IT Priority"
+                        : key === "currentStatus"
+                          ? "Current Status"
+                          : key.charAt(0).toUpperCase() + key.slice(1);
+              return (
+                <th
+                  key={key}
+                  className={sortable ? "sortable-th" : ""}
+                  onClick={sortable ? () => onSort(key) : undefined}
+                  scope="col"
+                >
+                  {label}
+                  <SortArrow field={key} sort={sort} />
+                </th>
+              );
+            })}
+          </tr>
+        </thead>
+        <tbody>
+          {tickets.map((t) => (
+            <tr
+              key={t.id}
+              className="ticket-row"
+              onClick={() => onRowClick(t)}
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  onRowClick(t);
+                }
+              }}
+              data-testid={`ticket-row-${t.id}`}
+            >
+              <td className="col-ticket-number">{t.ticketNumber}</td>
+              <td className="col-summary">{t.summary}</td>
+              <td>{t.category.name}</td>
+              <td>{t.requestedPriority}</td>
+              <td>{t.itPriority ?? "\u2014"}</td>
+              <td>{t.currentStatus}</td>
+              <td>{formatDate(t.updatedAt)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
