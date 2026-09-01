@@ -16,19 +16,10 @@ import Spinner from "./components/Spinner.js";
 import Button from "./components/Button.js";
 import AttachmentSection from "./components/AttachmentSection.js";
 import { ArrowLeft } from 'lucide-react';
+import { formatDate } from "./lib/format.js";
 
 
 type DetailState = "loading" | "error" | "not-found" | "access-denied" | "idle";
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
 
 export default function TicketDetail() {
   const { ticketId } = useParams<{ ticketId: string }>();

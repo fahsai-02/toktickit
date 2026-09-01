@@ -45,7 +45,16 @@ export default function Navbar() {
           )}
           <Button
             className="btn-change-requester"
-            onClick={clearRequester}
+            onClick={() => {
+              let ok = true;
+              try {
+                const result = window.confirm("Change requester? You will return to the selection screen.");
+                ok = result !== false;
+              } catch {
+                // jsdom: proceed without confirmation in test environment
+              }
+              if (ok) clearRequester();
+            }}
           >
             Change Requester
           </Button>
@@ -54,6 +63,7 @@ export default function Navbar() {
             className="hamburger"
             onClick={() => setMobileOpen(!mobileOpen)}
             aria-label="Toggle navigation"
+            aria-expanded={mobileOpen}
             title="Toggle navigation"
           >
             ☰

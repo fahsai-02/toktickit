@@ -1,19 +1,10 @@
 import type { TicketListItem } from "../api.js";
 import Badge, { statusBadgeVariant, priorityBadgeVariant } from "./Badge.js";
+import { formatDate } from "../lib/format.js";
 
 interface TicketCardProps {
   ticket: TicketListItem;
   onClick: (ticket: TicketListItem) => void;
-}
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
 }
 
 export default function TicketCard({ ticket, onClick }: TicketCardProps) {

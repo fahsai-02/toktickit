@@ -178,6 +178,8 @@ export default function MyTickets() {
     navigate(`/tickets/${ticket.id}`);
   };
 
+  if (!requester) return null;
+
   return (
     <div className="container my-tickets">
       <div className="my-tickets-toolbar">

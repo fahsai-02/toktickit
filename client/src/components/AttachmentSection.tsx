@@ -8,6 +8,7 @@ import {
 import Button from "./Button.js";
 import Spinner from "./Spinner.js";
 import { Upload, Download, Trash2, FileText, AlertCircle, RotateCcw } from "lucide-react";
+import { formatDate } from "../lib/format.js";
 
 const ALLOWED_TYPES = [
   "image/jpeg",
@@ -22,16 +23,6 @@ function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
 }
 
 interface UploadEntry {
@@ -81,6 +72,8 @@ export default function AttachmentSection({
     const dialog = dialogRef.current;
     if (!dialog) return;
 
+    document.body.style.overflow = "hidden";
+
     const focusableSelector =
       'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
     const focusable = dialog.querySelectorAll<HTMLElement>(focusableSelector);
@@ -113,6 +106,7 @@ export default function AttachmentSection({
     document.addEventListener("keydown", handleKeyDown);
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "";
       previousFocus?.focus();
     };
   }, [removeDialog]);

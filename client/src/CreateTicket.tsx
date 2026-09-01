@@ -84,13 +84,13 @@ export default function CreateTicket() {
 
   const ticketDate = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
-  async function loadReferenceData(systemCategoryId?: number | null) {
+  async function loadReferenceData() {
     setDataLoading(true);
     setLoadError(null);
     try {
       const [cats, systems] = await Promise.all([
         fetchCategories(),
-        fetchRelatedSystems(systemCategoryId ?? undefined),
+        fetchRelatedSystems(categoryId ?? undefined),
       ]);
       setCategories(cats);
       setRelatedSystems(systems);
@@ -105,6 +105,7 @@ export default function CreateTicket() {
 
   useEffect(() => {
     void loadReferenceData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -367,7 +368,7 @@ export default function CreateTicket() {
           style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}
         >
           <span>{loadError}</span>
-          <Button variant="secondary" onClick={() => void loadReferenceData(categoryId)}> Retry </Button>
+          <Button variant="secondary" onClick={() => void loadReferenceData()}> Retry </Button>
         </Callout>
       )}
 
