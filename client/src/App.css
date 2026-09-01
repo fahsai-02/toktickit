@@ -717,17 +717,8 @@
   /* ── My Tickets Responsive ─────────────────────────────────────────── */
 
   @media (max-width: 768px) {
-    .my-tickets-toolbar {
-      flex-direction: column;
-      align-items: stretch;
-    }
-
     .my-tickets-toolbar .page-title {
-      text-align: center;
-    }
-
-    .my-tickets-toolbar .btn-primary {
-      width: 100%;
+      font-size: 18px;
     }
 
     .filter-card {
@@ -735,13 +726,36 @@
     }
 
     .filter-row {
-      flex-direction: column;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr auto;
+      gap: 8px;
     }
 
-    .filter-search,
-    .filter-select {
-      flex: 1 1 auto;
+    .filter-search {
+      grid-column: 1 / -1;
       min-width: 0;
+    }
+
+    .filter-select {
+      min-width: 0;
+    }
+
+    .filter-row .field-label {
+      margin-bottom: 2px;
+    }
+
+    .filter-row .field-input,
+    .filter-row .field-select {
+      height: 34px;
+      font-size: 12px;
+      padding: 0 8px;
+    }
+
+    .filter-row .btn-ghost {
+      height: 34px;
+      padding: 0 10px;
+      font-size: 12px;
+      align-self: end;
     }
 
     .mobile-sort {
@@ -784,7 +798,7 @@
     }
 
     .filter-select {
-      flex: 0 1 160px;
+      flex: 0 1 140px;
     }
   }
 }
