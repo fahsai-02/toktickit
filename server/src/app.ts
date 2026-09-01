@@ -431,6 +431,93 @@ app.post("/api/tickets", async (req: Request, res: Response) => {
   }
 });
 
+app.get("/api/tickets/:id", async (req: Request, res: Response) => {
+  const fields: Record<string, string> = {};
+
+  const ticketId = parsePositiveInt(req.params.id);
+  if (ticketId === null) {
+    fields.id = "Ticket id must be a positive integer.";
+  }
+
+  const requesterId = parsePositiveInt(req.query.requesterId);
+  if (requesterId === null) {
+    fields.requesterId = "requesterId is required and must be a positive integer.";
+  }
+
+  if (Object.keys(fields).length > 0) {
+    validationError(res, fields);
+    return;
+  }
+
+  try {
+    const requester = await db.requester.findUnique({
+      where: { id: requesterId! },
+      select: { id: true },
+    });
+    if (!requester) {
+      res.status(404).json({
+        error: { code: "NOT_FOUND", message: "Requester not found" },
+      });
+      return;
+    }
+
+    const ticket = await db.ticket.findUnique({
+      where: { id: ticketId! },
+      select: {
+        id: true,
+        ticketNumber: true,
+        summary: true,
+        description: true,
+        requestedPriority: true,
+        itPriority: true,
+        currentStatus: true,
+        ticketDate: true,
+        requesterId: true,
+        requester: { select: { id: true, name: true } },
+        category: { select: { id: true, name: true } },
+        relatedSystem: { select: { id: true, name: true } },
+        createdAt: true,
+        updatedAt: true,
+        attachments: {
+          orderBy: { createdAt: "asc" },
+          select: {
+            id: true,
+            originalFileName: true,
+            fileSize: true,
+            mimeType: true,
+            isRemoved: true,
+            removedAt: true,
+            removalReason: true,
+            uploadedByRequesterId: true,
+            createdAt: true,
+          },
+        },
+      },
+    });
+
+    if (!ticket) {
+      res.status(404).json({
+        error: { code: "NOT_FOUND", message: "Ticket not found" },
+      });
+      return;
+    }
+
+    if (ticket.requesterId !== requesterId!) {
+      res.status(403).json({
+        error: { code: "FORBIDDEN", message: "You don't have access to this ticket." },
+      });
+      return;
+    }
+
+    const { requesterId: _, ...ticketData } = ticket;
+    res.json({ data: ticketData });
+  } catch {
+    res.status(500).json({
+      error: { code: "INTERNAL_ERROR", message: "Failed to fetch ticket" },
+    });
+  }
+});
+
 app.use((_req: Request, res: Response) => {
   res.status(404).json({
     error: { code: "NOT_FOUND", message: "Resource not found" },
