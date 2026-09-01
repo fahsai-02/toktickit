@@ -286,3 +286,99 @@ export async function fetchTicket(
   return data;
 }
 
+// ── Attachments (Issue 11) ─────────────────────────────────────────────
+
+export async function uploadAttachment(
+  ticketId: number,
+  requesterId: number,
+  file: File
+): Promise<Attachment> {
+  const formData = new FormData();
+  formData.append("requesterId", String(requesterId));
+  formData.append("file", file);
+
+  const res = await fetch(`${API_URL}/api/tickets/${ticketId}/attachments`, {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!res.ok) {
+    let message = `Failed to upload attachment: ${res.status}`;
+    let code = "INTERNAL_ERROR";
+    let fields: Record<string, string> | undefined;
+    try {
+      const body = (await res.json()) as {
+        error?: { code?: string; message?: string; fields?: Record<string, string> };
+      };
+      code = body.error?.code ?? "INTERNAL_ERROR";
+      message = body.error?.message ?? message;
+      fields = body.error?.fields;
+    } catch {
+      // ignore
+    }
+    throw new ApiError(message, code, fields);
+  }
+
+  const { data } = (await res.json()) as { data: Attachment };
+  return data;
+}
+
+export async function downloadAttachment(
+  attachmentId: number,
+  requesterId: number
+): Promise<Blob> {
+  const base = API_URL || window.location.origin;
+  const url = new URL(`/api/attachments/${attachmentId}/download`, base);
+  url.searchParams.set("requesterId", String(requesterId));
+
+  const res = await fetch(url);
+  if (!res.ok) {
+    let message = `Failed to download attachment: ${res.status}`;
+    let code = "INTERNAL_ERROR";
+    try {
+      const body = (await res.json()) as {
+        error?: { code?: string; message?: string };
+      };
+      code = body.error?.code ?? "INTERNAL_ERROR";
+      message = body.error?.message ?? message;
+    } catch {
+      // ignore
+    }
+    throw new ApiError(message, code);
+  }
+
+  return res.blob();
+}
+
+export async function removeAttachment(
+  attachmentId: number,
+  requesterId: number,
+  removalReason: string
+): Promise<Attachment> {
+  const res = await fetch(`${API_URL}/api/attachments/${attachmentId}`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ requesterId, removalReason }),
+  });
+
+  if (!res.ok) {
+    let message = `Failed to remove attachment: ${res.status}`;
+    let code = "INTERNAL_ERROR";
+    let fields: Record<string, string> | undefined;
+    try {
+      const body = (await res.json()) as {
+        error?: { code?: string; message?: string; fields?: Record<string, string> };
+      };
+      code = body.error?.code ?? "INTERNAL_ERROR";
+      message = body.error?.message ?? message;
+      fields = body.error?.fields;
+    } catch {
+      // ignore
+    }
+    throw new ApiError(message, code, fields);
+  }
+
+  const { data } = (await res.json()) as { data: Attachment };
+  return data;
+}
+
