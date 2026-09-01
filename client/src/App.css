@@ -976,6 +976,63 @@
     background: #991b1b !important;
   }
 
+  /* ── Upload Progress (Create Ticket success) ──────────────────── */
+
+  .upload-progress {
+    margin-top: 16px;
+    padding: 16px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+  }
+
+  .upload-progress h3 {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 0 12px;
+  }
+
+  .upload-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--color-text-muted);
+    margin-bottom: 8px;
+  }
+
+  .uploaded-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .uploaded-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    font-size: 14px;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .uploaded-item:last-child {
+    border-bottom: none;
+  }
+
+  .uploaded-item--success {
+    color: var(--color-success);
+  }
+
+  .uploaded-item--error {
+    color: var(--color-error);
+    justify-content: space-between;
+  }
+
+  .uploaded-error-msg {
+    font-size: 13px;
+  }
+
   /* ── My Tickets Responsive ─────────────────────────────────────────── */
 
   @media (max-width: 768px) {
