@@ -96,7 +96,8 @@ export default function TicketDetail() {
     return (
       <div className="container ticket-detail">
         <Link to="/my-tickets" className="back-link">
-          &larr; My Tickets
+          <ArrowLeft size={16} />
+          My Tickets
         </Link>
         <div className="list-state" data-testid="not-found-state">
           <p>Ticket not found.</p>
@@ -112,7 +113,8 @@ export default function TicketDetail() {
     return (
       <div className="container ticket-detail">
         <Link to="/my-tickets" className="back-link">
-          &larr; My Tickets
+          <ArrowLeft size={16} />
+          My Tickets
         </Link>
         <div className="list-state list-state--error" data-testid="access-denied-state">
           <p>You don&apos;t have access to this ticket.</p>
@@ -128,7 +130,8 @@ export default function TicketDetail() {
     return (
       <div className="container ticket-detail">
         <Link to="/my-tickets" className="back-link">
-          &larr; My Tickets
+          <ArrowLeft size={16} />
+          My Tickets
         </Link>
         <div className="list-state list-state--error" data-testid="error-state">
           <p className="error-banner">{errorMessage}</p>

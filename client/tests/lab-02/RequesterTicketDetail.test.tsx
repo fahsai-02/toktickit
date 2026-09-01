@@ -98,7 +98,7 @@ describe("TicketDetail", () => {
       renderDetail();
 
       await screen.findByTestId("ticket-detail");
-      expect(screen.getByText(/\u2190 My Tickets/)).toHaveAttribute("href", "/my-tickets");
+      expect(screen.getByRole("link", { name: /my tickets/i })).toHaveAttribute("href", "/my-tickets");
     });
 
     it("shows active attachments", async () => {

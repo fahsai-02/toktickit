@@ -33,6 +33,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+  await db.attachment.deleteMany({ where: { ticketId: { in: [ticketId, ticketId2] } } });
   await db.ticket.deleteMany({ where: { id: { in: [ticketId, ticketId2] } } });
 });
 
@@ -58,6 +59,12 @@ describe("GET /api/tickets/:id", () => {
     expect(res.body.data.createdAt).toBeTruthy();
     expect(res.body.data.updatedAt).toBeTruthy();
     expect(Array.isArray(res.body.data.attachments)).toBe(true);
+    if (res.body.data.attachments.length > 1) {
+      const dates = res.body.data.attachments.map((a: { createdAt: string }) => new Date(a.createdAt).getTime());
+      for (let i = 1; i < dates.length; i++) {
+        expect(dates[i]).toBeGreaterThanOrEqual(dates[i - 1]);
+      }
+    }
   });
 
   it("API-12: returns 403 when requesting another requester's ticket", async () => {
@@ -138,6 +145,7 @@ describe("GET /api/tickets/:id", () => {
       removalReason: "Wrong file",
     });
 
+    await db.attachment.deleteMany({ where: { ticketId: tid } });
     await db.ticket.delete({ where: { id: tid } });
   });
 });

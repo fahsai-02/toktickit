@@ -204,7 +204,7 @@ app.get("/api/tickets", async (req: Request, res: Response) => {
 
   try {
     const requester = await db.requester.findUnique({
-      where: { id: requesterId },
+      where: { id: requesterId! },
       select: { id: true },
     });
     if (!requester) {
