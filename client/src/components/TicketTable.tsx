@@ -1,4 +1,8 @@
 import type { TicketListItem } from "../api.js";
+import Badge, {
+  statusBadgeVariant,
+  priorityBadgeVariant,
+} from "./Badge.js";
 
 interface SortConfig {
   sortBy: string;
@@ -109,9 +113,19 @@ export default function TicketTable({
               <td className="col-ticket-number">{t.ticketNumber}</td>
               <td className="col-summary">{t.summary}</td>
               <td>{t.category.name}</td>
-              <td>{t.requestedPriority}</td>
-              <td>{t.itPriority ?? "\u2014"}</td>
-              <td>{t.currentStatus}</td>
+              <td>
+                <Badge variant={priorityBadgeVariant(t.requestedPriority)}>
+                  {t.requestedPriority}
+                </Badge>
+              </td>
+              <td>
+                <Badge variant="it-priority">{t.itPriority ?? "\u2014"}</Badge>
+              </td>
+              <td>
+                <Badge variant={statusBadgeVariant(t.currentStatus)}>
+                  {t.currentStatus}
+                </Badge>
+              </td>
               <td>{formatDate(t.updatedAt)}</td>
             </tr>
           ))}

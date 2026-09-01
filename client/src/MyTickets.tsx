@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { Inbox, SearchX } from "lucide-react";
 import { useRequester } from "./RequesterContext.js";
 import {
   fetchTickets,
@@ -57,9 +58,17 @@ export default function MyTickets() {
   const [listState, setListState] = useState<ListState>("loading");
   const [errorMessage, setErrorMessage] = useState("");
   const [categories, setCategories] = useState<Category[]>([]);
+  const [searchInput, setSearchInput] = useState("");
 
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef(0);
+
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    };
+  }, []);
 
   const requesterId = requester?.id;
 
@@ -124,13 +133,12 @@ export default function MyTickets() {
 
   // Debounced search
   const handleSearchChange = (value: string) => {
+    setSearchInput(value);
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
     searchTimeout.current = setTimeout(() => {
       setFilters((f) => ({ ...f, search: value }));
       setPage(1);
     }, 300);
-    // Update local input immediately
-    setFilters((f) => ({ ...f, search: value }));
   };
 
   const handleFilterChange = (key: keyof Filters, value: string) => {
@@ -139,6 +147,8 @@ export default function MyTickets() {
   };
 
   const clearFilters = () => {
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    setSearchInput("");
     setFilters(EMPTY_FILTERS);
     setPage(1);
   };
@@ -192,7 +202,7 @@ export default function MyTickets() {
               type="text"
               className="field-input"
               placeholder="Search ticket number or summary"
-              value={filters.search}
+              value={searchInput}
               onChange={(e) => handleSearchChange(e.target.value)}
               data-testid="search-input"
             />
@@ -316,6 +326,7 @@ export default function MyTickets() {
 
       {listState === "empty" && (
         <div className="list-state" data-testid="empty-state">
+          <Inbox size={48} strokeWidth={1.5} />
           <p>You haven&apos;t created any tickets yet.</p>
           <Button
             variant="primary"
@@ -328,6 +339,7 @@ export default function MyTickets() {
 
       {listState === "no-results" && (
         <div className="list-state" data-testid="no-results-state">
+          <SearchX size={48} strokeWidth={1.5} />
           <p>No tickets match your filters.</p>
           <Button variant="secondary" onClick={clearFilters}>
             Clear Filters
