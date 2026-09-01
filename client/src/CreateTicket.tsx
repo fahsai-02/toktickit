@@ -158,9 +158,7 @@ export default function CreateTicket() {
       });
     }
 
-    if (nextRejected.length > 0) {
-      setRejectedFiles(nextRejected);
-    }
+    setRejectedFiles(nextRejected);
 
     if (stagedFiles.length + accepted.length > MAX_FILES) {
       setSubmitError(
@@ -282,25 +280,11 @@ export default function CreateTicket() {
     }
   }
 
-  function handleReset() {
-    setCategoryId(null);
-    setSystemId(null);
-    setPriority("");
-    setSummary("");
-    setDescription("");
-    setStagedFiles([]);
-    setRejectedFiles([]);
-    setFieldErrors({});
-    setSubmitError(null);
-    setSuccessTicket(null);
-  }
-
   if (successTicket) {
     const totalFiles = stagedFiles.length;
     const completedUploads = uploadedAttachments.length;
     const failedCount = failedUploads.size;
     const uploadingCount = uploadingFiles.size;
-    const allDone = !uploading && (totalFiles === 0 || completedUploads + failedCount === totalFiles);
 
     return (
       <div className="container create-ticket">
