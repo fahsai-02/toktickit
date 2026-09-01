@@ -1,10 +1,53 @@
 import express, { type Express, type Request, type Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import multer from 'multer';
+import path from 'node:path';
+import fs from 'node:fs';
+import crypto from 'node:crypto';
+import { fileURLToPath } from 'node:url';
 import { db } from './db.js';
 import { buildNextTicketNumber } from './lib/ticketNumber.js';
 
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const UPLOADS_DIR = path.join(__dirname, '..', 'uploads');
+
+if (!fs.existsSync(UPLOADS_DIR)) {
+  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+}
+
+const ALLOWED_MIME_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'application/pdf',
+];
+const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.pdf'];
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+
+const storage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, UPLOADS_DIR),
+  filename: (_req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    cb(null, `${crypto.randomUUID()}${ext}`);
+  },
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: MAX_FILE_SIZE },
+  fileFilter: (_req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (ALLOWED_MIME_TYPES.includes(file.mimetype) && ALLOWED_EXTENSIONS.includes(ext)) {
+      cb(null, true);
+    } else {
+      cb(new Error("UNSUPPORTED_MEDIA_TYPE"));
+    }
+  },
+});
 
 const app: Express = express();
 
@@ -480,17 +523,18 @@ app.get("/api/tickets/:id", async (req: Request, res: Response) => {
         updatedAt: true,
         attachments: {
           orderBy: { createdAt: "asc" },
-          select: {
-            id: true,
-            originalFileName: true,
-            fileSize: true,
-            mimeType: true,
-            isRemoved: true,
-            removedAt: true,
-            removalReason: true,
-            uploadedByRequesterId: true,
-            createdAt: true,
-          },
+      select: {
+        id: true,
+        originalFileName: true,
+        storageFileName: true,
+        fileSize: true,
+        mimeType: true,
+        isRemoved: true,
+        removedAt: true,
+        removalReason: true,
+        uploadedByRequesterId: true,
+        createdAt: true,
+      },
         },
       },
     });
@@ -518,6 +562,362 @@ app.get("/api/tickets/:id", async (req: Request, res: Response) => {
   }
 });
 
+app.get("/api/tickets/:id/attachments", async (req: Request, res: Response) => {
+  const fields: Record<string, string> = {};
+
+  const ticketId = parsePositiveInt(req.params.id);
+  if (ticketId === null) {
+    fields.id = "Ticket id must be a positive integer.";
+  }
+
+  const requesterId = parsePositiveInt(req.query.requesterId);
+  if (requesterId === null) {
+    fields.requesterId = "requesterId is required and must be a positive integer.";
+  }
+
+  if (Object.keys(fields).length > 0) {
+    validationError(res, fields);
+    return;
+  }
+
+  try {
+    const ticket = await db.ticket.findUnique({
+      where: { id: ticketId! },
+      select: { id: true, requesterId: true },
+    });
+
+    if (!ticket) {
+      res.status(404).json({
+        error: { code: "NOT_FOUND", message: "Ticket not found" },
+      });
+      return;
+    }
+
+    if (ticket.requesterId !== requesterId!) {
+      res.status(403).json({
+        error: { code: "FORBIDDEN", message: "You don't have access to this ticket." },
+      });
+      return;
+    }
+
+    const attachments = await db.attachment.findMany({
+      where: { ticketId: ticketId! },
+      orderBy: { createdAt: "asc" },
+      select: {
+        id: true,
+        originalFileName: true,
+        fileSize: true,
+        mimeType: true,
+        isRemoved: true,
+        removedAt: true,
+        removalReason: true,
+        uploadedByRequesterId: true,
+        createdAt: true,
+      },
+    });
+
+    res.json({ data: attachments });
+  } catch {
+    res.status(500).json({
+      error: { code: "INTERNAL_ERROR", message: "Failed to fetch attachments" },
+    });
+  }
+});
+
+app.post("/api/tickets/:id/attachments", upload.single("file"), async (req: Request, res: Response) => {
+  const ticketId = parsePositiveInt(req.params.id);
+  const requesterId = parsePositiveInt(req.body.requesterId);
+
+  if (ticketId === null || requesterId === null) {
+    const fields: Record<string, string> = {};
+    if (ticketId === null) fields.id = "Ticket id must be a positive integer.";
+    if (requesterId === null) fields.requesterId = "requesterId is required.";
+    validationError(res, fields);
+    return;
+  }
+
+  if (!req.file) {
+    res.status(400).json({
+      error: {
+        code: "VALIDATION_ERROR",
+        message: "File is required. Allowed types: jpg, jpeg, png, webp, pdf (max 5 MB).",
+      },
+    });
+    return;
+  }
+
+  try {
+    const requester = await db.requester.findUnique({
+      where: { id: requesterId },
+      select: { id: true, isActive: true },
+    });
+
+    if (!requester) {
+      res.status(404).json({
+        error: { code: "NOT_FOUND", message: "Requester not found" },
+      });
+      return;
+    }
+
+    const ticket = await db.ticket.findUnique({
+      where: { id: ticketId },
+      select: { id: true, requesterId: true },
+    });
+
+    if (!ticket) {
+      res.status(404).json({
+        error: { code: "NOT_FOUND", message: "Ticket not found" },
+      });
+      return;
+    }
+
+    if (ticket.requesterId !== requesterId) {
+      res.status(403).json({
+        error: { code: "FORBIDDEN", message: "You don't have access to this ticket." },
+      });
+      return;
+    }
+
+    const activeCount = await db.attachment.count({
+      where: { ticketId, isRemoved: false },
+    });
+
+    if (activeCount >= 5) {
+      res.status(400).json({
+        error: {
+          code: "BUSINESS_RULE_VIOLATION",
+          message: "Ticket already has the maximum of 5 active attachments.",
+        },
+      });
+      return;
+    }
+
+    if (req.file.size > MAX_FILE_SIZE) {
+      res.status(413).json({
+        error: {
+          code: "PAYLOAD_TOO_LARGE",
+          message: "File size exceeds the 5 MB limit.",
+        },
+      });
+      return;
+    }
+
+    if (!ALLOWED_MIME_TYPES.includes(req.file.mimetype)) {
+      res.status(415).json({
+        error: {
+          code: "UNSUPPORTED_MEDIA_TYPE",
+          message: "File type not allowed. Allowed: jpg, jpeg, png, webp, pdf.",
+        },
+      });
+      return;
+    }
+
+    const attachment = await db.attachment.create({
+      data: {
+        ticketId,
+        originalFileName: req.file.originalname,
+        storageFileName: req.file.filename,
+        fileSize: req.file.size,
+        mimeType: req.file.mimetype,
+        uploadedByRequesterId: requesterId,
+      },
+      select: {
+        id: true,
+        originalFileName: true,
+        fileSize: true,
+        mimeType: true,
+        isRemoved: true,
+        removedAt: true,
+        removalReason: true,
+        uploadedByRequesterId: true,
+        createdAt: true,
+      },
+    });
+
+    res.status(201).json({ data: attachment });
+  } catch {
+    res.status(500).json({
+      error: { code: "INTERNAL_ERROR", message: "Failed to upload attachment" },
+    });
+  }
+});
+
+app.get("/api/attachments/:id/download", async (req: Request, res: Response) => {
+  const fields: Record<string, string> = {};
+
+  const attachmentId = parsePositiveInt(req.params.id);
+  if (attachmentId === null) {
+    fields.id = "Attachment id must be a positive integer.";
+  }
+
+  const requesterId = parsePositiveInt(req.query.requesterId);
+  if (requesterId === null) {
+    fields.requesterId = "requesterId is required and must be a positive integer.";
+  }
+
+  if (Object.keys(fields).length > 0) {
+    validationError(res, fields);
+    return;
+  }
+
+  try {
+    const requester = await db.requester.findUnique({
+      where: { id: requesterId! },
+      select: { id: true },
+    });
+    if (!requester) {
+      res.status(404).json({
+        error: { code: "NOT_FOUND", message: "Requester not found" },
+      });
+      return;
+    }
+
+    const attachment = await db.attachment.findUnique({
+      where: { id: attachmentId! },
+      select: {
+        id: true,
+        storageFileName: true,
+        originalFileName: true,
+        fileSize: true,
+        mimeType: true,
+        isRemoved: true,
+        ticket: { select: { requesterId: true } },
+      },
+    });
+
+    if (!attachment) {
+      res.status(404).json({
+        error: { code: "NOT_FOUND", message: "Attachment not found" },
+      });
+      return;
+    }
+
+    if (attachment.isRemoved) {
+      res.status(410).json({
+        error: { code: "GONE", message: "This attachment has been removed." },
+      });
+      return;
+    }
+
+    if (attachment.ticket.requesterId !== requesterId!) {
+      res.status(403).json({
+        error: { code: "FORBIDDEN", message: "You don't have access to this attachment." },
+      });
+      return;
+    }
+
+    const filePath = path.join(UPLOADS_DIR, attachment.storageFileName);
+    if (!fs.existsSync(filePath)) {
+      res.status(404).json({
+        error: { code: "NOT_FOUND", message: "Attachment file not found on disk." },
+      });
+      return;
+    }
+
+    res.setHeader("Content-Type", attachment.mimeType);
+    res.setHeader("Content-Disposition", `attachment; filename="${attachment.originalFileName}"`);
+    res.setHeader("Content-Length", attachment.fileSize);
+
+    const fileStream = fs.createReadStream(filePath);
+    fileStream.pipe(res);
+  } catch {
+    res.status(500).json({
+      error: { code: "INTERNAL_ERROR", message: "Failed to download attachment" },
+    });
+  }
+});
+
+app.delete("/api/attachments/:id", async (req: Request, res: Response) => {
+  const attachmentId = parsePositiveInt(req.params.id);
+  const body = req.body ?? {};
+  const requesterId = parsePositiveInt(body.requesterId);
+  const removalReason = typeof body.removalReason === "string" ? body.removalReason.trim() : "";
+
+  const fields: Record<string, string> = {};
+  if (attachmentId === null) fields.id = "Attachment id must be a positive integer.";
+  if (requesterId === null) fields.requesterId = "requesterId is required.";
+  if (removalReason.length < 3 || removalReason.length > 200) {
+    fields.removalReason = "removalReason must be 3-200 characters.";
+  }
+
+  if (Object.keys(fields).length > 0) {
+    validationError(res, fields);
+    return;
+  }
+
+  try {
+    const requester = await db.requester.findUnique({
+      where: { id: requesterId! },
+      select: { id: true },
+    });
+    if (!requester) {
+      res.status(404).json({
+        error: { code: "NOT_FOUND", message: "Requester not found" },
+      });
+      return;
+    }
+
+    const attachment = await db.attachment.findUnique({
+      where: { id: attachmentId! },
+      select: {
+        id: true,
+        isRemoved: true,
+        ticket: { select: { requesterId: true } },
+      },
+    });
+
+    if (!attachment) {
+      res.status(404).json({
+        error: { code: "NOT_FOUND", message: "Attachment not found" },
+      });
+      return;
+    }
+
+    if (attachment.isRemoved) {
+      res.status(400).json({
+        error: {
+          code: "BUSINESS_RULE_VIOLATION",
+          message: "This attachment has already been removed.",
+        },
+      });
+      return;
+    }
+
+    if (attachment.ticket.requesterId !== requesterId!) {
+      res.status(403).json({
+        error: { code: "FORBIDDEN", message: "You don't have access to this attachment." },
+      });
+      return;
+    }
+
+    const updated = await db.attachment.update({
+      where: { id: attachmentId! },
+      data: {
+        isRemoved: true,
+        removedAt: new Date(),
+        removalReason,
+      },
+      select: {
+        id: true,
+        originalFileName: true,
+        fileSize: true,
+        mimeType: true,
+        isRemoved: true,
+        removedAt: true,
+        removalReason: true,
+        uploadedByRequesterId: true,
+        createdAt: true,
+      },
+    });
+
+    res.json({ data: updated });
+  } catch {
+    res.status(500).json({
+      error: { code: "INTERNAL_ERROR", message: "Failed to remove attachment" },
+    });
+  }
+});
+
 app.use((_req: Request, res: Response) => {
   res.status(404).json({
     error: { code: "NOT_FOUND", message: "Resource not found" },
@@ -531,6 +931,24 @@ app.use(
     res: Response,
     _next: (err?: unknown) => void
   ) => {
+    if (err instanceof Error && err.message === "UNSUPPORTED_MEDIA_TYPE") {
+      res.status(415).json({
+        error: {
+          code: "UNSUPPORTED_MEDIA_TYPE",
+          message: "File type not allowed. Allowed: jpg, jpeg, png, webp, pdf.",
+        },
+      });
+      return;
+    }
+    if (err instanceof Error && (err as { code?: string }).code === "LIMIT_FILE_SIZE") {
+      res.status(413).json({
+        error: {
+          code: "PAYLOAD_TOO_LARGE",
+          message: "File size exceeds the 5 MB limit.",
+        },
+      });
+      return;
+    }
     if (
       err instanceof SyntaxError &&
       "status" in err &&
