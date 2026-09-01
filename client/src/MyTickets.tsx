@@ -174,8 +174,8 @@ export default function MyTickets() {
     void loadTickets();
   };
 
-  const handleRowClick = (_ticket: TicketListItem) => {
-    // TODO(Issue 10): navigate to detail
+  const handleRowClick = (ticket: TicketListItem) => {
+    navigate(`/tickets/${ticket.id}`);
   };
 
   return (

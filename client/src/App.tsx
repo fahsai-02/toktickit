@@ -4,6 +4,7 @@ import RequesterSelection from "./RequesterSelection.js";
 import AppShell from "./AppShell.js";
 import MyTickets from "./MyTickets.js";
 import CreateTicket from "./CreateTicket.js";
+import TicketDetail from "./TicketDetail.js";
 
 export default function App() {
   const { requester } = useRequester();
@@ -21,6 +22,7 @@ export default function App() {
     <Routes>
       <Route element={<AppShell />}>
         <Route path="/my-tickets" element={<MyTickets />} />
+        <Route path="/tickets/:ticketId" element={<TicketDetail />} />
         <Route path="/create-ticket" element={<CreateTicket />} />
         <Route path="/select-requester" element={<Navigate to="/my-tickets" replace />} />
         <Route path="/" element={<Navigate to="/my-tickets" replace />} />

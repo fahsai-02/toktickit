@@ -714,11 +714,117 @@
     margin: 0;
   }
 
+  /* ── Ticket Detail ──────────────────────────────────────────────────── */
+
+  .back-link {
+    display: inline-block;
+    margin-bottom: 16px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-secondary);
+    text-decoration: none;
+  }
+
+  .back-link:hover {
+    text-decoration: underline;
+  }
+
+  .ticket-detail-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .ticket-detail-number {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  .ticket-detail-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    box-shadow: 0 1px 2px var(--color-shadow);
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+
+  .ticket-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .ticket-detail-description {
+    white-space: pre-wrap;
+    min-height: 80px;
+  }
+
+  .ticket-detail-section-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 12px;
+  }
+
+  .ticket-detail-note {
+    font-size: 13px;
+    margin-top: 8px;
+  }
+
+  .attachment-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .attachment-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--color-border);
+    font-size: 14px;
+  }
+
+  .attachment-item:last-child {
+    border-bottom: none;
+  }
+
+  .attachment-name {
+    font-weight: 500;
+  }
+
+  .attachment-size {
+    color: var(--color-text-muted);
+    font-size: 12px;
+  }
+
+  .attachment-item--removed {
+    opacity: 0.6;
+  }
+
+  .attachment-removed-info {
+    color: var(--color-text-muted);
+    font-size: 12px;
+    font-style: italic;
+  }
+
   /* ── My Tickets Responsive ─────────────────────────────────────────── */
 
   @media (max-width: 768px) {
     .my-tickets-toolbar .page-title {
       font-size: 18px;
+    }
+
+    .ticket-detail-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .ticket-detail-card {
+      padding: 16px;
     }
 
     .filter-card {
