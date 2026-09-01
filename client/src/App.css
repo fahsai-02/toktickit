@@ -635,7 +635,7 @@
   .pagination-pages {
     display: flex;
     align-items: center;
-    gap: 2px;
+    gap: 8px;
   }
 
   .pagination-btn {
@@ -717,7 +717,9 @@
   /* ── Ticket Detail ──────────────────────────────────────────────────── */
 
   .back-link {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     margin-bottom: 16px;
     font-size: 14px;
     font-weight: 500;
@@ -889,7 +891,9 @@
     }
 
     .pagination-pages {
+      display: flex;
       flex-wrap: wrap;
+      gap: 8px;
       justify-content: center;
     }
   }

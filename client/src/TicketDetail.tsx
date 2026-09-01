@@ -13,6 +13,8 @@ import Badge, {
 import ReadOnlyField from "./components/ReadOnlyField.js";
 import Spinner from "./components/Spinner.js";
 import Button from "./components/Button.js";
+import { ArrowLeft } from 'lucide-react';
+
 
 type DetailState = "loading" | "error" | "not-found" | "access-denied" | "idle";
 
@@ -146,7 +148,8 @@ export default function TicketDetail() {
   return (
     <div className="container ticket-detail" data-testid="ticket-detail">
       <Link to="/my-tickets" className="back-link">
-        &larr; My Tickets
+        < ArrowLeft size={16}/>
+        My Tickets
       </Link>
 
       <div className="ticket-detail-header">
