@@ -37,6 +37,9 @@ build/
 server/prisma/*.db
 server/src/generated/prisma
 
+# uploads
+server/uploads/
+
 # AI Agents & Local Tooling
 .agents/
 .agent/
@@ -44,3 +47,11 @@ server/src/generated/prisma
 .windsurf/
 .opencode/
 skills-lock.json
+
+# Lab 2 local-only docs (instructor handouts + internal plan, not deliverables)
+docs/lab-02/Lab_02_Full_Specification_and_Guide.md
+docs/lab-02/lab-02-labsheet.md
+docs/lab-02/work-plan.md
+
+# instructor-provided course handouts (never commit)
+docs/lab-02/TokTickIT_GitHub_Workflow_Guide_TH_EN.pdf
