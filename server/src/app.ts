@@ -91,6 +91,9 @@ app.get("/api/related-systems", async (req: Request, res: Response) => {
   }
 });
 
+const SORT_WHITELIST = ["updatedAt", "createdAt", "requestedPriority", "ticketNumber"] as const;
+const STATUSES = ["NEW"] as const;
+
 const PRIORITIES = ["LOW", "MEDIUM", "HIGH", "URGENT"];
 
 function validationError(
@@ -113,6 +116,162 @@ function parsePositiveInt(value: unknown): number | null {
   }
   return null;
 }
+
+app.get("/api/tickets", async (req: Request, res: Response) => {
+  const fields: Record<string, string> = {};
+
+  const requesterId = parsePositiveInt(req.query.requesterId);
+  if (requesterId === null) {
+    fields.requesterId = "requesterId is required and must be a positive integer.";
+  }
+
+  const search =
+    typeof req.query.search === "string" ? req.query.search.trim() : "";
+
+  const categoryIdParam = req.query.categoryId;
+  let categoryId: number | undefined;
+  if (categoryIdParam !== undefined) {
+    const parsed = parsePositiveInt(categoryIdParam);
+    if (parsed === null) {
+      fields.categoryId = "categoryId must be a positive integer.";
+    } else {
+      categoryId = parsed;
+    }
+  }
+
+  const currentStatusParam = req.query.currentStatus;
+  let currentStatus: string | undefined;
+  if (currentStatusParam !== undefined) {
+    if (typeof currentStatusParam === "string" && STATUSES.includes(currentStatusParam as typeof STATUSES[number])) {
+      currentStatus = currentStatusParam;
+    } else {
+      fields.currentStatus = `currentStatus must be one of: ${STATUSES.join(", ")}.`;
+    }
+  }
+
+  const requestedPriorityParam = req.query.requestedPriority;
+  let requestedPriority: string | undefined;
+  if (requestedPriorityParam !== undefined) {
+    if (typeof requestedPriorityParam === "string" && PRIORITIES.includes(requestedPriorityParam)) {
+      requestedPriority = requestedPriorityParam;
+    } else {
+      fields.requestedPriority = `requestedPriority must be one of: ${PRIORITIES.join(", ")}.`;
+    }
+  }
+
+  let sortBy: string = "updatedAt";
+  if (req.query.sortBy !== undefined) {
+    if (typeof req.query.sortBy === "string" && SORT_WHITELIST.includes(req.query.sortBy as typeof SORT_WHITELIST[number])) {
+      sortBy = req.query.sortBy;
+    } else {
+      fields.sortBy = `sortBy must be one of: ${SORT_WHITELIST.join(", ")}.`;
+    }
+  }
+
+  let sortOrder: "asc" | "desc" = "desc";
+  if (req.query.sortOrder !== undefined) {
+    if (typeof req.query.sortOrder === "string" && (req.query.sortOrder === "asc" || req.query.sortOrder === "desc")) {
+      sortOrder = req.query.sortOrder;
+    } else {
+      fields.sortOrder = "sortOrder must be asc or desc.";
+    }
+  }
+
+  let page = 1;
+  if (req.query.page !== undefined) {
+    const parsed = Number(req.query.page);
+    if (!Number.isFinite(parsed) || !Number.isInteger(parsed) || parsed < 1) {
+      fields.page = "page must be an integer >= 1.";
+    } else {
+      page = parsed;
+    }
+  }
+
+  let pageSize = 10;
+  if (req.query.pageSize !== undefined) {
+    const parsed = Number(req.query.pageSize);
+    if (!Number.isFinite(parsed) || !Number.isInteger(parsed) || parsed < 1 || parsed > 50) {
+      fields.pageSize = "pageSize must be an integer between 1 and 50.";
+    } else {
+      pageSize = parsed;
+    }
+  }
+
+  if (Object.keys(fields).length > 0) {
+    validationError(res, fields);
+    return;
+  }
+
+  try {
+    const requester = await db.requester.findUnique({
+      where: { id: requesterId },
+      select: { id: true },
+    });
+    if (!requester) {
+      res.status(404).json({
+        error: { code: "NOT_FOUND", message: "Requester not found" },
+      });
+      return;
+    }
+
+    const where: Record<string, unknown> = { requesterId };
+
+    if (search) {
+      where.OR = [
+        { ticketNumber: { contains: search, mode: "insensitive" } },
+        { summary: { contains: search, mode: "insensitive" } },
+      ];
+    }
+    if (categoryId !== undefined) {
+      where.categoryId = categoryId;
+    }
+    if (currentStatus !== undefined) {
+      where.currentStatus = currentStatus;
+    }
+    if (requestedPriority !== undefined) {
+      where.requestedPriority = requestedPriority;
+    }
+
+    const orderBy: Array<Record<string, string>> = [
+      { [sortBy]: sortOrder },
+    ];
+    if (sortBy !== "ticketNumber") {
+      orderBy.push({ ticketNumber: "desc" });
+    }
+
+    const [total, tickets] = await Promise.all([
+      db.ticket.count({ where }),
+      db.ticket.findMany({
+        where,
+        orderBy,
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        select: {
+          id: true,
+          ticketNumber: true,
+          summary: true,
+          requestedPriority: true,
+          itPriority: true,
+          currentStatus: true,
+          category: { select: { id: true, name: true } },
+          createdAt: true,
+          updatedAt: true,
+        },
+      }),
+    ]);
+
+    const totalPages = Math.ceil(total / pageSize);
+
+    res.json({
+      data: tickets,
+      meta: { total, page, pageSize, totalPages },
+    });
+  } catch {
+    res.status(500).json({
+      error: { code: "INTERNAL_ERROR", message: "Failed to fetch tickets" },
+    });
+  }
+});
 
 app.post("/api/tickets", async (req: Request, res: Response) => {
   const body = req.body ?? {};

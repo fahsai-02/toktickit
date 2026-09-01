@@ -115,6 +115,79 @@ export interface NewTicketInput {
   description: string;
 }
 
+// ── Ticket List (Issue 9) ───────────────────────────────────────────────────
+
+export interface TicketListItem {
+  id: number;
+  ticketNumber: string;
+  summary: string;
+  requestedPriority: RequestedPriority;
+  itPriority: RequestedPriority | null;
+  currentStatus: TicketStatus;
+  category: Category;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TicketListMeta {
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export interface TicketListParams {
+  requesterId: number;
+  search?: string;
+  categoryId?: number;
+  currentStatus?: string;
+  requestedPriority?: string;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+  page?: number;
+  pageSize?: number;
+}
+
+export async function fetchTickets(
+  params: TicketListParams
+): Promise<{ data: TicketListItem[]; meta: TicketListMeta }> {
+  const base = API_URL || window.location.origin;
+  const url = new URL("/api/tickets", base);
+  url.searchParams.set("requesterId", String(params.requesterId));
+  if (params.search) url.searchParams.set("search", params.search);
+  if (params.categoryId !== undefined)
+    url.searchParams.set("categoryId", String(params.categoryId));
+  if (params.currentStatus)
+    url.searchParams.set("currentStatus", params.currentStatus);
+  if (params.requestedPriority)
+    url.searchParams.set("requestedPriority", params.requestedPriority);
+  if (params.sortBy) url.searchParams.set("sortBy", params.sortBy);
+  if (params.sortOrder) url.searchParams.set("sortOrder", params.sortOrder);
+  if (params.page !== undefined)
+    url.searchParams.set("page", String(params.page));
+  if (params.pageSize !== undefined)
+    url.searchParams.set("pageSize", String(params.pageSize));
+
+  const res = await fetch(url);
+  if (!res.ok) {
+    let message = `Failed to fetch tickets: ${res.status}`;
+    let code = "INTERNAL_ERROR";
+    let fields: Record<string, string> | undefined;
+    try {
+      const body = (await res.json()) as {
+        error?: { code?: string; message?: string; fields?: Record<string, string> };
+      };
+      code = body.error?.code ?? "INTERNAL_ERROR";
+      message = body.error?.message ?? message;
+      fields = body.error?.fields;
+    } catch {
+      // ignore malformed error body
+    }
+    throw new ApiError(message, code, fields);
+  }
+  return (await res.json()) as { data: TicketListItem[]; meta: TicketListMeta };
+}
+
 export class ApiError extends Error {
   code: string;
   fields?: Record<string, string>;
