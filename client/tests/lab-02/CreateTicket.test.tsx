@@ -186,6 +186,7 @@ describe("CreateTicket", () => {
       await screen.findByText(/Ticket created: TKT-2026-000012/)
     ).toBeInTheDocument();
     expect(screen.getByTestId("go-to-my-tickets")).toBeInTheDocument();
+    expect(screen.getByText("View ticket")).toBeInTheDocument();
   });
 
   it("stages valid files and rejects disallowed or oversized files immediately (UI-06)", async () => {

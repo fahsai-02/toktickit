@@ -228,3 +228,61 @@ export async function createTicket(input: NewTicketInput): Promise<Ticket> {
   return data;
 }
 
+// ── Ticket Detail (Issue 10) ──────────────────────────────────────────────
+
+export interface Attachment {
+  id: number;
+  originalFileName: string;
+  fileSize: number;
+  mimeType: string;
+  isRemoved: boolean;
+  removedAt: string | null;
+  removalReason: string | null;
+  uploadedByRequesterId: number;
+  createdAt: string;
+}
+
+export interface TicketDetail {
+  id: number;
+  ticketNumber: string;
+  summary: string;
+  description: string;
+  requestedPriority: RequestedPriority;
+  itPriority: RequestedPriority | null;
+  currentStatus: TicketStatus;
+  ticketDate: string;
+  requester: TicketRequester;
+  category: Category;
+  relatedSystem: Pick<RelatedSystem, "id" | "name">;
+  createdAt: string;
+  updatedAt: string;
+  attachments: Attachment[];
+}
+
+export async function fetchTicket(
+  ticketId: number,
+  requesterId: number
+): Promise<TicketDetail> {
+  const base = API_URL || window.location.origin;
+  const url = new URL(`/api/tickets/${ticketId}`, base);
+  url.searchParams.set("requesterId", String(requesterId));
+
+  const res = await fetch(url);
+  if (!res.ok) {
+    let message = `Failed to fetch ticket: ${res.status}`;
+    let code = "INTERNAL_ERROR";
+    try {
+      const body = (await res.json()) as {
+        error?: { code?: string; message?: string };
+      };
+      code = body.error?.code ?? "INTERNAL_ERROR";
+      message = body.error?.message ?? message;
+    } catch {
+      // ignore malformed error body
+    }
+    throw new ApiError(message, code);
+  }
+  const { data } = (await res.json()) as { data: TicketDetail };
+  return data;
+}
+
