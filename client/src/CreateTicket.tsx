@@ -250,8 +250,11 @@ export default function CreateTicket() {
           </p>
         </Callout>
         <div className="create-actions">
-          <Button variant="secondary" disabled>
-            View ticket (coming soon)
+          <Button
+            variant="secondary"
+            onClick={() => navigate(`/tickets/${successTicket.id}`)}
+          >
+            View ticket
           </Button>
           <Button
             variant="primary"
