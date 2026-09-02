@@ -667,7 +667,9 @@ app.post("/api/tickets/:id/attachments", upload.single("file"), async (req: Requ
       return;
     }
 
-    if (!ALLOWED_MIME_TYPES.includes(req.file.mimetype)) {
+    const ext = path.extname(req.file.originalname).toLowerCase();
+    const typeResult = validateAttachmentType(req.file.mimetype, ext);
+    if (!typeResult.valid) {
       res.status(415).json({
         error: {
           code: "UNSUPPORTED_MEDIA_TYPE",
@@ -680,7 +682,7 @@ app.post("/api/tickets/:id/attachments", upload.single("file"), async (req: Requ
     const attachment = await db.attachment.create({
       data: {
         ticketId,
-        originalFileName: req.file.originalname,
+        originalFileName: req.file.originalname.trim().slice(0, 255),
         storageFileName: req.file.filename,
         fileSize: req.file.size,
         mimeType: req.file.mimetype,
@@ -780,7 +782,13 @@ app.get("/api/attachments/:id/download", async (req: Request, res: Response) => 
     }
 
     res.setHeader("Content-Type", attachment.mimeType);
-    res.setHeader("Content-Disposition", `attachment; filename="${attachment.originalFileName}"`);
+    const safeName = attachment.originalFileName
+      .replace(/[\r\n]/g, "")
+      .replace(/"/g, '\\"');
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${safeName}"; filename*=UTF-8''${encodeURIComponent(attachment.originalFileName)}`
+    );
     res.setHeader("Content-Length", attachment.fileSize);
 
     const fileStream = fs.createReadStream(filePath);

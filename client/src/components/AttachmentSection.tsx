@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import {
   uploadAttachment,
   downloadAttachment,
@@ -18,6 +18,8 @@ const ALLOWED_TYPES = [
 ];
 const MAX_SIZE = 5 * 1024 * 1024; // 5 MB
 const MAX_ACTIVE = 5;
+
+let tempIdSeq = 0;
 
 interface Props {
   ticketId: number;
@@ -49,8 +51,8 @@ export default function AttachmentSection({
   const [removeError, setRemoveError] = useState("");
   const [removing, setRemoving] = useState(false);
 
-  const activeAttachments = attachments.filter((a) => !a.isRemoved);
-  const removedAttachments = attachments.filter((a) => a.isRemoved);
+  const activeAttachments = useMemo(() => attachments.filter((a) => !a.isRemoved), [attachments]);
+  const removedAttachments = useMemo(() => attachments.filter((a) => a.isRemoved), [attachments]);
   const activeCount = activeAttachments.length;
   const atLimit = activeCount >= MAX_ACTIVE;
 
@@ -164,24 +166,24 @@ export default function AttachmentSection({
     if (fileInputRef.current) fileInputRef.current.value = "";
 
     for (const file of validFiles) {
-      const tempId = Date.now() + Math.random();
+      const tempId = ++tempIdSeq;
       setUploadFiles((prev) => new Map(prev).set(tempId, file));
-      doUpload(file, tempId);
+      await doUpload(file, tempId);
     }
   }
 
   // ── Download with "unavailable" error state (ui-spec 5.4) ──────────
   async function handleDownload(attachment: Attachment) {
+    let url: string | null = null;
     try {
       const blob = await downloadAttachment(attachment.id, requesterId);
-      const url = URL.createObjectURL(blob);
+      url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
       a.download = attachment.originalFileName;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      URL.revokeObjectURL(url);
       setDownloadErrors((prev) => {
         const next = new Map(prev);
         next.delete(attachment.id);
@@ -190,6 +192,8 @@ export default function AttachmentSection({
     } catch (err) {
       const message = err instanceof Error ? err.message : "Download failed";
       setDownloadErrors((prev) => new Map(prev).set(attachment.id, message));
+    } finally {
+      if (url) URL.revokeObjectURL(url);
     }
   }
 
@@ -205,6 +209,7 @@ export default function AttachmentSection({
     setRemoveDialog(null);
     setRemoveReason("");
     setRemoveError("");
+    removeTriggerRef.current?.focus();
   }
 
   async function confirmRemove() {
