@@ -5,11 +5,13 @@ import {
   fetchCategories,
   fetchRelatedSystems,
   createTicket,
+  uploadAttachment,
   ApiError,
   type Category,
   type RelatedSystem,
   type RequestedPriority,
   type Ticket,
+  type Attachment,
 } from "./api.js";
 import { useRequester } from "./RequesterContext.js";
 import Button from "./components/Button.js";
@@ -19,6 +21,7 @@ import TextArea from "./components/TextArea.js";
 import ReadOnlyField from "./components/ReadOnlyField.js";
 import Callout from "./components/Callout.js";
 import Spinner from "./components/Spinner.js";
+import { formatFileSize } from "./lib/format.js";
 
 const PRIORITIES: RequestedPriority[] = ["LOW", "MEDIUM", "HIGH", "URGENT"];
 
@@ -31,6 +34,7 @@ interface StagedFile {
   id: number;
   name: string;
   size: number;
+  file: File;
 }
 
 let stagedFileSeq = 0;
@@ -41,11 +45,6 @@ interface FieldErrors {
   requestedPriority?: string;
   summary?: string;
   description?: string;
-}
-
-function formatBytes(bytes: number): string {
-  if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  return `${Math.round(bytes / 1024)} KB`;
 }
 
 function fileExtension(name: string): string {
@@ -74,16 +73,20 @@ export default function CreateTicket() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [successTicket, setSuccessTicket] = useState<Ticket | null>(null);
+  const [uploadedAttachments, setUploadedAttachments] = useState<Attachment[]>([]);
+  const [uploadingFiles, setUploadingFiles] = useState<Set<number>>(new Set());
+  const [failedUploads, setFailedUploads] = useState<Map<number, string>>(new Map());
+  const [uploading, setUploading] = useState(false);
 
   const ticketDate = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
-  async function loadReferenceData(systemCategoryId?: number | null) {
+  async function loadReferenceData() {
     setDataLoading(true);
     setLoadError(null);
     try {
       const [cats, systems] = await Promise.all([
         fetchCategories(),
-        fetchRelatedSystems(systemCategoryId ?? undefined),
+        fetchRelatedSystems(categoryId ?? undefined),
       ]);
       setCategories(cats);
       setRelatedSystems(systems);
@@ -98,6 +101,7 @@ export default function CreateTicket() {
 
   useEffect(() => {
     void loadReferenceData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -147,12 +151,11 @@ export default function CreateTicket() {
         id: ++stagedFileSeq,
         name: file.name,
         size: file.size,
+        file,
       });
     }
 
-    if (nextRejected.length > 0) {
-      setRejectedFiles(nextRejected);
-    }
+    setRejectedFiles(nextRejected);
 
     if (stagedFiles.length + accepted.length > MAX_FILES) {
       setSubmitError(
@@ -202,6 +205,35 @@ export default function CreateTicket() {
         description: description.trim(),
       });
       setSuccessTicket(ticket);
+
+      // Upload staged files sequentially (AD-03 step 4)
+      if (stagedFiles.length > 0) {
+        setUploading(true);
+        const uploaded: Attachment[] = [];
+        const failed = new Map<number, string>();
+        const uploadingIds = new Set(stagedFiles.map((f) => f.id));
+        setUploadingFiles(new Set(uploadingIds));
+
+        for (const sf of stagedFiles) {
+          try {
+            const attachment = await uploadAttachment(ticket.id, currentRequester.id, sf.file);
+            uploaded.push(attachment);
+          } catch (err) {
+            const message = err instanceof Error ? err.message : "Upload failed";
+            failed.set(sf.id, message);
+          } finally {
+            setUploadingFiles((prev) => {
+              const next = new Set(prev);
+              next.delete(sf.id);
+              return next;
+            });
+          }
+        }
+
+        setUploadedAttachments(uploaded);
+        setFailedUploads(failed);
+        setUploading(false);
+      }
     } catch (err) {
       if (err instanceof ApiError && err.fields) {
         setFieldErrors({
@@ -222,20 +254,35 @@ export default function CreateTicket() {
     }
   }
 
-  function handleReset() {
-    setCategoryId(null);
-    setSystemId(null);
-    setPriority("");
-    setSummary("");
-    setDescription("");
-    setStagedFiles([]);
-    setRejectedFiles([]);
-    setFieldErrors({});
-    setSubmitError(null);
-    setSuccessTicket(null);
+  async function retryUpload(sf: StagedFile) {
+    if (!successTicket) return;
+    setFailedUploads((prev) => {
+      const next = new Map(prev);
+      next.delete(sf.id);
+      return next;
+    });
+    setUploadingFiles((prev) => new Set(prev).add(sf.id));
+    try {
+      const attachment = await uploadAttachment(successTicket.id, currentRequester.id, sf.file);
+      setUploadedAttachments((prev) => [...prev, attachment]);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Upload failed";
+      setFailedUploads((prev) => new Map(prev).set(sf.id, message));
+    } finally {
+      setUploadingFiles((prev) => {
+        const next = new Set(prev);
+        next.delete(sf.id);
+        return next;
+      });
+    }
   }
 
   if (successTicket) {
+    const totalFiles = stagedFiles.length;
+    const completedUploads = uploadedAttachments.length;
+    const failedCount = failedUploads.size;
+    const uploadingCount = uploadingFiles.size;
+
     return (
       <div className="container create-ticket">
         <Callout variant="success">
@@ -249,6 +296,45 @@ export default function CreateTicket() {
             Your ticket has been submitted. The support team will look into it.
           </p>
         </Callout>
+
+        {totalFiles > 0 && (
+          <div className="upload-progress" data-testid="upload-progress">
+            <h3>Attachments</h3>
+            {uploading && (
+              <div className="upload-status">
+                <Spinner />
+                <span>Uploading {uploadingCount} file{uploadingCount !== 1 ? "s" : ""}...</span>
+              </div>
+            )}
+            {uploadedAttachments.length > 0 && (
+              <ul className="uploaded-list">
+                {uploadedAttachments.map((a) => (
+                  <li key={a.id} className="uploaded-item uploaded-item--success" data-testid={`uploaded-${a.id}`}>
+                    <CheckCircle2 size={14} />
+                    <span>{a.originalFileName}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {failedUploads.size > 0 && (
+              <ul className="uploaded-list">
+                {stagedFiles.filter((sf) => failedUploads.has(sf.id)).map((sf) => (
+                  <li key={sf.id} className="uploaded-item uploaded-item--error" data-testid={`failed-${sf.id}`}>
+                    <span className="uploaded-error-msg">{failedUploads.get(sf.id)}</span>
+                    <Button
+                      variant="secondary"
+                      onClick={() => void retryUpload(sf)}
+                      data-testid={`retry-${sf.id}`}
+                    >
+                      Retry
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+
         <div className="create-actions">
           <Button
             variant="secondary"
@@ -278,7 +364,7 @@ export default function CreateTicket() {
           style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}
         >
           <span>{loadError}</span>
-          <Button variant="secondary" onClick={() => void loadReferenceData(categoryId)}> Retry </Button>
+          <Button variant="secondary" onClick={() => void loadReferenceData()}> Retry </Button>
         </Callout>
       )}
 
@@ -432,7 +518,7 @@ export default function CreateTicket() {
               {stagedFiles.map((f) => (
                 <li key={f.id} className="staged-chip">
                   <span className="staged-name">{f.name}</span>
-                  <span className="staged-size">{formatBytes(f.size)}</span>
+                  <span className="staged-size">{formatFileSize(f.size)}</span>
                   <button
                     type="button"
                     aria-label={`Remove ${f.name} (file #${f.id})`}

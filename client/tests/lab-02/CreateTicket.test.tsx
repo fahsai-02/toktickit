@@ -270,4 +270,76 @@ describe("CreateTicket", () => {
       ["— Select system —", "Campus Wi-Fi", "Email"]
     );
   });
+
+  it("uploads staged files sequentially after ticket creation (AD-03)", async () => {
+    const uploadSpy = vi.spyOn(api, "uploadAttachment").mockResolvedValue({
+      id: 200,
+      originalFileName: "report.pdf",
+      fileSize: 2048,
+      mimeType: "application/pdf",
+      isRemoved: false,
+      removedAt: null,
+      removalReason: null,
+      uploadedByRequesterId: 1,
+      createdAt: "2026-08-29T10:05:00.000Z",
+    });
+    vi.spyOn(api, "createTicket").mockResolvedValue(validTicket);
+    await renderTicket();
+
+    fillValidForm();
+    const input = screen.getByTestId("file-input");
+    fireEvent.change(input, {
+      target: { files: [createFile("report.pdf", "application/pdf", 2048)] },
+    });
+    expect(screen.getByText("report.pdf")).toBeInTheDocument();
+
+    submit();
+
+    await waitFor(() => {
+      expect(uploadSpy).toHaveBeenCalledTimes(1);
+    });
+    expect(uploadSpy).toHaveBeenCalledWith(12, 1, expect.any(File));
+
+    expect(
+      await screen.findByText(/Ticket created: TKT-2026-000012/)
+    ).toBeInTheDocument();
+    expect(await screen.findByText("report.pdf")).toBeInTheDocument();
+  });
+
+  it("shows failed upload with Retry button when upload fails after creation", async () => {
+    vi.spyOn(api, "uploadAttachment").mockRejectedValue(
+      new api.ApiError("File size exceeds the 5 MB limit.", "PAYLOAD_TOO_LARGE")
+    );
+    vi.spyOn(api, "createTicket").mockResolvedValue(validTicket);
+    await renderTicket();
+
+    fillValidForm();
+    const input = screen.getByTestId("file-input");
+    fireEvent.change(input, {
+      target: { files: [createFile("big.pdf", "application/pdf", 1024)] },
+    });
+
+    submit();
+
+    await waitFor(() => {
+      expect(screen.getByText(/File size exceeds/)).toBeInTheDocument();
+    });
+    expect(screen.getByRole("button", { name: /retry/i })).toBeInTheDocument();
+  });
+
+  it("clears rejected files when new valid files are selected", async () => {
+    await renderTicket();
+
+    const input = screen.getByTestId("file-input");
+    fireEvent.change(input, {
+      target: { files: [createFile("virus.exe", "application/octet-stream", 1024)] },
+    });
+    expect(screen.getByText(/virus\.exe: only JPG, PNG, WEBP, or PDF/)).toBeInTheDocument();
+
+    fireEvent.change(input, {
+      target: { files: [createFile("good.pdf", "application/pdf", 1024)] },
+    });
+    expect(screen.queryByText(/virus\.exe/)).not.toBeInTheDocument();
+    expect(screen.getByText("good.pdf")).toBeInTheDocument();
+  });
 });

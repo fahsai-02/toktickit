@@ -814,6 +814,225 @@
     font-style: italic;
   }
 
+  /* ── Attachment Section ──────────────────────────────────────────── */
+
+  .attachment-section {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    box-shadow: 0 1px 2px var(--color-shadow);
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+
+  .attachment-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .attachment-section-header .ticket-detail-section-title {
+    margin-bottom: 0;
+  }
+
+  .attachment-hint {
+    font-size: 12px;
+    color: var(--color-text-muted);
+  }
+
+  .attachment-icon {
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+  }
+
+  .attachment-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
+  }
+
+  .attachment-action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .attachment-action-btn:hover {
+    background: var(--color-pale);
+    color: var(--color-secondary);
+  }
+
+  .attachment-action-btn--destructive:hover {
+    background: rgba(185, 28, 28, 0.1);
+    color: var(--color-error);
+  }
+
+  .attachment-item--uploading {
+    color: var(--color-text-muted);
+  }
+
+  .attachment-item--error {
+    color: var(--color-error);
+  }
+
+  .attachment-error-icon {
+    flex-shrink: 0;
+  }
+
+  .attachment-error-text {
+    font-size: 13px;
+  }
+
+  .attachment-local-errors {
+    margin-bottom: 12px;
+  }
+
+  .attachment-local-error {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--color-error);
+    margin-bottom: 4px;
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* ── Remove Dialog ─────────────────────────────────────────────── */
+
+  .remove-dialog-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 16px;
+  }
+
+  .remove-dialog {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    padding: 24px;
+    max-width: 480px;
+    width: 100%;
+  }
+
+  .remove-dialog h3 {
+    margin: 0 0 8px;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .remove-dialog p {
+    margin: 0 0 16px;
+    font-size: 14px;
+    color: var(--color-text-muted);
+  }
+
+  .remove-dialog textarea {
+    width: 100%;
+    resize: vertical;
+    min-height: 80px;
+  }
+
+  .remove-dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  .btn-destructive {
+    background: var(--color-error) !important;
+    border-color: var(--color-error) !important;
+  }
+
+  .btn-destructive:hover:not(:disabled) {
+    background: #991b1b !important;
+  }
+
+  /* ── Upload Progress (Create Ticket success) ──────────────────── */
+
+  .upload-progress {
+    margin-top: 16px;
+    padding: 16px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+  }
+
+  .upload-progress h3 {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 0 12px;
+  }
+
+  .upload-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--color-text-muted);
+    margin-bottom: 8px;
+  }
+
+  .uploaded-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .uploaded-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    font-size: 14px;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .uploaded-item:last-child {
+    border-bottom: none;
+  }
+
+  .uploaded-item--success {
+    color: var(--color-success);
+  }
+
+  .uploaded-item--error {
+    color: var(--color-error);
+    justify-content: space-between;
+  }
+
+  .uploaded-error-msg {
+    font-size: 13px;
+  }
+
   /* ── My Tickets Responsive ─────────────────────────────────────────── */
 
   @media (max-width: 768px) {

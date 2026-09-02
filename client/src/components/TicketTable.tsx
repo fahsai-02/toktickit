@@ -3,6 +3,7 @@ import Badge, {
   statusBadgeVariant,
   priorityBadgeVariant,
 } from "./Badge.js";
+import { formatDate } from "../lib/format.js";
 
 interface SortConfig {
   sortBy: string;
@@ -34,16 +35,6 @@ function SortArrow({
       {active ? (sort.sortOrder === "asc" ? " \u25B2" : " \u25BC") : " \u25B4"}
     </span>
   );
-}
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
 }
 
 export default function TicketTable({
@@ -102,6 +93,7 @@ export default function TicketTable({
               className="ticket-row"
               onClick={() => onRowClick(t)}
               tabIndex={0}
+              role="button"
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();

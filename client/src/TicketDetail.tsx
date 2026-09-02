@@ -4,6 +4,7 @@ import { useRequester } from "./RequesterContext.js";
 import {
   fetchTicket,
   type TicketDetail as TicketDetailType,
+  type Attachment,
   ApiError,
 } from "./api.js";
 import Badge, {
@@ -13,26 +14,12 @@ import Badge, {
 import ReadOnlyField from "./components/ReadOnlyField.js";
 import Spinner from "./components/Spinner.js";
 import Button from "./components/Button.js";
+import AttachmentSection from "./components/AttachmentSection.js";
 import { ArrowLeft } from 'lucide-react';
+import { formatDate } from "./lib/format.js";
 
 
 type DetailState = "loading" | "error" | "not-found" | "access-denied" | "idle";
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
 
 export default function TicketDetail() {
   const { ticketId } = useParams<{ ticketId: string }>();
@@ -145,8 +132,11 @@ export default function TicketDetail() {
 
   if (!ticket) return null;
 
-  const activeAttachments = ticket.attachments.filter((a) => !a.isRemoved);
-  const removedAttachments = ticket.attachments.filter((a) => a.isRemoved);
+  const handleAttachmentsUpdate = (input: Attachment[] | ((prev: Attachment[]) => Attachment[])) => {
+    if (!ticket) return;
+    const newAttachments = typeof input === "function" ? input(ticket.attachments) : input;
+    setTicket({ ...ticket, attachments: newAttachments });
+  };
 
   return (
     <div className="container ticket-detail" data-testid="ticket-detail">
@@ -200,36 +190,12 @@ export default function TicketDetail() {
       </div>
 
       {/* Attachments */}
-      <div className="ticket-detail-card">
-        <h2 className="ticket-detail-section-title">
-          Attachments ({activeAttachments.length})
-        </h2>
-        {ticket.attachments.length === 0 ? (
-          <p className="text-muted">No attachments.</p>
-        ) : (
-          <ul className="attachment-list">
-            {activeAttachments.map((a) => (
-              <li key={a.id} className="attachment-item" data-testid={`attachment-${a.id}`}>
-                <span className="attachment-name">{a.originalFileName}</span>
-                <span className="attachment-size">{formatFileSize(a.fileSize)}</span>
-              </li>
-            ))}
-            {removedAttachments.map((a) => (
-              <li
-                key={a.id}
-                className="attachment-item attachment-item--removed"
-                data-testid={`attachment-removed-${a.id}`}
-              >
-                <span className="attachment-name">{a.originalFileName}</span>
-                <span className="attachment-size">{formatFileSize(a.fileSize)}</span>
-                <span className="attachment-removed-info">
-                  Removed {formatDate(a.removedAt!)} &mdash; {a.removalReason}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+      <AttachmentSection
+        ticketId={ticket.id}
+        requesterId={requester?.id ?? 0}
+        attachments={ticket.attachments}
+        onUpdate={handleAttachmentsUpdate}
+      />
 
       <p className="text-muted ticket-detail-note">
         Comments, internal notes, and status actions will be available in future updates.

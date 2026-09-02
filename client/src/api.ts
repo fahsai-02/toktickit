@@ -20,38 +20,14 @@ export interface RelatedSystem {
   categoryId: number | null;
 }
 
-export interface SystemStatus {
-  online: boolean;
-  categories: Category[];
-}
 
-// ── Legacy (Lab 1) ────────────────────────────────────────────────────────
-
-export async function checkSystem(): Promise<SystemStatus> {
-  const healthRes = await fetch(`${API_URL}/api/health`);
-  if (!healthRes.ok) {
-    throw new Error(`Health check failed with status ${healthRes.status}`);
-  }
-
-  const categoriesRes = await fetch(`${API_URL}/api/categories`);
-  if (!categoriesRes.ok) {
-    throw new Error(
-      `Category fetch failed with status ${categoriesRes.status}`
-    );
-  }
-
-  const { data: categories } = (await categoriesRes.json()) as {
-    data: Category[];
-  };
-  return { online: true, categories };
-}
 
 // ── Lab 2 Reference APIs ───────────────────────────────────────────────────
 
 export async function fetchRequesters(): Promise<Requester[]> {
   const res = await fetch(`${API_URL}/api/dev/requesters`);
   if (!res.ok) {
-    throw new Error(`Failed to fetch requesters: ${res.status}`);
+    await handleApiError(res, "Failed to fetch requesters");
   }
   const { data } = (await res.json()) as { data: Requester[] };
   return data;
@@ -60,7 +36,7 @@ export async function fetchRequesters(): Promise<Requester[]> {
 export async function fetchCategories(): Promise<Category[]> {
   const res = await fetch(`${API_URL}/api/categories`);
   if (!res.ok) {
-    throw new Error(`Failed to fetch categories: ${res.status}`);
+    await handleApiError(res, "Failed to fetch categories");
   }
   const { data } = (await res.json()) as { data: Category[] };
   return data;
@@ -69,14 +45,13 @@ export async function fetchCategories(): Promise<Category[]> {
 export async function fetchRelatedSystems(
   categoryId?: number
 ): Promise<RelatedSystem[]> {
-  const base = API_URL || window.location.origin;
-  const url = new URL("/api/related-systems", base);
+  const url = new URL("/api/related-systems", API_URL || window.location.origin);
   if (categoryId !== undefined) {
     url.searchParams.set("categoryId", String(categoryId));
   }
   const res = await fetch(url);
   if (!res.ok) {
-    throw new Error(`Failed to fetch related systems: ${res.status}`);
+    await handleApiError(res, "Failed to fetch related systems");
   }
   const { data } = (await res.json()) as { data: RelatedSystem[] };
   return data;
@@ -170,20 +145,7 @@ export async function fetchTickets(
 
   const res = await fetch(url);
   if (!res.ok) {
-    let message = `Failed to fetch tickets: ${res.status}`;
-    let code = "INTERNAL_ERROR";
-    let fields: Record<string, string> | undefined;
-    try {
-      const body = (await res.json()) as {
-        error?: { code?: string; message?: string; fields?: Record<string, string> };
-      };
-      code = body.error?.code ?? "INTERNAL_ERROR";
-      message = body.error?.message ?? message;
-      fields = body.error?.fields;
-    } catch {
-      // ignore malformed error body
-    }
-    throw new ApiError(message, code, fields);
+    await handleApiError(res, `Failed to fetch tickets: ${res.status}`);
   }
   return (await res.json()) as { data: TicketListItem[]; meta: TicketListMeta };
 }
@@ -200,6 +162,26 @@ export class ApiError extends Error {
   }
 }
 
+async function handleApiError(
+  res: Response,
+  fallbackMessage: string
+): Promise<never> {
+  let message = fallbackMessage;
+  let code = "INTERNAL_ERROR";
+  let fields: Record<string, string> | undefined;
+  try {
+    const body = (await res.json()) as {
+      error?: { code?: string; message?: string; fields?: Record<string, string> };
+    };
+    code = body.error?.code ?? "INTERNAL_ERROR";
+    message = body.error?.message ?? message;
+    fields = body.error?.fields;
+  } catch {
+    // ignore malformed error body
+  }
+  throw new ApiError(message, code, fields);
+}
+
 export async function createTicket(input: NewTicketInput): Promise<Ticket> {
   const res = await fetch(`${API_URL}/api/tickets`, {
     method: "POST",
@@ -208,20 +190,7 @@ export async function createTicket(input: NewTicketInput): Promise<Ticket> {
   });
 
   if (!res.ok) {
-    let message = `Failed to create ticket: ${res.status}`;
-    let code = "INTERNAL_ERROR";
-    let fields: Record<string, string> | undefined;
-    try {
-      const body = (await res.json()) as {
-        error?: { code?: string; message?: string; fields?: Record<string, string> };
-      };
-      code = body.error?.code ?? "INTERNAL_ERROR";
-      message = body.error?.message ?? message;
-      fields = body.error?.fields;
-    } catch {
-      // ignore malformed error body
-    }
-    throw new ApiError(message, code, fields);
+    await handleApiError(res, `Failed to create ticket: ${res.status}`);
   }
 
   const { data } = (await res.json()) as { data: Ticket };
@@ -269,20 +238,68 @@ export async function fetchTicket(
 
   const res = await fetch(url);
   if (!res.ok) {
-    let message = `Failed to fetch ticket: ${res.status}`;
-    let code = "INTERNAL_ERROR";
-    try {
-      const body = (await res.json()) as {
-        error?: { code?: string; message?: string };
-      };
-      code = body.error?.code ?? "INTERNAL_ERROR";
-      message = body.error?.message ?? message;
-    } catch {
-      // ignore malformed error body
-    }
-    throw new ApiError(message, code);
+    await handleApiError(res, `Failed to fetch ticket: ${res.status}`);
   }
   const { data } = (await res.json()) as { data: TicketDetail };
+  return data;
+}
+
+// ── Attachments (Issue 11) ─────────────────────────────────────────────
+
+export async function uploadAttachment(
+  ticketId: number,
+  requesterId: number,
+  file: File
+): Promise<Attachment> {
+  const formData = new FormData();
+  formData.append("requesterId", String(requesterId));
+  formData.append("file", file);
+
+  const res = await fetch(`${API_URL}/api/tickets/${ticketId}/attachments`, {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!res.ok) {
+    await handleApiError(res, `Failed to upload attachment: ${res.status}`);
+  }
+
+  const { data } = (await res.json()) as { data: Attachment };
+  return data;
+}
+
+export async function downloadAttachment(
+  attachmentId: number,
+  requesterId: number
+): Promise<Blob> {
+  const base = API_URL || window.location.origin;
+  const url = new URL(`/api/attachments/${attachmentId}/download`, base);
+  url.searchParams.set("requesterId", String(requesterId));
+
+  const res = await fetch(url);
+  if (!res.ok) {
+    await handleApiError(res, `Failed to download attachment: ${res.status}`);
+  }
+
+  return res.blob();
+}
+
+export async function removeAttachment(
+  attachmentId: number,
+  requesterId: number,
+  removalReason: string
+): Promise<Attachment> {
+  const res = await fetch(`${API_URL}/api/attachments/${attachmentId}`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ requesterId, removalReason }),
+  });
+
+  if (!res.ok) {
+    await handleApiError(res, `Failed to remove attachment: ${res.status}`);
+  }
+
+  const { data } = (await res.json()) as { data: Attachment };
   return data;
 }
 
