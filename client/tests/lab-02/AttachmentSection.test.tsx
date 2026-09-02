@@ -31,7 +31,7 @@ const removedAttachment: Attachment = {
   createdAt: "2026-08-29T10:03:00.000Z",
 };
 
-function renderSection(attachments: Attachment[] = [], onUpdate?: (a: Attachment[]) => void) {
+function renderSection(attachments: Attachment[] = [], onUpdate?: (a: Attachment[] | ((prev: Attachment[]) => Attachment[])) => void) {
   return render(
     <AttachmentSection
       ticketId={ticketId}
@@ -210,7 +210,10 @@ describe("AttachmentSection", () => {
           "Wrong file attached"
         );
       });
-      expect(onUpdate).toHaveBeenCalledWith([updatedAttachment]);
+      expect(onUpdate).toHaveBeenCalledTimes(1);
+      const updater = onUpdate.mock.calls[0][0];
+      expect(typeof updater).toBe("function");
+      expect(updater([activeAttachment])).toEqual([updatedAttachment]);
     });
 
     it("shows error when removal fails", async () => {

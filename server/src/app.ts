@@ -28,6 +28,33 @@ const ALLOWED_MIME_TYPES = [
 const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.pdf'];
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 
+const MIME_EXT_MAP: Record<string, string[]> = {
+  'image/jpeg': ['.jpg', '.jpeg'],
+  'image/png': ['.png'],
+  'image/webp': ['.webp'],
+  'application/pdf': ['.pdf'],
+};
+
+function validateAttachmentType(
+  mimeType: string,
+  extension: string
+): { valid: boolean; reason?: string } {
+  if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
+    return { valid: false, reason: `Unsupported MIME type: ${mimeType}` };
+  }
+  if (!ALLOWED_EXTENSIONS.includes(extension)) {
+    return { valid: false, reason: `Unsupported extension: ${extension}` };
+  }
+  const allowedExts = MIME_EXT_MAP[mimeType];
+  if (!allowedExts || !allowedExts.includes(extension)) {
+    return {
+      valid: false,
+      reason: `MIME type ${mimeType} does not match extension ${extension}`,
+    };
+  }
+  return { valid: true };
+}
+
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, UPLOADS_DIR),
   filename: (_req, file, cb) => {
@@ -41,7 +68,8 @@ const upload = multer({
   limits: { fileSize: MAX_FILE_SIZE },
   fileFilter: (_req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
-    if (ALLOWED_MIME_TYPES.includes(file.mimetype) && ALLOWED_EXTENSIONS.includes(ext)) {
+    const result = validateAttachmentType(file.mimetype, ext);
+    if (result.valid) {
       cb(null, true);
     } else {
       cb(new Error("UNSUPPORTED_MEDIA_TYPE"));
@@ -526,7 +554,6 @@ app.get("/api/tickets/:id", async (req: Request, res: Response) => {
       select: {
         id: true,
         originalFileName: true,
-        storageFileName: true,
         fileSize: true,
         mimeType: true,
         isRemoved: true,
@@ -558,68 +585,6 @@ app.get("/api/tickets/:id", async (req: Request, res: Response) => {
   } catch {
     res.status(500).json({
       error: { code: "INTERNAL_ERROR", message: "Failed to fetch ticket" },
-    });
-  }
-});
-
-app.get("/api/tickets/:id/attachments", async (req: Request, res: Response) => {
-  const fields: Record<string, string> = {};
-
-  const ticketId = parsePositiveInt(req.params.id);
-  if (ticketId === null) {
-    fields.id = "Ticket id must be a positive integer.";
-  }
-
-  const requesterId = parsePositiveInt(req.query.requesterId);
-  if (requesterId === null) {
-    fields.requesterId = "requesterId is required and must be a positive integer.";
-  }
-
-  if (Object.keys(fields).length > 0) {
-    validationError(res, fields);
-    return;
-  }
-
-  try {
-    const ticket = await db.ticket.findUnique({
-      where: { id: ticketId! },
-      select: { id: true, requesterId: true },
-    });
-
-    if (!ticket) {
-      res.status(404).json({
-        error: { code: "NOT_FOUND", message: "Ticket not found" },
-      });
-      return;
-    }
-
-    if (ticket.requesterId !== requesterId!) {
-      res.status(403).json({
-        error: { code: "FORBIDDEN", message: "You don't have access to this ticket." },
-      });
-      return;
-    }
-
-    const attachments = await db.attachment.findMany({
-      where: { ticketId: ticketId! },
-      orderBy: { createdAt: "asc" },
-      select: {
-        id: true,
-        originalFileName: true,
-        fileSize: true,
-        mimeType: true,
-        isRemoved: true,
-        removedAt: true,
-        removalReason: true,
-        uploadedByRequesterId: true,
-        createdAt: true,
-      },
-    });
-
-    res.json({ data: attachments });
-  } catch {
-    res.status(500).json({
-      error: { code: "INTERNAL_ERROR", message: "Failed to fetch attachments" },
     });
   }
 });

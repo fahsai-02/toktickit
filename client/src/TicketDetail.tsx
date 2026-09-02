@@ -132,10 +132,10 @@ export default function TicketDetail() {
 
   if (!ticket) return null;
 
-  const handleAttachmentsUpdate = (newAttachments: Attachment[]) => {
-    if (ticket) {
-      setTicket({ ...ticket, attachments: newAttachments });
-    }
+  const handleAttachmentsUpdate = (input: Attachment[] | ((prev: Attachment[]) => Attachment[])) => {
+    if (!ticket) return;
+    const newAttachments = typeof input === "function" ? input(ticket.attachments) : input;
+    setTicket({ ...ticket, attachments: newAttachments });
   };
 
   return (

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   uploadAttachment,
   downloadAttachment,
@@ -8,7 +8,7 @@ import {
 import Button from "./Button.js";
 import Spinner from "./Spinner.js";
 import { Upload, Download, Trash2, FileText, AlertCircle, RotateCcw } from "lucide-react";
-import { formatDate } from "../lib/format.js";
+import { formatDate, formatFileSize } from "../lib/format.js";
 
 const ALLOWED_TYPES = [
   "image/jpeg",
@@ -19,22 +19,11 @@ const ALLOWED_TYPES = [
 const MAX_SIZE = 5 * 1024 * 1024; // 5 MB
 const MAX_ACTIVE = 5;
 
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-interface UploadEntry {
-  tempId: number;
-  file: File;
-}
-
 interface Props {
   ticketId: number;
   requesterId: number;
   attachments: Attachment[];
-  onUpdate: (attachments: Attachment[]) => void;
+  onUpdate: (attachments: Attachment[] | ((prev: Attachment[]) => Attachment[])) => void;
 }
 
 export default function AttachmentSection({
@@ -126,7 +115,7 @@ export default function AttachmentSection({
     setUploading((prev) => new Set(prev).add(tempId));
     try {
       const newAttachment = await uploadAttachment(ticketId, requesterId, file);
-      onUpdate([...attachments, newAttachment]);
+      onUpdate((prev) => [...prev, newAttachment]);
       setUploadFiles((prev) => {
         const next = new Map(prev);
         next.delete(tempId);
@@ -234,8 +223,8 @@ export default function AttachmentSection({
         requesterId,
         reason
       );
-      onUpdate(
-        attachments.map((a) => (a.id === updated.id ? updated : a))
+      onUpdate((prev) =>
+        prev.map((a) => (a.id === updated.id ? updated : a))
       );
       closeRemoveDialog();
     } catch (err) {

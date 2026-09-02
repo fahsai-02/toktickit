@@ -21,6 +21,7 @@ import TextArea from "./components/TextArea.js";
 import ReadOnlyField from "./components/ReadOnlyField.js";
 import Callout from "./components/Callout.js";
 import Spinner from "./components/Spinner.js";
+import { formatFileSize } from "./lib/format.js";
 
 const PRIORITIES: RequestedPriority[] = ["LOW", "MEDIUM", "HIGH", "URGENT"];
 
@@ -44,11 +45,6 @@ interface FieldErrors {
   requestedPriority?: string;
   summary?: string;
   description?: string;
-}
-
-function formatBytes(bytes: number): string {
-  if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  return `${Math.round(bytes / 1024)} KB`;
 }
 
 function fileExtension(name: string): string {
@@ -522,7 +518,7 @@ export default function CreateTicket() {
               {stagedFiles.map((f) => (
                 <li key={f.id} className="staged-chip">
                   <span className="staged-name">{f.name}</span>
-                  <span className="staged-size">{formatBytes(f.size)}</span>
+                  <span className="staged-size">{formatFileSize(f.size)}</span>
                   <button
                     type="button"
                     aria-label={`Remove ${f.name} (file #${f.id})`}
