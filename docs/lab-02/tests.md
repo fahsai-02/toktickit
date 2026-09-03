@@ -109,9 +109,9 @@ Status legend: `Planned` → written before implementation · updated to `Pass`/
 
 | Test ID | Type | Requirement/AC | What It Tests | Expected Result | Automated Test File | Final Status |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| E2E-01 | E2E | AC-01, 11, 17, 19, 22, 23, 24 | Happy-path journey | Select requester → create → locate in My Tickets → open detail → attach → download → soft-remove with reason → download now blocked (410 surfaced) | `e2e/lab-02/requester-ticket-flow.spec.ts` | Planned |
-| E2E-02 | E2E | AC-09, AC-11 | Cross-requester isolation | Switch to another requester → previous requester's tickets invisible | `e2e/lab-02/requester-ticket-flow.spec.ts` | Planned |
-| E2E-03 | E2E | AC-05 | Backend-down resilience | API route aborted mid-form → error banner, values retained | `e2e/lab-02/requester-ticket-flow.spec.ts` | Planned |
+| E2E-01 | E2E | AC-01, 11, 17, 19, 22, 23, 24 | Happy-path journey | Select requester → create → locate in My Tickets → open detail → attach → download → soft-remove with reason → download now blocked (410 surfaced) | `e2e/lab-02/requester-ticket-flow.spec.ts` (desktop project only) | Planned |
+| E2E-02 | E2E | AC-09, AC-11 | Cross-requester isolation | Switch to another requester → previous requester's tickets invisible | `e2e/lab-02/requester-ticket-flow.spec.ts` (desktop project only) | Planned |
+| E2E-03 | E2E | AC-05 | Backend-down resilience | API route aborted mid-form → error banner, values retained | `e2e/lab-02/requester-ticket-flow.spec.ts` (desktop project only) | Planned |
 
 ## 3. Acceptance-Criterion Traceability
 
@@ -146,6 +146,8 @@ cd .. && npx playwright test e2e/lab-02   # responsive + E2E (needs both servers
 ## 6. Final Results
 
 _Filled at sprint close (Issue 13). Target: all rows `Pass`, zero skipped._
+
+**Issue 12 note (E2E + responsive written):** The RESP-01..09 and E2E-01..03 specs (`e2e/lab-02/`) were authored during Issue 12 and observed passing against the running stack at the time; their rows are correctly left `Planned` here and will be set to `Pass` with run evidence at sprint close (Issue 13), consistent with the other suites.
 
 ## 7. Known Limitations / Deferred
 
