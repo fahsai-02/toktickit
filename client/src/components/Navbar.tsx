@@ -56,7 +56,7 @@ export default function Navbar() {
               if (ok) clearRequester();
             }}
           >
-            Change Requester
+            Change <span className="btn-change-requester__full">Requester</span>
           </Button>
           <button
             type="button"

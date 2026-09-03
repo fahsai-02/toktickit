@@ -43,7 +43,7 @@ describe("App — Requester context routing", () => {
     );
 
     renderWithProvider(<App />);
-    fireEvent.click(screen.getByText("Change Requester"));
+    fireEvent.click(screen.getByRole("button", { name: "Change Requester" }));
 
     await waitFor(() => {
       expect(screen.getByText(/testing mechanism/)).toBeInTheDocument();

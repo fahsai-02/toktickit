@@ -262,7 +262,8 @@ export default function AttachmentSection({
               data-testid="add-attachment-btn"
             >
               <Upload size={14} />
-              Add attachment
+              Add{" "}
+              <span className="add-attachment-btn__full">attachment</span>
             </Button>
           </>
         )}

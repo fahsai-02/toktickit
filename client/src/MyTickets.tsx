@@ -247,7 +247,7 @@ export default function MyTickets() {
           </div>
           <div className="filter-select">
             <label htmlFor="filter-priority" className="field-label">
-              Requested Priority
+              Priority
             </label>
             <select
               id="filter-priority"
