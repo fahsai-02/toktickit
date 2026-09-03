@@ -83,6 +83,14 @@ async function assertNoHorizontalScroll(page: Page) {
 }
 
 async function capture(page: Page, screen: string, project: string) {
+  // Ensure the capture starts at the true top. Under parallel runners the page
+  // can be left scrolled mid-form, which makes Playwright's fullPage stitch
+  // start offset and the sticky header land below a blank band at the top
+  // (the "navbar fell down over content" artifact). Scroll to 0 and let
+  // fonts/layout settle for a deterministic full-page shot.
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.evaluate(() => document.fonts?.ready);
+  await page.waitForTimeout(150);
   await page.screenshot({
     path: `artifacts/lab-02/screenshots/${screen}/${project}.png`,
     fullPage: true,
