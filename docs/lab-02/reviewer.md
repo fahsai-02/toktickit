@@ -10,10 +10,15 @@
 | 46 | feature/6-db-seed | approved |
 | 47 | feature/7-requester-context | approved |
 | 48 | feature/8-create-ticket | approved |
-| 49 | feature/9-my-tickets | pending review |
-| 41 | feature/12-e2e-visual | pending review |
+| 49 | feature/9-my-tickets | approved |
+| 50 | feature/10-ticket-detail | approved |
+| 51 | feature/11-attachments | approved |
+| 52 | feature/12-e2e-visual | approved |
+| 53 | feature/13-release-docs | pending review |
 
 ### feature/5-sprint-specification #45
+
+**Pull Requests URL:** <https://github.com/fahsai-02/toktickit/pull/45>
 
 Reviewer approved comment:  
 <img src="./images/peer-reviews/my-pr/feature/5-sprint-specification/comment-approved.png" width="600" />
@@ -23,6 +28,8 @@ How I responded:
 
 ---
 ### feature/6-db-seed #46
+
+**Pull Requests URL:** <https://github.com/fahsai-02/toktickit/pull/46>
 
 Reviewer comment I received:  
 <img src="./images/peer-reviews/my-pr/feature/6-db-seed/comment-received-1.png" width="600" />
@@ -35,6 +42,8 @@ Reviewer approved comment:
 
 ---
 ### feature/7-requester-context #47
+
+**Pull Requests URL:** <https://github.com/fahsai-02/toktickit/pull/47>
 
 My comment:  
 <img src="./images/peer-reviews/my-pr/feature/7-requester-context/my-comment.png" width="600" />
@@ -55,6 +64,8 @@ How I responded:
 ---
 ### feature/8-create-ticket #48
 
+**Pull Requests URL:** <https://github.com/fahsai-02/toktickit/pull/48>
+
 Reviewer comment I received:  
 <img src="./images/peer-reviews/my-pr/feature/8-create-ticket/comment-received-1.png" width="600" />
 <img src="./images/peer-reviews/my-pr/feature/8-create-ticket/comment-received-2.png" width="600" />
@@ -71,6 +82,8 @@ How I responded:
 ---
 ### feature/9-my-tickets #49
 
+**Pull Requests URL:** <https://github.com/fahsai-02/toktickit/pull/49>
+
 Reviewer comment I received:  
 <img src="./images/peer-reviews/my-pr/feature/9-my-tickets/comment-received-1.png" width="600" />
 
@@ -81,9 +94,54 @@ Reviewer approved comment:
 <img src="./images/peer-reviews/my-pr/feature/9-my-tickets/comment-approved.png" width="600" />
 
 ---
-### feature/12-e2e-visual #41
+### feature/10-ticket-detail #50
 
-E2E requester-flow + responsive screenshots and visual evidence (Issue 12). Peer review pending — screenshots of the reviewer's comment, response, and approval to be added here when the PR is reviewed before merge.
+**Pull Requests URL:** <https://github.com/fahsai-02/toktickit/pull/50>
+
+Reviewer comment I received:  
+<img src="./images/peer-reviews/my-pr/feature/10-ticket-detail/comment-received-1.png" width="600" />
+
+How I responded:  
+<img src="./images/peer-reviews/my-pr/feature/10-ticket-detail/comment-responded-1.png" width="600" />
+
+Reviewer approved comment:  
+<img src="./images/peer-reviews/my-pr/feature/10-ticket-detail/comment-approved.png" width="600" />
+
+---
+### feature/11-attachments #51
+
+**Pull Requests URL:** <https://github.com/fahsai-02/toktickit/pull/51>
+
+Reviewer comment I received:  
+<img src="./images/peer-reviews/my-pr/feature/11-attachments/comment-received-1.png" width="600" />
+
+How I responded:  
+<img src="./images/peer-reviews/my-pr/feature/11-attachments/comment-responded-1.png" width="600" />
+
+Reviewer approved comment:  
+<img src="./images/peer-reviews/my-pr/feature/11-attachments/comment-approved.png" width="600" />
+
+---
+### feature/12-e2e-visual #52
+
+**Pull Requests URL:** <https://github.com/fahsai-02/toktickit/pull/52>
+
+Reviewer comment I received:  
+<img src="./images/peer-reviews/my-pr/feature/12-e2e-visual/comment-received-1.png" width="600" />
+<img src="./images/peer-reviews/my-pr/feature/12-e2e-visual/comment-received-2.png" width="600" />
+
+How I responded:  
+<img src="./images/peer-reviews/my-pr/feature/12-e2e-visual/comment-responded-1.png" width="600" />
+
+Reviewer approved comment:  
+<img src="./images/peer-reviews/my-pr/feature/12-e2e-visual/comment-approved.png" width="600" />
+
+---
+### feature/13-release-docs #53
+
+**Pull Requests URL:** <https://github.com/fahsai-02/toktickit/pull/53>
+
+Peer review pending — PR #53 is the current release/docs issue. Screenshots of the reviewer's comment, response, and approval will be added here once the PR is opened.
 
 ---
 
@@ -159,32 +217,32 @@ My comment:
 <img src="./images/peer-reviews/partner-pr/feature/10-my-tickets/my-comment-1.png" width="600" />
 
 Partner's response:  
+<img src="./images/peer-reviews/partner-pr/feature/10-my-tickets/partner-response-1.png" width="600" />
+
+My approved comment:  
+<img src="./images/peer-reviews/partner-pr/feature/10-my-tickets/my-approved.png" width="600" />
 
 ---
+### feature/11-ticket-detail
 
-## Issue 12 — Visual Inspection Checklist (ui-spec.md Section 9)
+**Pull Requests URL:** <https://github.com/thrxpt/toktickit/pull/25>
 
-Screenshots are captured by Playwright (`e2e/lab-02/responsive.visual.spec.ts`) at the three viewports specified by `ui-spec.md` section 6 / AD-10:
+My approved comment:  
+<img src="./images/peer-reviews/partner-pr/feature/11-ticket-detail/my-approved.png" width="600" />
 
-```
-artifacts/lab-02/screenshots/create-ticket/{desktop,tablet,mobile}.png
-artifacts/lab-02/screenshots/my-tickets/{desktop,tablet,mobile}.png
-artifacts/lab-02/screenshots/ticket-detail/{desktop,tablet,mobile}.png
-```
+---
+### feature/12-attachments
 
-Checklist items below map 1:1 to `ui-spec.md` section 9. Each row is verified against the screenshots (not memory). The **"Auto"** column marks items enforced by an automated test; the **"Manual pass"** column is completed during the human visual review against the PNG files.
+**Pull Requests URL:** <https://github.com/thrxpt/toktickit/pull/26>
 
-| # | Checklist item (ui-spec 9) | Auto | Manual pass |
-|---|----------------------------|------|-------------|
-| 1 | Colors match Section 1 tokens (header, buttons, badges, fields) | — | ☐ |
-| 2 | Editable vs read-only fields clearly distinguishable | ☐ (RESP + E2E-01) | ☐ |
-| 3 | Red asterisks on required fields; messages under their own field | ☐ (UI-01.., STYLE-04) | ☐ |
-| 4 | Button hierarchy correct (primary/secondary/ghost/destructive); busy state while submitting | ☐ (E2E-01) | ☐ |
-| 5 | Badge styles consistent across screens (status, requested priority, IT priority "—") | ☐ (STYLE-03) | ☐ |
-| 6 | No clipping, overlap, or unintended horizontal scrolling at any viewport | ☐ (RESP-01..09 no-horizontal-scroll assert; AC-25) | ☐ |
-| 7 | Filters, sort control, pagination usable at all three viewports | ☐ (UI-08..12) | ☐ |
-| 8 | Empty vs no-results states visually distinct | ☐ (UI-08) | ☐ |
-| 9 | Attachment states render correctly (active, uploading, invalid, removed, unavailable) | ☐ (UI-15..18, E2E-01) | ☐ |
-| 10 | Long filenames/timestamps ellipsize gracefully; nothing unreadable | — | ☐ |
+My comment:  
+<img src="./images/peer-reviews/partner-pr/feature/12-attachments/my-comment-1.png" width="600" />
+<img src="./images/peer-reviews/partner-pr/feature/12-attachments/my-comment-2.png" width="600" />
+<img src="./images/peer-reviews/partner-pr/feature/12-attachments/my-comment-3.png" width="600" />
+<img src="./images/peer-reviews/partner-pr/feature/12-attachments/my-comment-4.png" width="600" />
 
-**Note (as of Issue 12 implementation):** The nine PNGs above were generated by Playwright and confirmed to contain rendered content at the correct viewport sizes (verified via file metadata), with no unintended horizontal scrolling at mobile (RESP-01..09 assertion). The **Manual pass** column is intentionally left unchecked pending the student's eyes-on visual review of the PNG files against `ui-spec.md` section 9 — items 1, 5, and 10 (color rendering, badge hue, ellipsis behavior) are not fully provable by automated assertion. Once confirmed, flip each `☐` to `[x]`; do not mark boxes without actually viewing the images.
+Partner's response:  
+<img src="./images/peer-reviews/partner-pr/feature/12-attachments/partner-response-1.png" width="600" />
+
+My approved comment:  
+<img src="./images/peer-reviews/partner-pr/feature/12-attachments/my-approved.png" width="600" />
