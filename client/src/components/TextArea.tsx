@@ -36,15 +36,19 @@ export default function TextArea({
         required={required}
         {...rest}
       />
-      {counter && (
-        <div className="field-counter" data-testid={`field-counter-${id}`}>
-          {counter.value}/{counter.max}
+      {(counter || error) && (
+        <div className="field-footer">
+          {error && (
+            <p id={errorId} className="field-error-msg">
+              {error}
+            </p>
+          )}
+          {counter && (
+            <span className="field-counter" data-testid={`field-counter-${id}`}>
+              {counter.value}/{counter.max}
+            </span>
+          )}
         </div>
-      )}
-      {error && (
-        <p id={errorId} className="field-error-msg">
-          {error}
-        </p>
       )}
     </div>
   );
