@@ -8,6 +8,7 @@
     "test:e2e:headed": "playwright test e2e/lab-02 --headed"
   },
   "devDependencies": {
-    "@playwright/test": "^1.55.0"
+    "@playwright/test": "^1.55.0",
+    "@types/node": "^26.4.1"
   }
 }

@@ -1,10 +1,11 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect, type Page, type TestInfo } from "@playwright/test";
 import { API_BASE, TINY_PNG, createTicketViaApi } from "./helpers.js";
 
 // ── Configuration ────────────────────────────────────────────────────────────
-// The E2E flow runs against the full stack (API :5000 + Vite :5173) and is
-// scoped to the **desktop** project only (tests.md RESP/E2E note: viewport
-// matrix is covered by the responsive spec; the flow does not need 3 widths).
+// The E2E flow runs against the full stack (API :5000 + Vite :5173) on every
+// viewport project (desktop 1440×900, tablet 820×1180, mobile 390×844). The
+// My Tickets list renders a table on desktop/tablet and a card list on mobile
+// (ui-spec.md section 6), so assertions are made viewport-aware below.
 
 const REQUESTER_JENNIFER = { id: 1, name: "Jennifer Anderson" };
 const REQUESTER_DAVID = { id: 2, name: "David Lee" };
@@ -45,17 +46,51 @@ test.describe("E2E requester ticket flow", () => {
   test.describe.configure({ mode: "serial" });
 
   test.beforeEach(({}, testInfo) => {
-    // Only run this file's tests on the desktop project (per user requirement).
-    test.skip(
-      testInfo.project.name !== "desktop",
-      "E2E flow runs only against the desktop viewport project"
-    );
+    // My Tickets renders the desktop table on desktop/tablet (≥769px) and the
+    // card list on mobile (≤768px). Resolve the visible container once so the
+    // list assertions below target the right element for the current viewport.
+    (testInfo as TestInfo & { listContainer?: string }).listContainer =
+      testInfo.project.name === "mobile" ? "ticket-cards-mobile" : "ticket-table-desktop";
   });
+
+  // Assert whether a ticket whose summary/number contains `text` is in the list.
+  // The list container is removed from the DOM when a search finds no results
+  // (no-results state), so:
+  //  - visible=true: wait for the visible container, then require the row/card.
+  //  - visible=false: only assert `text` is absent page-wide (the ticket simply
+  //    must not be reachable), tolerating either an empty list or the no-results
+  //    panel where the container is unmounted.
+  async function expectTicketInList(
+    page: Page,
+    testInfo: TestInfo,
+    text: string,
+    visible: boolean
+  ) {
+    const container = (testInfo as TestInfo & { listContainer?: string }).listContainer!;
+    if (visible) {
+      const list = page.locator(`[data-testid="${container}"]`);
+      await list.waitFor({ state: "visible" });
+      const rowOrCard = list.locator(
+        container === "ticket-cards-mobile"
+          ? `[data-testid^="ticket-card-"]`
+          : `[data-testid^="ticket-row-"]`
+      ).filter({ hasText: text });
+      await expect(rowOrCard.first()).toBeVisible();
+    } else {
+      // Absence must be robust: the text should not exist on the visible page
+      // regardless of whether the list container or the no-results panel shows.
+      const list = page.locator(`[data-testid="${container}"]`);
+      if (await list.isVisible().catch(() => false)) {
+        await expect(list).not.toContainText(text);
+      }
+      await expect(page.getByTestId("no-results-state")).toBeVisible();
+    }
+  }
 
   test("E2E-01 full happy path: create, locate, detail, attach, download, soft-remove", async ({
     page,
     request,
-  }) => {
+  }, testInfo) => {
     const unique = Date.now();
     const summary = `E2E screen flicker ${unique}`;
     const pngPath = await makePngFixture(`e2e-${unique}.png`);
@@ -175,7 +210,7 @@ test.describe("E2E requester ticket flow", () => {
       await page.getByTestId("ticket-detail").locator("a.back-link").click();
       await page.waitForURL("**/my-tickets");
       await searchTickets(page, ticketNumber);
-      await expect(page.getByTestId("ticket-table-desktop").locator("text=" + summary)).toBeVisible();
+      await expectTicketInList(page, testInfo, summary, true);
     } finally {
       // Cleanup the temp fixture even if the test fails mid-way (no orphan files left)
       const fs = await import("node:fs");
@@ -186,15 +221,17 @@ test.describe("E2E requester ticket flow", () => {
   test("E2E-02 cross-requester isolation: switching requester hides the other's tickets", async ({
     page,
     request,
-  }) => {
+  }, testInfo) => {
     const unique = Date.now();
     const jenniferSummary = `E2E Jennifer laptop ${unique}`;
     const jenniferTicket = await createTicketViaApi(request, REQUESTER_JENNIFER.id, jenniferSummary, { requestedPriority: "HIGH" });
 
-    // Select Jennifer, her ticket must be visible (AC-11)
+    // Select Jennifer, her ticket must be visible (AC-11) and the header
+    // shows her name (AC-09)
     await selectRequester(page, REQUESTER_JENNIFER.name);
+    await expect(page.locator(".requester-name")).toHaveText(REQUESTER_JENNIFER.name);
     await searchTickets(page, jenniferTicket.ticketNumber);
-    await expect(page.getByTestId("ticket-table-desktop").locator("text=" + jenniferSummary)).toBeVisible();
+    await expectTicketInList(page, testInfo, jenniferSummary, true);
 
     // Switch requester to David via Change Requester (AC-09)
     page.once("dialog", (d) => d.accept());
@@ -202,10 +239,12 @@ test.describe("E2E requester ticket flow", () => {
     await page.waitForURL("**/select-requester");
     await selectRequester(page, REQUESTER_DAVID.name);
 
+    // Header now shows the newly selected requester's name (AC-09)
+    await expect(page.locator(".requester-name")).toHaveText(REQUESTER_DAVID.name);
+
     // Jennifer's ticket must be invisible for David (AC-09/11)
     await searchTickets(page, jenniferTicket.ticketNumber);
-    await expect(page.getByTestId("ticket-table-desktop").locator("text=" + jenniferSummary)).toHaveCount(0);
-    await expect(page.getByTestId("ticket-table-desktop").locator("text=" + jenniferTicket.ticketNumber)).toHaveCount(0);
+    await expectTicketInList(page, testInfo, jenniferSummary, false);
   });
 
   test("E2E-03 backend-down resilience: error banner and values retained when API fails", async ({
