@@ -39,11 +39,11 @@ export default function PaginationBar({
 
   return (
     <div className="pagination-bar" data-testid="pagination-bar">
-      <span className="pagination-info">
-        Showing {start}–{end} of {total}
-      </span>
+      <div className="pagination-meta">
+        <span className="pagination-info">
+          Showing {start}–{end} of {total}
+        </span>
 
-      <div className="pagination-controls">
         <label className="pagination-page-size">
           Rows:
           <select
@@ -56,8 +56,9 @@ export default function PaginationBar({
             <option value={50}>50</option>
           </select>
         </label>
+      </div>
 
-        <nav className="pagination-pages" aria-label="Pagination">
+      <nav className="pagination-pages" aria-label="Pagination">
           <button
             type="button"
             className="pagination-btn"
@@ -93,7 +94,6 @@ export default function PaginationBar({
             Next &#8250;
           </button>
         </nav>
-      </div>
     </div>
   );
 }

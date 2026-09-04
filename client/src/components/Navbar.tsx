@@ -45,6 +45,7 @@ export default function Navbar() {
           )}
           <Button
             className="btn-change-requester"
+            aria-label="Change Requester"
             onClick={() => {
               let ok = true;
               try {
@@ -56,7 +57,7 @@ export default function Navbar() {
               if (ok) clearRequester();
             }}
           >
-            Change Requester
+            Change <span className="btn-change-requester__full">Requester</span>
           </Button>
           <button
             type="button"

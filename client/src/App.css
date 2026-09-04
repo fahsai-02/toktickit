@@ -308,6 +308,16 @@
       padding: 0 16px;
     }
 
+    .header-left {
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .header-right {
+      gap: 8px;
+      min-width: 0;
+    }
+
     .nav {
       display: none;
       position: absolute;
@@ -341,10 +351,17 @@
 
     .btn-change-requester {
       min-height: 44px;
+      padding: 4px 10px;
+      white-space: nowrap;
+    }
+
+    .btn-change-requester__full {
+      display: none;
     }
 
     .requester-name {
-      max-width: 120px;
+      max-width: 80px;
+      min-width: 0;
     }
 
     .app-main {
@@ -607,7 +624,7 @@
     white-space: nowrap;
   }
 
-  .pagination-controls {
+  .pagination-meta {
     display: flex;
     align-items: center;
     gap: 12px;
@@ -1048,6 +1065,22 @@
       padding: 16px;
     }
 
+    .attachment-section-header .btn-secondary {
+      white-space: nowrap;
+    }
+
+    .add-attachment-btn__full {
+      display: none;
+    }
+
+    .attachment-item .attachment-name {
+      flex: 0 1 auto;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
     .filter-card {
       padding: 12px;
     }
@@ -1105,7 +1138,7 @@
       padding: 12px;
     }
 
-    .pagination-controls {
+    .pagination-meta {
       justify-content: space-between;
     }
 
@@ -1114,6 +1147,7 @@
       flex-wrap: wrap;
       gap: 8px;
       justify-content: center;
+      width: 100%;
     }
   }
 

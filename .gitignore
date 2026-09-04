@@ -40,6 +40,15 @@ server/src/generated/prisma
 # uploads
 server/uploads/
 
+# Playwright runtime artifacts (traces, reports) — screenshots/ is a committed deliverable
+artifacts/lab-02/test-results/
+playwright-report/
+test-results/
+
+# E2E temporary upload fixture files (created at repo root by the flow spec)
+.tmp-*.png
+tmp-*.png
+
 # AI Agents & Local Tooling
 .agents/
 .agent/
@@ -52,6 +61,9 @@ skills-lock.json
 docs/lab-02/Lab_02_Full_Specification_and_Guide.md
 docs/lab-02/lab-02-labsheet.md
 docs/lab-02/work-plan.md
+docs/lab-02/Lab_02_labsheet.pdf
+docs/lab-02/issues-5-13.md
+docs/lab-02/issues-5-13_en.md
 
 # instructor-provided course handouts (never commit)
 docs/lab-02/TokTickIT_GitHub_Workflow_Guide_TH_EN.pdf
