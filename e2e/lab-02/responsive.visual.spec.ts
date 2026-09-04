@@ -1,49 +1,19 @@
 import { test, expect, type Page, type APIRequestContext } from "@playwright/test";
+import { API_BASE, TINY_PNG, createTicketViaApi } from "./helpers.js";
 
 // ── Configuration ────────────────────────────────────────────────────────────
 // RESP-01..09: 3 screens (create-ticket, my-tickets, ticket-detail) × 3
 // viewport projects (desktop 1440×900, tablet 820×1180, mobile 390×844) per
 // ui-spec.md section 9 / tests.md RESP-01..09. Runs against the real stack.
 
-const API_BASE = "http://localhost:5000";
 const STORAGE_KEY = "toktickit-requester";
 
 // Distinct requesters per screen so parallel tests never share tickets.
-const REQUIRE = {
+const TEST_REQUESTERS = {
   createTicket: { id: 5, name: "Napat Chaiwong", email: "napat.chaiwong@toktickit.dev" },
   myTickets: { id: 3, name: "Sarah Johnson", email: "sarah.johnson@toktickit.dev" },
   ticketDetail: { id: 4, name: "Michael Brown", email: "michael.brown@toktickit.dev" },
 };
-
-const TINY_PNG = Buffer.from(
-  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
-  "base64"
-);
-
-async function createTicketViaApi(
-  request: APIRequestContext,
-  requesterId: number,
-  summary: string,
-  overrides: {
-    categoryId?: number;
-    relatedSystemId?: number;
-    requestedPriority?: string;
-  } = {}
-) {
-  const res = await request.post(`${API_BASE}/api/tickets`, {
-    data: {
-      requesterId,
-      categoryId: overrides.categoryId ?? 2, // Hardware
-      relatedSystemId: overrides.relatedSystemId ?? 7, // Corporate Laptop
-      requestedPriority: overrides.requestedPriority ?? "HIGH",
-      summary,
-      description: `Responsive visual-screenshot ticket: ${summary}`,
-    },
-  });
-  expect(res.status()).toBe(201);
-  const body = (await res.json()) as { data: { id: number } };
-  return body.data.id;
-}
 
 async function uploadAttachmentViaApi(
   request: APIRequestContext,
@@ -61,7 +31,7 @@ async function uploadAttachmentViaApi(
 }
 
 /** Inject a requester into localStorage so the app skips the selection screen. */
-function seedRequester(page: Page, requester: typeof REQUIRE.createTicket) {
+function seedRequester(page: Page, requester: typeof TEST_REQUESTERS.createTicket) {
   page.addInitScript(
     (args) => {
       const { key, requester } = args as { key: string; requester: unknown };
@@ -109,7 +79,7 @@ const CREATE_PROJECT = {
 } as const;
 
 test("RESP create-ticket screen at all viewports", async ({ page }, testInfo) => {
-  seedRequester(page, REQUIRE.createTicket);
+  seedRequester(page, TEST_REQUESTERS.createTicket);
   await page.goto("/create-ticket");
   await expect(page.getByTestId("category")).toBeVisible();
 
@@ -148,24 +118,24 @@ test("RESP my-tickets screen at all viewports", async ({ page, request }, testIn
   // Seed several tickets in different categories so the list screenshot shows a
   // variety of classification badge colors, not only Hardware.
   await Promise.all([
-    createTicketViaApi(request, REQUIRE.myTickets.id, `VPN auth failure ${unique}`, {
+    createTicketViaApi(request, TEST_REQUESTERS.myTickets.id, `VPN auth failure ${unique}`, {
       categoryId: 4, // Network
       relatedSystemId: 3, // VPN
       requestedPriority: "URGENT",
     }),
-    createTicketViaApi(request, REQUIRE.myTickets.id, `Corporate laptop won't boot ${unique}`, {
+    createTicketViaApi(request, TEST_REQUESTERS.myTickets.id, `Corporate laptop won't boot ${unique}`, {
       categoryId: 2, // Hardware
       relatedSystemId: 7, // Corporate Laptop
       requestedPriority: "MEDIUM",
     }),
-    createTicketViaApi(request, REQUIRE.myTickets.id, `LEB2 App crashes on login ${unique}`, {
+    createTicketViaApi(request, TEST_REQUESTERS.myTickets.id, `LEB2 App crashes on login ${unique}`, {
       categoryId: 3, // Software
       relatedSystemId: 4, // LEB2 App
       requestedPriority: "HIGH",
     }),
   ]);
 
-  seedRequester(page, REQUIRE.myTickets);
+  seedRequester(page, TEST_REQUESTERS.myTickets);
   await page.goto("/my-tickets");
   // Wait for the list to render the 3 seeded rows (desktop table or mobile card).
   await expect
@@ -173,6 +143,16 @@ test("RESP my-tickets screen at all viewports", async ({ page, request }, testIn
       timeout: 10_000,
     })
     .toBeGreaterThanOrEqual(3);
+
+  // ui-spec.md section 6 / AC-25: assert the desktop table actually becomes
+  // the mobile card list on the mobile viewport (not merely "some row type").
+  if (testInfo.project.name === "mobile") {
+    await expect(page.locator(".ticket-cards-mobile")).toBeVisible();
+    await expect(page.locator(".ticket-table-desktop")).toBeHidden();
+  } else {
+    await expect(page.locator(".ticket-table-desktop")).toBeVisible();
+    await expect(page.locator(".ticket-cards-mobile")).toBeHidden();
+  }
 
   await assertNoHorizontalScroll(page);
   await capture(page, "my-tickets", testInfo.project.name);
@@ -182,15 +162,15 @@ test("RESP my-tickets screen at all viewports", async ({ page, request }, testIn
 
 test("RESP ticket-detail screen at all viewports", async ({ page, request }, testInfo) => {
   const unique = Date.now();
-  const ticketId = await createTicketViaApi(
+  const ticket = await createTicketViaApi(
     request,
-    REQUIRE.ticketDetail.id,
+    TEST_REQUESTERS.ticketDetail.id,
     `Laptop charger not working ${unique}`
   );
-  await uploadAttachmentViaApi(request, ticketId, REQUIRE.ticketDetail.id, "charger-photo.png");
+  await uploadAttachmentViaApi(request, ticket.id, TEST_REQUESTERS.ticketDetail.id, "charger-photo.png");
 
-  seedRequester(page, REQUIRE.ticketDetail);
-  await page.goto(`/tickets/${ticketId}`);
+  seedRequester(page, TEST_REQUESTERS.ticketDetail);
+  await page.goto(`/tickets/${ticket.id}`);
   await expect(page.getByTestId("ticket-detail")).toBeVisible();
   await expect(page.getByTestId("attachment-section")).toBeVisible();
 

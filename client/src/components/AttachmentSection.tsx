@@ -259,6 +259,7 @@ export default function AttachmentSection({
             <Button
               variant="secondary"
               onClick={() => fileInputRef.current?.click()}
+              aria-label="Add attachment"
               data-testid="add-attachment-btn"
             >
               <Upload size={14} />

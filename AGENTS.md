@@ -2,7 +2,12 @@
 
 Tok TickIT — IT service desk app, a KMUTT CPE334-SE course project (2 packages: `client/`, `server/`). Early-stage lab work; source intentionally contains `TODO(Issue N)` markers and unimplemented functions that later lab issues fill in.
 
-## Commands (run inside the package dir; pnpm only, no root package.json)
+## Commands (pnpm only; not a pnpm workspace)
+
+> A root `package.json` exists **only** for Playwright E2E tooling
+> (`pnpm test:e2e`, `pnpm test:e2e:headed`) and is not a shared workspace.
+> `client/` and `server/` remain two independent packages with their own
+> lockfiles; their commands below must still be run inside each package dir.
 
 - `pnpm install` in `client/` AND `server/` separately (two independent lockfiles, not a pnpm workspace)
 - `server`: `pnpm dev` (tsx watch src/index.ts), `pnpm build` (tsc → dist), `pnpm start`, `pnpm test`

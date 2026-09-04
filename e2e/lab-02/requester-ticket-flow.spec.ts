@@ -1,21 +1,15 @@
-import { test, expect, type Page, type APIRequestContext } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
+import { API_BASE, TINY_PNG, createTicketViaApi } from "./helpers.js";
 
 // ── Configuration ────────────────────────────────────────────────────────────
 // The E2E flow runs against the full stack (API :5000 + Vite :5173) and is
 // scoped to the **desktop** project only (tests.md RESP/E2E note: viewport
 // matrix is covered by the responsive spec; the flow does not need 3 widths).
 
-const API_BASE = "http://localhost:5000";
 const REQUESTER_JENNIFER = { id: 1, name: "Jennifer Anderson" };
 const REQUESTER_DAVID = { id: 2, name: "David Lee" };
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
-
-/** A tiny valid 1×1 PNG so the client MIME/extension validator accepts it. */
-const TINY_PNG = Buffer.from(
-  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
-  "base64"
-);
 
 async function makePngFixture(name: string): Promise<string> {
   const { writeFileSync } = await import("node:fs");
@@ -36,27 +30,6 @@ async function selectRequester(page: Page, name: string) {
   await select.selectOption(value as string);
   await page.getByTestId("continue-button").click();
   await page.waitForURL("**/my-tickets");
-}
-
-async function createTicketViaApi(
-  request: APIRequestContext,
-  requesterId: number,
-  summary: string,
-  priority = "MEDIUM"
-) {
-  const res = await request.post(`${API_BASE}/api/tickets`, {
-    data: {
-      requesterId,
-      categoryId: 2,
-      relatedSystemId: 7,
-      requestedPriority: priority,
-      summary,
-      description: `Automated E2E setup ticket: ${summary}`,
-    },
-  });
-  expect(res.status()).toBe(201);
-  const body = (await res.json()) as { data: { id: number; ticketNumber: string; summary: string } };
-  return body.data;
 }
 
 async function searchTickets(page: Page, term: string) {
@@ -216,7 +189,7 @@ test.describe("E2E requester ticket flow", () => {
   }) => {
     const unique = Date.now();
     const jenniferSummary = `E2E Jennifer laptop ${unique}`;
-    const jenniferTicket = await createTicketViaApi(request, REQUESTER_JENNIFER.id, jenniferSummary, "HIGH");
+    const jenniferTicket = await createTicketViaApi(request, REQUESTER_JENNIFER.id, jenniferSummary, { requestedPriority: "HIGH" });
 
     // Select Jennifer, her ticket must be visible (AC-11)
     await selectRequester(page, REQUESTER_JENNIFER.name);
