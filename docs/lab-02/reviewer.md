@@ -14,7 +14,7 @@
 | 50 | feature/10-ticket-detail | approved |
 | 51 | feature/11-attachments | approved |
 | 52 | feature/12-e2e-visual | approved |
-| 53 | feature/13-release-docs | pending review |
+| 53 | feature/13-release-docs | approved |
 
 ### feature/5-sprint-specification #45
 
@@ -141,7 +141,15 @@ Reviewer approved comment:
 
 **Pull Requests URL:** <https://github.com/fahsai-02/toktickit/pull/53>
 
-Peer review pending — PR #53 is the current release/docs issue. Screenshots of the reviewer's comment, response, and approval will be added here once the PR is opened.
+Reviewer comment I received:  
+<img src="./images/peer-reviews/my-pr/feature/13-release-docs/comment-received-1.png" width="600" />
+<img src="./images/peer-reviews/my-pr/feature/13-release-docs/comment-received-2.png" width="600" />
+
+How I responded:  
+<img src="./images/peer-reviews/my-pr/feature/13-release-docs/comment-responded-1.png" width="600" />
+
+Reviewer approved comment:  
+<img src="./images/peer-reviews/my-pr/feature/13-release-docs/comment-approved.png" width="600" />
 
 ---
 
