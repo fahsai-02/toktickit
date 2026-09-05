@@ -158,16 +158,23 @@ pnpm test:e2e          # run the full lab-02 E2E + responsive suite
 pnpm test:e2e:headed   # same, with a visible browser
 ```
 
-Two specs under `e2e/lab-02/`:
+Three specs under `e2e/lab-02/`, all running on all 3 viewport projects
+(desktop 1440×900, tablet 820×1180, mobile 390×844):
 
 - `requester-ticket-flow.spec.ts` — E2E-01..03: happy-path journey
   (create → locate → detail → attach → download → soft-remove → download
-  blocked), cross-requester isolation, and backend-down resilience. These run
-  only on the **desktop** project.
+  blocked), cross-requester isolation, and backend-down resilience. The My
+  Tickets list assertions are viewport-aware (desktop table vs mobile card
+  list).
 - `responsive.visual.spec.ts` — RESP-01..09: 3 screens (create-ticket,
   my-tickets, ticket-detail) captured at 3 viewport projects (desktop 1440×900,
   tablet 820×1180, mobile 390×844), asserting no horizontal scroll and saving
   screenshots to `artifacts/lab-02/screenshots/{screen}/{project}.png`.
+- `states.visual.spec.ts` — STATE captures: UI states a static happy-path
+  shot cannot show (validation messages, submit busy spinner, empty vs
+  no-results, uploading/invalid/removed/unavailable attachments, long-filename
+  ellipsis) on every viewport, saving screenshots to
+  `artifacts/lab-02/screenshots/states/{state}/{project}.png`.
 
 The create-ticket screenshots use varied category/priority per viewport (e.g.
 Hardware/MEDIUM, Software/HIGH, Network/URGENT) with a staged attachment chip;
