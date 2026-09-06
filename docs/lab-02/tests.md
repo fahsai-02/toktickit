@@ -4,9 +4,9 @@
 | :--- | :--- |
 | **Project** | Tok TickIT — IT Service Desk |
 | **Sprint** | Lab 2: Requester Ticketing MVP |
-| **Version** | v1.0 APPROVED — planned tests before implementation; statuses updated to final results at sprint close |
-| **Date** | 2026-08-21 |
-| **Traceability source** | `specification.md` v1.0 AC-01..26 · `api-spec.md` v1.0 · `ui-spec.md` v1.0 |
+| **Version** | v1.1 FINAL — results at sprint close (v1.0 was the Planned baseline before implementation) |
+| **Date** | 2026-09-04 |
+| **Traceability source** | `specification.md` v1.0 AC-01..26 · `api-spec.md` v1.1 · `ui-spec.md` v1.0 |
 
 ---
 
@@ -168,3 +168,5 @@ Screenshot artifacts for the visual checklist were generated at `artifacts/lab-0
 *This plan is written before implementation (Test DD evidence). Any behavior change during implementation must update both this file and the specs.*
 
 **Approval:** Reviewed and approved by the student on 2026-08-21. Six test levels, 62 planned tests, full AC traceability, and labsheet-conformant table/section format confirmed. **Statuses updated to final results at sprint close (2026-09-04, Issue 13): all rows `Pass`, zero skipped anywhere — server 124/124, client 77/77 (11 files incl. `zen-green-style.test.tsx` STYLE-01..04), E2E+responsive 45 passed across all 3 viewports; evidence recorded in section 6.**
+
+**Revision v1.1 (2026-09-04):** header bumped v1.0 → v1.1 FINAL with sprint-close date; traceability source corrected to `api-spec.md` v1.1 (dev-proxy correction, 2026-08-29); section 6 counts re-verified against live runs — server 11 files / 124 passed, client 11 files / 77 passed, Playwright 45 total in 3 files. No test rows changed.
