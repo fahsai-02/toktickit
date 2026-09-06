@@ -1,0 +1,256 @@
+# Lab 2 — Peer Review Record
+
+**Author:** Nakagamon Saengdara — 67070501064 — GitHub: @fahsai-02  
+**Peer reviewer:** Theeraphat Jaingam — 67070501063 — GitHub: @thrxpt  
+
+## Pull Requests I authored (reviewed by my partner)
+| PR | Branch | Reviewer verdict |
+|----|--------|------------------|
+| 45 | feature/5-sprint-specification | approved |
+| 46 | feature/6-db-seed | approved |
+| 47 | feature/7-requester-context | approved |
+| 48 | feature/8-create-ticket | approved |
+| 49 | feature/9-my-tickets | approved |
+| 50 | feature/10-ticket-detail | approved |
+| 51 | feature/11-attachments | approved |
+| 52 | feature/12-e2e-visual | approved |
+| 53 | feature/13-release-docs | approved |
+
+### feature/5-sprint-specification #45
+
+**Pull Requests URL:** <https://github.com/fahsai-02/toktickit/pull/45>
+
+Reviewer approved comment:  
+<img src="./images/peer-reviews/my-pr/feature/5-sprint-specification/comment-approved.png" width="600" />
+
+How I responded:  
+<img src="./images/peer-reviews/my-pr/feature/5-sprint-specification/comment-responded-1.png" width="600" />
+
+---
+### feature/6-db-seed #46
+
+**Pull Requests URL:** <https://github.com/fahsai-02/toktickit/pull/46>
+
+Reviewer comment I received:  
+<img src="./images/peer-reviews/my-pr/feature/6-db-seed/comment-received-1.png" width="600" />
+
+How I responded:  
+<img src="./images/peer-reviews/my-pr/feature/6-db-seed/comment-responded-1.png" width="600" />
+
+Reviewer approved comment:  
+<img src="./images/peer-reviews/my-pr/feature/6-db-seed/comment-approved.png" width="600" />
+
+---
+### feature/7-requester-context #47
+
+**Pull Requests URL:** <https://github.com/fahsai-02/toktickit/pull/47>
+
+My comment:  
+<img src="./images/peer-reviews/my-pr/feature/7-requester-context/my-comment.png" width="600" />
+
+Reviewer comment I received:  
+<img src="./images/peer-reviews/my-pr/feature/7-requester-context/comment-received-1.png" width="600" />
+
+How I responded:  
+<img src="./images/peer-reviews/my-pr/feature/7-requester-context/comment-responded-1.png" width="600" />
+<img src="./images/peer-reviews/my-pr/feature/7-requester-context/comment-responded-2.png" width="600" />
+
+Reviewer approved comment:  
+<img src="./images/peer-reviews/my-pr/feature/7-requester-context/comment-approved.png" width="600" />
+
+How I responded:  
+<img src="./images/peer-reviews/my-pr/feature/7-requester-context/comment-responded-3.png" width="600" />
+
+---
+### feature/8-create-ticket #48
+
+**Pull Requests URL:** <https://github.com/fahsai-02/toktickit/pull/48>
+
+Reviewer comment I received:  
+<img src="./images/peer-reviews/my-pr/feature/8-create-ticket/comment-received-1.png" width="600" />
+<img src="./images/peer-reviews/my-pr/feature/8-create-ticket/comment-received-2.png" width="600" />
+
+How I responded:  
+<img src="./images/peer-reviews/my-pr/feature/8-create-ticket/comment-responded-1.png" width="600" />
+
+Reviewer approved comment:  
+<img src="./images/peer-reviews/my-pr/feature/8-create-ticket/comment-approved.png" width="600" />
+
+How I responded:  
+<img src="./images/peer-reviews/my-pr/feature/8-create-ticket/comment-responded-2.png" width="600" />
+
+---
+### feature/9-my-tickets #49
+
+**Pull Requests URL:** <https://github.com/fahsai-02/toktickit/pull/49>
+
+Reviewer comment I received:  
+<img src="./images/peer-reviews/my-pr/feature/9-my-tickets/comment-received-1.png" width="600" />
+
+How I responded:  
+<img src="./images/peer-reviews/my-pr/feature/9-my-tickets/comment-responded-1.png" width="600" />
+
+Reviewer approved comment:  
+<img src="./images/peer-reviews/my-pr/feature/9-my-tickets/comment-approved.png" width="600" />
+
+---
+### feature/10-ticket-detail #50
+
+**Pull Requests URL:** <https://github.com/fahsai-02/toktickit/pull/50>
+
+Reviewer comment I received:  
+<img src="./images/peer-reviews/my-pr/feature/10-ticket-detail/comment-received-1.png" width="600" />
+
+How I responded:  
+<img src="./images/peer-reviews/my-pr/feature/10-ticket-detail/comment-responded-1.png" width="600" />
+
+Reviewer approved comment:  
+<img src="./images/peer-reviews/my-pr/feature/10-ticket-detail/comment-approved.png" width="600" />
+
+---
+### feature/11-attachments #51
+
+**Pull Requests URL:** <https://github.com/fahsai-02/toktickit/pull/51>
+
+Reviewer comment I received:  
+<img src="./images/peer-reviews/my-pr/feature/11-attachments/comment-received-1.png" width="600" />
+
+How I responded:  
+<img src="./images/peer-reviews/my-pr/feature/11-attachments/comment-responded-1.png" width="600" />
+
+Reviewer approved comment:  
+<img src="./images/peer-reviews/my-pr/feature/11-attachments/comment-approved.png" width="600" />
+
+---
+### feature/12-e2e-visual #52
+
+**Pull Requests URL:** <https://github.com/fahsai-02/toktickit/pull/52>
+
+Reviewer comment I received:  
+<img src="./images/peer-reviews/my-pr/feature/12-e2e-visual/comment-received-1.png" width="600" />
+<img src="./images/peer-reviews/my-pr/feature/12-e2e-visual/comment-received-2.png" width="600" />
+
+How I responded:  
+<img src="./images/peer-reviews/my-pr/feature/12-e2e-visual/comment-responded-1.png" width="600" />
+
+Reviewer approved comment:  
+<img src="./images/peer-reviews/my-pr/feature/12-e2e-visual/comment-approved.png" width="600" />
+
+---
+### feature/13-release-docs #53
+
+**Pull Requests URL:** <https://github.com/fahsai-02/toktickit/pull/53>
+
+Reviewer comment I received:  
+<img src="./images/peer-reviews/my-pr/feature/13-release-docs/comment-received-1.png" width="600" />
+<img src="./images/peer-reviews/my-pr/feature/13-release-docs/comment-received-2.png" width="600" />
+
+How I responded:  
+<img src="./images/peer-reviews/my-pr/feature/13-release-docs/comment-responded-1.png" width="600" />
+
+Reviewer approved comment:  
+<img src="./images/peer-reviews/my-pr/feature/13-release-docs/comment-approved.png" width="600" />
+
+---
+
+## Pull Requests I reviewed for my partner
+
+### feature/5-lab2-contrac
+
+**Pull Requests URL:** <https://github.com/thrxpt/toktickit/pull/10>
+
+My comment:  
+<img src="./images/peer-reviews/partner-pr/feature/5-lab2-contrac/my-comment-1.png" width="600" />
+
+Partner's response:  
+<img src="./images/peer-reviews/partner-pr/feature/5-lab2-contrac/partner-response-1.png" width="600" />
+
+My approved comment:  
+<img src="./images/peer-reviews/partner-pr/feature/5-lab2-contrac/my-approved.png" width="600" />
+
+---
+### feature/6-data-model-seed
+
+**Pull Requests URL:** <https://github.com/thrxpt/toktickit/pull/20>
+
+My approved comment:  
+<img src="./images/peer-reviews/partner-pr/feature/6-data-model-seed/my-approved.png" width="600" />
+
+Partner's response:  
+<img src="./images/peer-reviews/partner-pr/feature/6-data-model-seed/partner-response-1.png" width="600" />
+
+---
+### feature/7-app-shell-theme
+
+**Pull Requests URL:** <https://github.com/thrxpt/toktickit/pull/21>
+
+My comment:  
+<img src="./images/peer-reviews/partner-pr/feature/7-app-shell-theme/my-comment-1.png" width="600" />
+
+Partner's response:  
+<img src="./images/peer-reviews/partner-pr/feature/7-app-shell-theme/partner-response-1.png" width="600" />
+
+My approved comment:  
+<img src="./images/peer-reviews/partner-pr/feature/7-app-shell-theme/my-approved.png" width="600" />
+
+---
+### feature/8-requester-context
+
+**Pull Requests URL:** <https://github.com/thrxpt/toktickit/pull/22>
+
+My approved comment:  
+<img src="./images/peer-reviews/partner-pr/feature/8-requester-context/my-approved.png" width="600" />
+
+---
+### feature/9-create-ticket
+
+**Pull Requests URL:** <https://github.com/thrxpt/toktickit/pull/23>
+
+My comment:  
+<img src="./images/peer-reviews/partner-pr/feature/9-create-ticket/my-comment-1.png" width="600" />
+<img src="./images/peer-reviews/partner-pr/feature/9-create-ticket/my-comment-2.png" width="600" />
+
+Partner's response:  
+<img src="./images/peer-reviews/partner-pr/feature/9-create-ticket/partner-response-1.png" width="600" />
+
+My approved comment:  
+<img src="./images/peer-reviews/partner-pr/feature/9-create-ticket/my-approved.png" width="600" />
+
+---
+### feature/10-my-tickets
+
+**Pull Requests URL:** <https://github.com/thrxpt/toktickit/pull/24>
+
+My comment:  
+<img src="./images/peer-reviews/partner-pr/feature/10-my-tickets/my-comment-1.png" width="600" />
+
+Partner's response:  
+<img src="./images/peer-reviews/partner-pr/feature/10-my-tickets/partner-response-1.png" width="600" />
+
+My approved comment:  
+<img src="./images/peer-reviews/partner-pr/feature/10-my-tickets/my-approved.png" width="600" />
+
+---
+### feature/11-ticket-detail
+
+**Pull Requests URL:** <https://github.com/thrxpt/toktickit/pull/25>
+
+My approved comment:  
+<img src="./images/peer-reviews/partner-pr/feature/11-ticket-detail/my-approved.png" width="600" />
+
+---
+### feature/12-attachments
+
+**Pull Requests URL:** <https://github.com/thrxpt/toktickit/pull/26>
+
+My comment:  
+<img src="./images/peer-reviews/partner-pr/feature/12-attachments/my-comment-1.png" width="600" />
+<img src="./images/peer-reviews/partner-pr/feature/12-attachments/my-comment-2.png" width="600" />
+<img src="./images/peer-reviews/partner-pr/feature/12-attachments/my-comment-3.png" width="600" />
+<img src="./images/peer-reviews/partner-pr/feature/12-attachments/my-comment-4.png" width="600" />
+
+Partner's response:  
+<img src="./images/peer-reviews/partner-pr/feature/12-attachments/partner-response-1.png" width="600" />
+
+My approved comment:  
+<img src="./images/peer-reviews/partner-pr/feature/12-attachments/my-approved.png" width="600" />

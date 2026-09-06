@@ -1,0 +1,345 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
+import { RequesterProvider } from "../../src/RequesterContext.js";
+import CreateTicket from "../../src/CreateTicket.js";
+import * as api from "../../src/api.js";
+
+const requester = {
+  id: 1,
+  name: "Jennifer Anderson",
+  email: "jennifer.anderson@toktickit.dev",
+  department: "Marketing",
+};
+
+const categories: api.Category[] = [
+  { id: 2, name: "Hardware" },
+  { id: 4, name: "Network" },
+];
+
+const allSystems: api.RelatedSystem[] = [
+  { id: 7, name: "Corporate Laptop", categoryId: 2 },
+  { id: 2, name: "Campus Wi-Fi", categoryId: 4 },
+  { id: 1, name: "Email", categoryId: null },
+];
+
+function createFile(name: string, type: string, size: number, lastModified = 0): File {
+  return new File([new ArrayBuffer(size)], name, { type, lastModified });
+}
+
+async function renderTicket() {
+  render(
+    <RequesterProvider>
+      <MemoryRouter initialEntries={["/create-ticket"]}>
+        <CreateTicket />
+      </MemoryRouter>
+    </RequesterProvider>
+  );
+  await screen.findByTestId("category");
+}
+
+function selectField(testId: string, value: string) {
+  fireEvent.change(screen.getByTestId(testId), { target: { value } });
+}
+
+function submit() {
+  fireEvent.click(screen.getByTestId("submit-ticket"));
+}
+
+const validTicket: api.Ticket = {
+  id: 12,
+  ticketNumber: "TKT-2026-000012",
+  summary: "Laptop battery drains quickly",
+  description: "Battery drains within two hours.",
+  requestedPriority: "MEDIUM",
+  itPriority: null,
+  currentStatus: "NEW",
+  ticketDate: "2026-08-29T10:00:00.000Z",
+  requester: { id: 1, name: "Jennifer Anderson" },
+  category: { id: 2, name: "Hardware" },
+  relatedSystem: { id: 7, name: "Corporate Laptop" },
+  createdAt: "2026-08-29T10:00:00.000Z",
+  updatedAt: "2026-08-29T10:00:00.000Z",
+};
+
+function fillValidForm() {
+  selectField("category", "2");
+  selectField("relatedSystem", "7");
+  selectField("priority", "MEDIUM");
+  fireEvent.change(screen.getByTestId("summary"), {
+    target: { value: "Laptop battery drains quickly" },
+  });
+  fireEvent.change(screen.getByTestId("description"), {
+    target: { value: "Battery drains within two hours." },
+  });
+}
+
+describe("CreateTicket", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    localStorage.setItem(
+      "toktickit-requester",
+      JSON.stringify(requester)
+    );
+    vi.restoreAllMocks();
+    vi.spyOn(api, "fetchCategories").mockResolvedValue(categories);
+    vi.spyOn(api, "fetchRelatedSystems").mockImplementation(
+      async (categoryId?: number) =>
+        categoryId === undefined
+          ? allSystems
+          : allSystems.filter(
+              (s) => s.categoryId === categoryId || s.categoryId === null
+            )
+    );
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("shows an inline requirement error and does not call the API when fields are missing (UI-01)", async () => {
+    vi.spyOn(api, "createTicket").mockResolvedValue(validTicket);
+    await renderTicket();
+
+    submit();
+
+    expect(
+      await screen.findByText("Summary is required (1-120 characters).")
+    ).toBeInTheDocument();
+    expect(api.createTicket).not.toHaveBeenCalled();
+  });
+
+  it("updates the live character counter and rejects an over-long summary (UI-02)", async () => {
+    await renderTicket();
+
+    fireEvent.change(screen.getByTestId("summary"), {
+      target: { value: "Hello" },
+    });
+    expect(screen.getByTestId("field-counter-summary")).toHaveTextContent(
+      "5/120"
+    );
+
+    fireEvent.change(screen.getByTestId("description"), {
+      target: { value: "abc" },
+    });
+    expect(screen.getByTestId("field-counter-description")).toHaveTextContent(
+      "3/2000"
+    );
+
+    fireEvent.change(screen.getByTestId("summary"), {
+      target: { value: "a".repeat(121) },
+    });
+    fillValidForm();
+    screen
+      .getByTestId("summary")
+      .setAttribute("value", "a".repeat(121));
+    fireEvent.change(screen.getByTestId("summary"), {
+      target: { value: "a".repeat(121) },
+    });
+    submit();
+
+    expect(
+      await screen.findByText("Summary is required (1-120 characters).")
+    ).toBeInTheDocument();
+  });
+
+  it("disables the button and shows a busy state while submitting (UI-03)", async () => {
+    vi.spyOn(api, "createTicket").mockReturnValue(new Promise(() => {}));
+    await renderTicket();
+
+    fillValidForm();
+    await act(async () => {
+      submit();
+    });
+
+    expect(screen.getByTestId("submit-ticket")).toBeDisabled();
+    expect(document.querySelector(".spinner")).toBeInTheDocument();
+  });
+
+  it("shows an error callout and keeps typed values on failure without redirect (UI-04)", async () => {
+    vi.spyOn(api, "createTicket").mockRejectedValue(
+      new api.ApiError("Could not save your ticket", "INTERNAL_ERROR")
+    );
+    await renderTicket();
+
+    fillValidForm();
+    submit();
+
+    expect(await screen.findByTestId("submit-error")).toBeInTheDocument();
+    expect(
+      screen.getByTestId("summary")
+    ).toHaveValue("Laptop battery drains quickly");
+    expect(screen.getByTestId("description")).toHaveValue(
+      "Battery drains within two hours."
+    );
+    expect(screen.queryByTestId("go-to-my-tickets")).not.toBeInTheDocument();
+  });
+
+  it("shows a success panel with the official ticket number (UI-05)", async () => {
+    vi.spyOn(api, "createTicket").mockResolvedValue(validTicket);
+    await renderTicket();
+
+    fillValidForm();
+    submit();
+
+    expect(
+      await screen.findByText(/Ticket created: TKT-2026-000012/)
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("go-to-my-tickets")).toBeInTheDocument();
+    expect(screen.getByText("View ticket")).toBeInTheDocument();
+  });
+
+  it("stages valid files and rejects disallowed or oversized files immediately (UI-06)", async () => {
+    await renderTicket();
+
+    const input = screen.getByTestId("file-input");
+    const goodPdf = createFile("report.pdf", "application/pdf", 2048);
+    const badType = createFile("virus.exe", "application/octet-stream", 1024);
+    const oversized = createFile("big.png", "image/png", 6 * 1024 * 1024);
+
+    fireEvent.change(input, {
+      target: { files: [goodPdf, badType, oversized] },
+    });
+
+    expect(screen.getByText("report.pdf")).toBeInTheDocument();
+    expect(screen.getByText(/virus\.exe: only JPG, PNG, WEBP, or PDF/)).toBeInTheDocument();
+    expect(screen.getByText(/big\.png: file exceeds 5 MB/)).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /Remove report\.pdf/ })
+    );
+    expect(screen.queryByText("report.pdf")).not.toBeInTheDocument();
+  });
+
+  it("stages two files with the same name and removes only one (UI-06b)", async () => {
+    await renderTicket();
+
+    const input = screen.getByTestId("file-input");
+    fireEvent.change(input, {
+      target: {
+        files: [
+          createFile("notes.pdf", "application/pdf", 1024),
+          createFile("notes.pdf", "application/pdf", 2048),
+        ],
+      },
+    });
+
+    expect(screen.getAllByText("notes.pdf")).toHaveLength(2);
+
+    fireEvent.click(
+      screen.getAllByRole("button", { name: /Remove notes\.pdf/ })[0]
+    );
+    expect(screen.getAllByText("notes.pdf")).toHaveLength(1);
+  });
+
+  it("dismisses the file-limit message and shows it again when the limit is exceeded (UI-06c)", async () => {
+    await renderTicket();
+
+    const input = screen.getByTestId("file-input");
+    const beyondLimit = Array.from({ length: 6 }, () =>
+      createFile("notes.pdf", "application/pdf", 1024)
+    );
+
+    fireEvent.change(input, { target: { files: beyondLimit } });
+
+    expect(
+      screen.getByText(/You can add up to 5 files/)
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Dismiss error" }));
+    expect(screen.queryByText(/You can add up to 5 files/)).not.toBeInTheDocument();
+
+    fireEvent.change(input, { target: { files: beyondLimit } });
+    expect(
+      screen.getByText(/You can add up to 5 files/)
+    ).toBeInTheDocument();
+  });
+
+  it("reloads the related-system options when the category changes (UI-07)", async () => {
+    await renderTicket();
+
+    selectField("category", "4");
+
+    await waitFor(() => {
+      expect(screen.getByTestId("relatedSystem")).toContainElement(
+        screen.getByRole("option", { name: "Campus Wi-Fi" })
+      );
+    });
+    const selectedSystem = screen.getByTestId("relatedSystem") as HTMLSelectElement;
+    expect(Array.from(selectedSystem.options).map((o) => o.textContent)).toEqual(
+      ["— Select system —", "Campus Wi-Fi", "Email"]
+    );
+  });
+
+  it("uploads staged files sequentially after ticket creation (AD-03)", async () => {
+    const uploadSpy = vi.spyOn(api, "uploadAttachment").mockResolvedValue({
+      id: 200,
+      originalFileName: "report.pdf",
+      fileSize: 2048,
+      mimeType: "application/pdf",
+      isRemoved: false,
+      removedAt: null,
+      removalReason: null,
+      uploadedByRequesterId: 1,
+      createdAt: "2026-08-29T10:05:00.000Z",
+    });
+    vi.spyOn(api, "createTicket").mockResolvedValue(validTicket);
+    await renderTicket();
+
+    fillValidForm();
+    const input = screen.getByTestId("file-input");
+    fireEvent.change(input, {
+      target: { files: [createFile("report.pdf", "application/pdf", 2048)] },
+    });
+    expect(screen.getByText("report.pdf")).toBeInTheDocument();
+
+    submit();
+
+    await waitFor(() => {
+      expect(uploadSpy).toHaveBeenCalledTimes(1);
+    });
+    expect(uploadSpy).toHaveBeenCalledWith(12, 1, expect.any(File));
+
+    expect(
+      await screen.findByText(/Ticket created: TKT-2026-000012/)
+    ).toBeInTheDocument();
+    expect(await screen.findByText("report.pdf")).toBeInTheDocument();
+  });
+
+  it("shows failed upload with Retry button when upload fails after creation", async () => {
+    vi.spyOn(api, "uploadAttachment").mockRejectedValue(
+      new api.ApiError("File size exceeds the 5 MB limit.", "PAYLOAD_TOO_LARGE")
+    );
+    vi.spyOn(api, "createTicket").mockResolvedValue(validTicket);
+    await renderTicket();
+
+    fillValidForm();
+    const input = screen.getByTestId("file-input");
+    fireEvent.change(input, {
+      target: { files: [createFile("big.pdf", "application/pdf", 1024)] },
+    });
+
+    submit();
+
+    await waitFor(() => {
+      expect(screen.getByText(/File size exceeds/)).toBeInTheDocument();
+    });
+    expect(screen.getByRole("button", { name: /retry/i })).toBeInTheDocument();
+  });
+
+  it("clears rejected files when new valid files are selected", async () => {
+    await renderTicket();
+
+    const input = screen.getByTestId("file-input");
+    fireEvent.change(input, {
+      target: { files: [createFile("virus.exe", "application/octet-stream", 1024)] },
+    });
+    expect(screen.getByText(/virus\.exe: only JPG, PNG, WEBP, or PDF/)).toBeInTheDocument();
+
+    fireEvent.change(input, {
+      target: { files: [createFile("good.pdf", "application/pdf", 1024)] },
+    });
+    expect(screen.queryByText(/virus\.exe/)).not.toBeInTheDocument();
+    expect(screen.getByText("good.pdf")).toBeInTheDocument();
+  });
+});

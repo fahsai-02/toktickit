@@ -7,19 +7,21 @@ describe("GET /api/categories", () => {
     const res = await request(app).get("/api/categories");
 
     expect(res.status).toBe(200);
-    expect(res.body).toEqual([
-      { id: 1, name: "Account and Access" },
-      { id: 2, name: "Hardware" },
-      { id: 3, name: "Software" },
-      { id: 4, name: "Network" },
-    ]);
+    expect(res.body).toEqual({
+      data: [
+        { id: 1, name: "Account and Access" },
+        { id: 2, name: "Hardware" },
+        { id: 3, name: "Software" },
+        { id: 4, name: "Network" },
+      ],
+    });
   });
 
   it("returns each category with only id and name", async () => {
     const res = await request(app).get("/api/categories");
 
     expect(res.status).toBe(200);
-    for (const category of res.body) {
+    for (const category of res.body.data) {
       expect(Object.keys(category).sort()).toEqual(["id", "name"]);
     }
   });

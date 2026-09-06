@@ -1,0 +1,91 @@
+/* Button variants */
+
+@layer components {
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 40px;
+    padding: 0 20px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #fff;
+    background: var(--color-primary);
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .btn-primary:hover {
+    background: var(--color-secondary);
+  }
+
+  .btn-primary:active {
+    background: var(--color-primary);
+  }
+
+  .btn-primary:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+  }
+
+  .btn-primary:disabled,
+  .btn-secondary:disabled,
+  .btn-ghost:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 40px;
+    padding: 0 20px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-secondary);
+    background: var(--color-surface);
+    border: 1px solid var(--color-secondary);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .btn-secondary:hover {
+    background: var(--color-pale);
+  }
+
+  .btn-secondary:active {
+    background: var(--color-pale);
+  }
+
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 40px;
+    padding: 0 16px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    background: transparent;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+  }
+
+  .btn-ghost:hover {
+    background: var(--color-pale);
+    color: var(--color-text);
+  }
+
+  .btn-ghost:active {
+    background: var(--color-pale);
+    color: var(--color-text);
+  }
+}
