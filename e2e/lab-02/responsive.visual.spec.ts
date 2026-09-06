@@ -1,12 +1,17 @@
-import { test, expect, type Page, type APIRequestContext } from "@playwright/test";
-import { API_BASE, TINY_PNG, createTicketViaApi } from "./helpers.js";
+import { test, expect } from "@playwright/test";
+import {
+  TINY_PNG,
+  createTicketViaApi,
+  uploadAttachmentViaApi,
+  seedRequester,
+  assertNoHorizontalScroll,
+  capture,
+} from "./helpers.js";
 
 // ── Configuration ────────────────────────────────────────────────────────────
 // RESP-01..09: 3 screens (create-ticket, my-tickets, ticket-detail) × 3
 // viewport projects (desktop 1440×900, tablet 820×1180, mobile 390×844) per
 // ui-spec.md section 9 / tests.md RESP-01..09. Runs against the real stack.
-
-const STORAGE_KEY = "toktickit-requester";
 
 // Distinct requesters per screen so parallel tests never share tickets.
 const TEST_REQUESTERS = {
@@ -14,58 +19,6 @@ const TEST_REQUESTERS = {
   myTickets: { id: 3, name: "Sarah Johnson", email: "sarah.johnson@toktickit.dev" },
   ticketDetail: { id: 4, name: "Michael Brown", email: "michael.brown@toktickit.dev" },
 };
-
-async function uploadAttachmentViaApi(
-  request: APIRequestContext,
-  ticketId: number,
-  requesterId: number,
-  fileName: string
-) {
-  const res = await request.post(`${API_BASE}/api/tickets/${ticketId}/attachments`, {
-    multipart: {
-      requesterId: String(requesterId),
-      file: { name: fileName, mimeType: "image/png", buffer: TINY_PNG },
-    },
-  });
-  expect(res.status()).toBe(201);
-}
-
-/** Inject a requester into localStorage so the app skips the selection screen. */
-function seedRequester(page: Page, requester: typeof TEST_REQUESTERS.createTicket) {
-  page.addInitScript(
-    (args) => {
-      const { key, requester } = args as { key: string; requester: unknown };
-      window.localStorage.setItem(key, JSON.stringify(requester));
-    },
-    { key: STORAGE_KEY, requester }
-  );
-}
-
-/** Assert no unintended horizontal page scrolling at the current viewport. */
-async function assertNoHorizontalScroll(page: Page) {
-  const scrollWidth = await page.evaluate(
-    () => Math.max(document.body.scrollWidth, document.documentElement.scrollWidth)
-  );
-  const innerWidth = await page.evaluate(() => window.innerWidth);
-  expect(scrollWidth, `document scrollWidth ${scrollWidth} exceeds innerWidth ${innerWidth}`).toBeLessThanOrEqual(
-    innerWidth + 1
-  );
-}
-
-async function capture(page: Page, screen: string, project: string) {
-  // Ensure the capture starts at the true top. Under parallel runners the page
-  // can be left scrolled mid-form, which makes Playwright's fullPage stitch
-  // start offset and the sticky header land below a blank band at the top
-  // (the "navbar fell down over content" artifact). Scroll to 0 and let
-  // fonts/layout settle for a deterministic full-page shot.
-  await page.evaluate(() => window.scrollTo(0, 0));
-  await page.evaluate(() => document.fonts?.ready);
-  await page.waitForTimeout(150);
-  await page.screenshot({
-    path: `artifacts/lab-02/screenshots/${screen}/${project}.png`,
-    fullPage: true,
-  });
-}
 
 // ── RESP-01..03: Create Ticket ──────────────────────────────────────────────
 

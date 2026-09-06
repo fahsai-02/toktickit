@@ -424,8 +424,8 @@
   }
 
   .filter-select {
-    flex: 0 1 180px;
-    min-width: 140px;
+    flex: 0 1 150px;
+    min-width: 100px;
   }
 
   .filter-row .field-label {
@@ -581,6 +581,7 @@
     margin: 0 0 8px;
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
     color: var(--color-text-muted);
@@ -1161,7 +1162,7 @@
     }
 
     .filter-select {
-      flex: 0 1 140px;
+      flex: 0 1 100px;
     }
   }
 }

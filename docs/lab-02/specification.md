@@ -197,21 +197,21 @@ Responsive and accessibility
 
 ## 10. Definition of Done (Product)
 
-- [ ] All Included scope implemented; no Excluded features present.
-- [ ] Every AC above verified by at least one automated test traced in `tests.md`.
-- [ ] All unit, API, UI, style, responsive, and E2E tests pass from documented commands on final `main`.
-- [ ] No test skipped, disabled, or commented out.
-- [ ] Backend enforces ownership on every ticket/attachment endpoint (verified by cross-requester tests).
-- [ ] Screens conform to `ui-spec.md` (tokens, states, badges, responsive breakpoints) confirmed by screenshots at 3 viewports.
-- [ ] Implemented endpoints conform to `api-spec.md` (paths, request/response shapes, validation, status codes); Prisma schema matches Section 7 with committed migrations.
-- [ ] Responsive screenshots captured at Desktop, Tablet, and Mobile into `artifacts/lab-02/screenshots/` (create-ticket, my-tickets, ticket-detail), ready for submission evidence Parts 1 and 9.
-- [ ] Peer-review evidence recorded in `docs/lab-02/reviewer.md`: reviewer identity, PR links, comments given and received, responses, and approvals.
-- [ ] Validation works identically client- and server-side; failure paths preserve data (BR-12).
-- [ ] Seed runs idempotently; migrations apply cleanly on an empty database.
-- [ ] README documents setup, env vars, docker, prisma generate/migrate/seed, and test commands accurately.
-- [ ] `docs/lab-02/ai-use.md` records the LLM used, 6–10 key prompts, and a short reflection.
-- [ ] All work merged through reviewed PRs: feature branches → `lab2-staging` → one release PR → `main`; GitHub Project Kanban shows every issue in Done.
-- [ ] Student can explain every implementation choice and demonstrate failure cases live.
+- [x] All Included scope implemented; no Excluded features present.
+- [x] Every AC above verified by at least one automated test traced in `tests.md`.
+- [x] All unit, API, UI, style, responsive, and E2E tests pass from documented commands on final `main`.
+- [x] No test skipped, disabled, or commented out.
+- [x] Backend enforces ownership on every ticket/attachment endpoint (verified by cross-requester tests).
+- [x] Screens conform to `ui-spec.md` (tokens, states, badges, responsive breakpoints) confirmed by screenshots at 3 viewports.
+- [x] Implemented endpoints conform to `api-spec.md` (paths, request/response shapes, validation, status codes); Prisma schema matches Section 7 with committed migrations.
+- [x] Responsive screenshots captured at Desktop, Tablet, and Mobile into `artifacts/lab-02/screenshots/` (create-ticket, my-tickets, ticket-detail), ready for submission evidence Parts 1 and 9.
+- [x] Peer-review evidence recorded in `docs/lab-02/reviewer.md`: reviewer identity, PR links, comments given and received, responses, and approvals.
+- [x] Validation works identically client- and server-side; failure paths preserve data (BR-12).
+- [x] Seed runs idempotently; migrations apply cleanly on an empty database.
+- [x] README documents setup, env vars, docker, prisma generate/migrate/seed, and test commands accurately.
+- [x] `docs/lab-02/ai-use.md` records the LLM used, 6–10 key prompts, and a short reflection.
+- [x] All work merged through reviewed PRs: feature branches → `lab2-staging` → one release PR → `main`; GitHub Project Kanban shows every issue in Done.
+- [x] Student can explain every implementation choice and demonstrate failure cases live.
 
 ## 11. Assumptions and Decisions
 
