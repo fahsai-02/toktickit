@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { db } from './db.js';
 import { buildNextTicketNumber } from './lib/ticketNumber.js';
 
-dotenv.config();
+dotenv.config({ quiet: true });
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
