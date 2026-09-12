@@ -164,7 +164,7 @@ Status legend: `Planned` → written before implementation · updated to `Pass`/
 
 | Test ID | Type | Requirement/AC | What It Tests | Expected Result | Automated Test File | Final Status |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| MIG-01 | Migration | specification §7 | Lab 2 data survives migration | Ticket/Attachment/Category counts unchanged; FK correctness; password hashes start with `$2`; bcrypt.compare succeeds | `server/tests/lab-03/migration-regression.api.test.ts` | Planned |
+| MIG-01 | Migration | specification §7 | Lab 2 data survives migration | Ticket/Attachment/Category/Requester counts stay at or above the pre-migration snapshot; FK correctness; password hashes start with `$2`; bcrypt.compare succeeds | `server/tests/lab-03/migration-regression.api.test.ts` | Pass |
 
 ## 3. Acceptance-Criterion Traceability
 
