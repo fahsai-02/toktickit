@@ -18,15 +18,31 @@ import { TicketStatus } from "../../src/generated/prisma/client.js";
 //   - the 8-value TicketStatus enum and new Ticket workflow fields exist/are used
 // ---------------------------------------------------------------------------
 
-// Snapshot taken before the Lab 3 migration (prisma migrate dev), for the dev DB.
-// Re-seeding may ADD tickets on other machines, so we assert "at least" (>=).
-const PRE_MIGRATION_COUNTS = {
+// Baseline below which a table must never fall. It must remain portable across machines:
+// a fresh install (migrate deploy + db seed with no Lab 2 data) produces exactly the seed's
+// own floor, so that is the default. Machines with Lab 2 legacy data can tighten the check by
+// setting PRE_MIGRATION_COUNTS (JSON) to their own pre-migration snapshot, e.g.
+//   PRE_MIGRATION_COUNTS='{"ticket":343,"attachment":179,"requester":6,"category":4,"relatedSystem":7}' pnpm test
+const BASELINE_COUNTS_DEFAULT = {
   requester: 6,
   category: 4,
   relatedSystem: 7,
-  ticket: 343,
-  attachment: 179,
+  ticket: 15,
+  attachment: 0,
 };
+
+function loadBaselineCounts(): Record<string, number> {
+  const raw = process.env.PRE_MIGRATION_COUNTS;
+  if (!raw) return BASELINE_COUNTS_DEFAULT;
+  try {
+    return { ...BASELINE_COUNTS_DEFAULT, ...JSON.parse(raw) };
+  } catch {
+    console.warn("[MIG-01] Invalid PRE_MIGRATION_COUNTS JSON; using default baseline.");
+    return BASELINE_COUNTS_DEFAULT;
+  }
+}
+
+const PRE_MIGRATION_COUNTS = loadBaselineCounts();
 
 const SEED_EMAIL_TO_PASSWORD: Record<string, string> = {
   "jennifer.anderson@toktickit.dev": "TempPass123!",

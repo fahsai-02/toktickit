@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 dotenv.config({ quiet: true });
 import bcrypt from "bcryptjs";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient, UserRole, TicketStatus } from "../src/generated/prisma/client.js";
+import { PrismaClient, UserRole, TicketStatus, RequestedPriority } from "../src/generated/prisma/client.js";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
@@ -103,7 +103,24 @@ const users = [
 // Seed tickets use ticketNumbers that never collide with real tickets (max real: TKT-2026-000344).
 // Historical/realistic seeds use year 2025; a couple of recent ones use block TKT-2026-000900+.
 // Idempotency: upsert on ticketNumber (@unique).
-const seedTickets = [
+type SeedTicket = {
+  ticketNumber: string;
+  summary: string;
+  description: string;
+  requestedPriority: RequestedPriority;
+  itPriority: RequestedPriority | null;
+  currentStatus: TicketStatus;
+  requester: string;
+  owner: string | null;
+  relatedSystem: string;
+  category: string;
+  ticketDate: string;
+  resolutionSummary: string | null;
+  requesterIndicatedResolved?: boolean;
+  indicatedResolvedAt?: string;
+};
+
+const seedTickets: SeedTicket[] = [
   {
     ticketNumber: "TKT-2025-000001",
     summary: "Cannot access faculty email after password reset",
@@ -474,8 +491,8 @@ async function main() {
     const data = {
       summary: seed.summary,
       description: seed.description,
-      requestedPriority: seed.requestedPriority as never,
-      itPriority: seed.itPriority as never,
+      requestedPriority: seed.requestedPriority,
+      itPriority: seed.itPriority,
       currentStatus: seed.currentStatus,
       ticketDate: new Date(seed.ticketDate),
       requesterId,
@@ -495,12 +512,25 @@ async function main() {
     });
   }
 
-  // ---- Seed Public Comments / Internal Notes (idempotent: delete known seed strings, then recreate) ----
+  // ---- Seed Public Comments / Internal Notes (idempotent: delete the seeded rows only, then recreate) ----
   const commentContents = seedPublicComments.map((c) => c.content);
   const noteContents = seedInternalNotes.map((n) => n.content);
 
-  await prisma.publicComment.deleteMany({ where: { content: { in: commentContents } } });
-  await prisma.internalNote.deleteMany({ where: { content: { in: noteContents } } });
+  // Scope deletes to the seed tickets AND the exact seed strings, so a user-posted comment/note
+  // that happens to match a seed string is never removed on re-run.
+  const seedTicketIds = (
+    await prisma.ticket.findMany({
+      where: { ticketNumber: { in: seedTickets.map((t) => t.ticketNumber) } },
+      select: { id: true },
+    })
+  ).map((t) => t.id);
+
+  await prisma.publicComment.deleteMany({
+    where: { ticketId: { in: seedTicketIds }, content: { in: commentContents } },
+  });
+  await prisma.internalNote.deleteMany({
+    where: { ticketId: { in: seedTicketIds }, content: { in: noteContents } },
+  });
 
   for (const seed of seedPublicComments) {
     const ticket = await prisma.ticket.findUnique({
