@@ -2,7 +2,8 @@ import dotenv from "dotenv";
 dotenv.config({ quiet: true });
 import bcrypt from "bcryptjs";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient, UserRole, TicketStatus, RequestedPriority } from "../src/generated/prisma/client.js";
+import { PrismaClient, UserRole, TicketStatus } from "../src/generated/prisma/client.js";
+import type { RequestedPriority } from "../src/generated/prisma/client.js";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
@@ -19,7 +20,7 @@ const prisma = new PrismaClient({ adapter });
 //  | IT Staff     | StaffPass1!   | 1 active true, rest false       |
 //  | Administrator| AdminPass1!   | false (documented = real)       |
 //
-//  bcrypt cost is 12 per specification.md §11 (line 316).
+//  bcrypt cost is 12 per specification.md section 11 (line 316).
 // =====================================================================
 
 const BCRYPT_ROUNDS = 12;
@@ -82,7 +83,7 @@ const requesters = [
 // Users — the real Lab 3 authentication accounts.
 // Requester accounts below must match the legacy Requester.email exactly so the
 // ticket backfill (requesterUserId) can map them. See migration decision in
-// specification.md §7.
+// specification.md section 7.
 const users = [
   // 6 Requesters mapped from Lab 2 (5 active + 1 inactive), all holding an initial password.
   { name: "Jennifer Anderson", email: "jennifer.anderson@toktickit.dev", role: UserRole.REQUESTER, isActive: true, mustChangePassword: true, password: REQUESTER_PASSWORD },
@@ -452,7 +453,7 @@ async function main() {
 
   // ---- Backfill requesterUserId on legacy Lab 2 tickets (migration leaves them NULL) ----
   //  Mapping is requesterId -> legacy Requester -> email -> User. Only fills NULL rows,
-  //  which keeps the seed idempotent. See specification.md §7 "Migration Decision".
+  //  which keeps the seed idempotent. See specification.md section 7 "Migration Decision".
   await prisma.$executeRaw`
     UPDATE "Ticket" t
     SET "requesterUserId" = u.id

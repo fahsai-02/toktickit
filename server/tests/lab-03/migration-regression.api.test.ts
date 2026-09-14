@@ -4,7 +4,7 @@ import { db } from "../../src/db.js";
 import { TicketStatus } from "../../src/generated/prisma/client.js";
 
 // ---------------------------------------------------------------------------
-// MIG-01 — Migration / Regression (specification.md §7; tests.md MIG-01)
+// MIG-01 — Migration / Regression (specification.md section 7; tests.md MIG-01)
 //
 // REQUIRES the database to already be migrated AND seeded:
 //   cd server && pnpm exec prisma migrate dev && pnpm exec prisma db seed

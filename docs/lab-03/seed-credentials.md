@@ -3,7 +3,7 @@
 > **Warning:** These credentials exist **only** for local development, testing, and grading.
 > Never use these passwords in production, and never commit real personal secrets to this repository.
 
-All passwords are bcrypt-hashed with cost **12** (specification.md §11) and stored in `passwordHash`.
+All passwords are bcrypt-hashed with cost **12** (specification.md section 11) and stored in `passwordHash`.
 They are never stored in plaintext.
 
 A user holding an **initial password** (`mustChangePassword = true`) is forced to change it at first
