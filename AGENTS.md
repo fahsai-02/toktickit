@@ -75,6 +75,20 @@ React Router v7 with `BrowserRouter` in `main.tsx`. Routes:
 - Client: Vitest in `client/tests/lab-01/*.test.tsx` (jsdom, setup `client/tests/setup.ts`); configured inside `client/vite.config.ts` (imported from `vitest/config`), `include: ["tests/**/*.test.tsx"]` — tests are NOT colocated with source.
 - Run `pnpm test` inside the relevant package; the working example test asserts the `/api/health` shape exactly `{ status: 'ok', service: 'TokTickIT API' }`.
 
+### Test-writing rules (mandatory for every new/changed test in this repo)
+
+Derived from the MIG-01 audit (2026-09); a new test that breaks these rules must be justified in the PR.
+
+1. **Never assert hard-coded seed values.** No literal seed ids/names/counts (e.g. `requester: { id: 1, name: "Jennifer Anderson" }`, `categoryId: 2`, `names).not.toContain("Robert Brown")`). Instead: (a) query `db` for the row that actually exists, (b) assert the shape with `toMatchObject` on ids you sent, or (c) import the value from the seed definition (`server/src/lib/seedData.ts`). Tests must pass on ANY seeded DB (fresh install or long-lived dev).
+2. **One source of truth for seed data.** Everything a test needs about the seed comes from `server/src/lib/seedData.ts` (rows) and `server/src/lib/seedCredentials.ts` (passwords, `BCRYPT_ROUNDS`) — the SAME modules `server/prisma/seed.ts` imports. Never duplicate seed arrays/passwords inside a test file: if the seed changes, the test must pick it up automatically.
+3. **Deterministic, not timing-based.** No `setTimeout`/sleep to force ordering. Use data that sorts by a guaranteed key (e.g. secondary `ticketNumber` DESC) or assert on strictly-ordered rows. Client: use `await screen.findBy*` / `waitFor`, never arbitrary sleeps.
+4. **Don't race other suites on the shared DB.** MIG-01 asserts over whole tables, so `server/vitest.config.ts` sets `test.fileParallelism: false` (test FILES run one at a time). Never reintroduce assertions that assume a private DB or a quiet moment.
+5. **Client side-effect assertions:** on client-side validation failure, assert the API call was NOT made; on success, assert the real request (method, URL, headers, body), not just the returned value.
+6. **jsdom quirks:** `window.confirm` has no meaningful implementation — stub it (`vi.spyOn(window, "confirm").mockReturnValue(true)`). Its known `"Could not parse CSS stylesheet"` noise on `@layer` is already suppressed in `client/vite.config.ts` `onConsoleLog`; don't try to force-parse modern CSS in jsdom.
+7. **bcrypt is slow (~450ms/hash at cost 12).** Batch/dedupe `bcrypt.compare` calls and set an explicit test timeout (e.g. 20s) instead of sampling one account per role — full coverage beats speed here.
+8. **Disconnect the DB client** in `afterAll` (`await db.$disconnect()`) in any suite that opens a connection.
+9. **Traceability:** put a comment on each test group naming the spec anchor (e.g. `MIG-01 — specification.md section 7`, `STYLE-03 — ui-spec.md section 3`). When touching an OLD lab's tests, cite the exact spec line/section the assertion depends on.
+
 ## Repo workflow / scope (course-specific)
 
 - Git flow: `main` and `lab1-staging` exist; work one issue at a time on its own `feature/<n>-<slug>` branch off `lab1-staging` (current: `feature/1-project-foundation`). See `docs/lab-01/ai_instructions.md` for the staged issue plan (health check → category seed → category list) and hard constraints: NO auth or image uploads yet.
@@ -317,3 +331,13 @@ These were agreed with the student and MUST be respected in every future chat:
 6. **MIG-01 automated test is IN this issue** (`server/tests/lab-03/migration-regression.api.test.ts`): verifies counts preserved, FK correctness, `requesterUserId` backfilled for all tickets, hashes start `$2` + compare succeeds, all-8 statuses present. Update `docs/lab-03/tests.md` MIG-01 `Planned` → `Pass` after it passes.
 
 7. **Docs/evidence to touch in this issue:** `docs/lab-03/seed-credentials.md` (create), `docs/lab-03/tests.md` (MIG-01 status + run results), spec §7 only if reality diverges from what's written. PR branch `feature/15-data-foundation` → `lab3-staging`, title `feat(schema): lab3 user models, migration & seed (#56)`.
+
+### Lab 3 — Pending stash: Lab 2 client test hardening (MUST NOT be lost)
+
+A stash holds client-side test hardening that was deliberately **excluded from Issue 15 (#56)** because that issue is server-only (schema/migration/seed). The stash must be applied to the FIRST Lab 3 branch that touches client code.
+
+- **Where:** `stash@{0}`, message `"lab2 client test hardening (deferred from #56)"`, created 2026-09-15 on `feature/15-data-foundation`.
+- **Contents (10 files):** the 9 modified `client/tests/lab-02/*.test.tsx` (`App.test.tsx` + 8 others: `AppShell`, `CreateTicket`, `MyTickets`, `RequesterContext`, `RequesterSelection`, `RequesterTicketDetail`, `api`, `zen-green-style`) and `client/vite.config.ts` (`reporter: "basic"` + `onConsoleLog` CSS-noise suppression).
+- **What it does:** makes Lab 2 client tests seed-independent and behavior-exact — active-nav `aria-current` instead of a CSS class, single-call debounce, corrupt-JSON fallback, retry/store tests, loading-state test, POST body/method/header assertions, badge assertions against the spec tokens (`--color-warning`/`--color-error`), `window.confirm` stub. Adds 6 tests → client suite goes 77 → 83 tests.
+- **Rule (mandatory):** when Lab 3 client work begins (auth UI, App Shell, requester regression, or ANY client branch/PR targeting `lab3-staging`), ON THAT BRANCH run `git stash pop`, commit the changes (suggested message: `chore(client): apply lab-02 test hardening`), and continue. Never leave the stash behind when a client branch exists, and never `git stash drop` it first.
+- **Verify before/after:** `git stash list` shows the entry; after popping, `cd client && pnpm test` → **11 files / 83 tests Pass**.
