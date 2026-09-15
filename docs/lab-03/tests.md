@@ -164,10 +164,14 @@ Status legend: `Planned` → written before implementation · updated to `Pass`/
 
 | Test ID | Type | Requirement/AC | What It Tests | Expected Result | Automated Test File | Final Status |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| MIG-01 | Migration | specification section 7 | Lab 2 data survives migration | Ticket/Attachment/Category/Requester counts stay at or above the baseline — defaults to the fresh-install seed floor; set `PRE_MIGRATION_COUNTS` (JSON) to enforce a specific pre-migration snapshot; FK correctness; `requesterUserId` backfilled; password hashes start with `$2`; bcrypt.compare succeeds | `server/tests/lab-03/migration-regression.api.test.ts` | Pass |
+| MIG-01 | Migration | specification section 7 | Lab 2 data survives migration; seed data is correct | Legacy row-count floor preserved; FK integrity (Ticket→Requester, Ticket→User, Attachment→Requester); `requesterUserId` backfilled for every ticket; all 8 `TicketStatus` values in use; workflow fields populated (resolutionSummary, requesterIndicatedResolved, ownerId, itPriority); assigned + unassigned ownership and populated + null IT Priority contrast; `requesterIndicatedResolved = true` always paired with `indicatedResolvedAt`; non-empty `resolutionSummary` when set; Public Comments on ≥2 tickets; Internal Notes (staff authors only); role distribution derived from seed definition; every documented account authenticates via bcrypt; admin `mustChangePassword = false`; IT Staff mustChangePassword split; `requesterUserId` backfilled (also covers API-14 intent: client-supplied requesterId is ignored by seed, so zero NULL `requesterUserId` rows exist post-seed); `fileParallelism: false` serializes files to avoid cross-suite row-count interference | `server/tests/lab-03/migration-regression.api.test.ts` | Pass |
 
 > **MIG-01 hardening note (count equality vs baseline):** AC-11's "assert counts are equal" measures the **migrate-only** step (record counts before and after `prisma migrate deploy`, no seed — every Lab 2 table stays exactly the same). The automated suite must run on a **seeded** DB, and the seed adds ticket rows (dev DB: 343 → 358), so the suite asserts "at or above the snapshot" rather than equality to detect losses. The default baseline is the fresh-install seed floor so `pnpm test` runs on any machine. For a strict check against this repo's dev snapshot, run:
-> `cd server && PRE_MIGRATION_COUNTS='{"ticket":343,"attachment":179,"requester":6,"category":4,"relatedSystem":7}' pnpm test` — **verified Pass 2026-09-12 (12 files / 135 tests)**.
+> `cd server && PRE_MIGRATION_COUNTS='{"ticket":343,"attachment":179,"requester":6,"category":4,"relatedSystem":7}' pnpm test`.
+>
+> **Parallelization guard:** `server/vitest.config.ts` sets `test.fileParallelism: false` so no other test file creates/deletes tickets while MIG-01's global count assertions run. Without this, the cross-file race with `POST /api/tickets` in `server/src/app.ts` (which skips `requesterUserId`) can cause non-deterministic MIG-01 failures.
+>
+> **Verified Pass 2026-09-14 (12 files / 138 tests).**
 
 ## 3. Acceptance-Criterion Traceability
 
@@ -211,7 +215,7 @@ cd .. && npx playwright test e2e/lab-03   # responsive + E2E (needs both servers
 
 | Suite | Command | Result |
 |-------|---------|--------|
-| Server (unit + API) | `cd server && pnpm test` | **Pass** — 12 files / 135 tests (2026-09-12) *(Migration & Regression Baseline: MIG-01 + Lab 1/2 tests only; Lab 3 endpoint tests remain Planned per Issues 16–21)* |
+| Server (unit + API) | `cd server && pnpm test` | **Pass** — 12 files / 138 tests (2026-09-14) *(Migration & Regression Baseline: MIG-01 strengthened + Lab 1/2 tests only; Lab 3 endpoint tests remain Planned per Issues 16–21)* |
 | Client (component + style) | `cd client && pnpm test` | *TBD at sprint close* |
 | E2E + Responsive (Playwright) | `pnpm test:e2e` (from repo root) | *TBD at sprint close* |
 
