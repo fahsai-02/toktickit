@@ -40,19 +40,19 @@ Status legend: `Planned` → written before implementation · updated to `Pass`/
 
 | Test ID | Type | Requirement/AC | What It Tests | Expected Result | Automated Test File | Final Status |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| API-01 | API | AC-01, FR-01 | Valid login | 200; session cookie set; user identity returned (id, name, email, role, mustChangePassword) | `auth.api.test.ts` | Planned |
-| API-02 | API | AC-05, FR-02 | Invalid credentials | 401 with generic "Invalid email or password" | `auth.api.test.ts` | Planned |
-| API-03 | API | AC-06, FR-03 | Inactive account login | 401 with same generic message (does not reveal account existence) | `auth.api.test.ts` | Planned |
-| API-04 | API | FR-04 | Logout | 200; subsequent protected calls return 401 | `auth.api.test.ts` | Planned |
-| API-05 | API | AC-01, FR-05 | Current user | 200 with user identity when authenticated; 401 when not | `auth.api.test.ts` | Planned |
-| API-06 | API | AC-02, FR-07 | Change password — valid | 200; mustChangePassword cleared; new password works for login | `auth.api.test.ts` | Planned |
-| API-07 | API | FR-07 | Change password — wrong current | 400 with `fields.currentPassword` error | `auth.api.test.ts` | Planned |
-| API-08 | API | FR-07 | Change password — too short | 400 with specific validation message | `auth.api.test.ts` | Planned |
-| API-09 | API | FR-07 | Change password — missing uppercase | 400 with specific validation message | `auth.api.test.ts` | Planned |
-| API-10 | API | FR-07 | Change password — missing lowercase | 400 with specific validation message | `auth.api.test.ts` | Planned |
-| API-11 | API | FR-07 | Change password — missing digit | 400 with specific validation message | `auth.api.test.ts` | Planned |
-| API-12 | API | FR-07 | Change password — missing special char | 400 with specific validation message | `auth.api.test.ts` | Planned |
-| API-13 | API | FR-07 | Change password — confirmation mismatch | 400 with `fields.confirmPassword` error | `auth.api.test.ts` | Planned |
+| API-01 | API | AC-01, FR-01 | Valid login | 200; session cookie set; user identity returned (id, name, email, role, mustChangePassword) | `auth.api.test.ts` | Pass |
+| API-02 | API | AC-05, FR-02 | Invalid credentials | 401 with generic "Invalid email or password" | `auth.api.test.ts` | Pass |
+| API-03 | API | AC-06, FR-03 | Inactive account login | 401 with same generic message (does not reveal account existence) | `auth.api.test.ts` | Pass |
+| API-04 | API | FR-04 | Logout | 200; subsequent protected calls return 401 | `auth.api.test.ts` | Pass |
+| API-05 | API | AC-01, FR-05 | Current user | 200 with user identity when authenticated; 401 when not | `auth.api.test.ts` | Pass |
+| API-06 | API | AC-02, FR-07 | Change password — valid | 200; mustChangePassword cleared; new password works for login | `auth.api.test.ts` | Pass |
+| API-07 | API | FR-07 | Change password — wrong current | 400 with `fields.currentPassword` error | `auth.api.test.ts` | Pass |
+| API-08 | API | FR-07 | Change password — too short | 400 with specific validation message | `auth.api.test.ts` | Pass |
+| API-09 | API | FR-07 | Change password — missing uppercase | 400 with specific validation message | `auth.api.test.ts` | Pass |
+| API-10 | API | FR-07 | Change password — missing lowercase | 400 with specific validation message | `auth.api.test.ts` | Pass |
+| API-11 | API | FR-07 | Change password — missing digit | 400 with specific validation message | `auth.api.test.ts` | Pass |
+| API-12 | API | FR-07 | Change password — missing special char | 400 with specific validation message | `auth.api.test.ts` | Pass |
+| API-13 | API | FR-07 | Change password — confirmation mismatch | 400 with `fields.confirmPassword` error | `auth.api.test.ts` | Pass |
 | API-14 | API | AC-03, FR-13 | Create ticket ignores client-supplied requesterId | Authenticated as user A; send `requesterId: B` in body; ticket is owned by A | `authorization.api.test.ts` | Planned |
 | API-15 | API | AC-03, FR-15 | Requester ownership on list | User A sees only A's tickets; 403/empty for B's tickets | `authorization.api.test.ts` | Planned |
 | API-16 | API | AC-03, FR-15 | Requester ownership on detail | User A requests B's ticket → 403 | `authorization.api.test.ts` | Planned |
