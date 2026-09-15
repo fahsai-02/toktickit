@@ -183,7 +183,7 @@ const seedTickets: SeedTicket[] = [
     summary: "Campus Wi-Fi drops constantly in library",
     description: "The laptop disconnects from Campus Wi-Fi every few minutes in the central library building.",
     requestedPriority: "URGENT",
-    itPriority: "URGENT",
+    itPriority: null,
     currentStatus: TicketStatus.OPEN,
     requester: "napat.chaiwong@toktickit.dev",
     owner: null,
@@ -426,15 +426,9 @@ async function main() {
   }
 
   // ---- Users (real Lab 3 authentication accounts), idempotent upsert by email ----
-  const hashCache = new Map<string, string>();
-  const hashFor = (password: string): string => {
-    let hash = hashCache.get(password);
-    if (!hash) {
-      hash = bcrypt.hashSync(password, BCRYPT_ROUNDS);
-      hashCache.set(password, hash);
-    }
-    return hash;
-  };
+  // Hash per user (NOT per password): bcrypt embeds a per-call random salt, so every
+  // account gets a unique hash even when passwords are shared dev credentials.
+  const hashFor = (password: string): string => bcrypt.hashSync(password, BCRYPT_ROUNDS);
 
   for (const user of users) {
     const data = {
