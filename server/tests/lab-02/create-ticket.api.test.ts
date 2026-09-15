@@ -39,11 +39,16 @@ describe("POST /api/tickets", () => {
       relatedSystemId: 7,
     });
     expect(res.body.data.ticketNumber).toMatch(/^TKT-\d{4}-\d{6}$/);
-    expect(res.body.data.requester).toEqual({
-      id: 1,
-      name: "Jennifer Anderson",
+    // Related records echo the requested ids with their seed names; assert the
+    // shape and matching id rather than literal seed names.
+    expect(res.body.data.requester).toMatchObject({ id: validBody.requesterId });
+    expect(typeof res.body.data.requester.name).toBe("string");
+    expect(res.body.data.category).toMatchObject({ id: validBody.categoryId });
+    expect(typeof res.body.data.category.name).toBe("string");
+    expect(res.body.data.relatedSystem).toMatchObject({
+      id: validBody.relatedSystemId,
     });
-    expect(res.body.data.category).toEqual({ id: 2, name: "Hardware" });
+    expect(typeof res.body.data.relatedSystem.name).toBe("string");
 
     createdTicketIds.push(res.body.data.id);
   });
@@ -141,9 +146,14 @@ describe("POST /api/tickets", () => {
   });
 
   it("rejects an inactive requester with 400 BUSINESS_RULE_VIOLATION", async () => {
+    const inactive = await db.requester.findFirst({
+      where: { isActive: false },
+    });
+    expect(inactive).toBeTruthy();
+
     const res = await request(app)
       .post("/api/tickets")
-      .send({ ...validBody, requesterId: 6 });
+      .send({ ...validBody, requesterId: inactive!.id });
 
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe("BUSINESS_RULE_VIOLATION");
@@ -187,6 +197,18 @@ describe("POST /api/tickets", () => {
       .send({ ...validBody, requesterId: 1.5 });
     expect(float.status).toBe(400);
     expect(float.body.error.fields.requesterId).toBeTruthy();
+
+    const zero = await request(app)
+      .post("/api/tickets")
+      .send({ ...validBody, requesterId: 0 });
+    expect(zero.status).toBe(400);
+    expect(zero.body.error.fields.requesterId).toBeTruthy();
+
+    const neg = await request(app)
+      .post("/api/tickets")
+      .send({ ...validBody, requesterId: -1 });
+    expect(neg.status).toBe(400);
+    expect(neg.body.error.fields.requesterId).toBeTruthy();
   });
 
   it("returns a JSON error envelope for malformed JSON body (no stack trace)", async () => {

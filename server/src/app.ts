@@ -8,6 +8,7 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { db } from './db.js';
 import { buildNextTicketNumber } from './lib/ticketNumber.js';
+import { ALLOWED_MIME_TYPES, ALLOWED_EXTENSIONS, MIME_EXT_MAP, validateAttachmentType } from './lib/attachmentValidation.js';
 
 dotenv.config({ quiet: true });
 
@@ -19,41 +20,7 @@ if (!fs.existsSync(UPLOADS_DIR)) {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }
 
-const ALLOWED_MIME_TYPES = [
-  'image/jpeg',
-  'image/png',
-  'image/webp',
-  'application/pdf',
-];
-const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.pdf'];
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
-
-const MIME_EXT_MAP: Record<string, string[]> = {
-  'image/jpeg': ['.jpg', '.jpeg'],
-  'image/png': ['.png'],
-  'image/webp': ['.webp'],
-  'application/pdf': ['.pdf'],
-};
-
-function validateAttachmentType(
-  mimeType: string,
-  extension: string
-): { valid: boolean; reason?: string } {
-  if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
-    return { valid: false, reason: `Unsupported MIME type: ${mimeType}` };
-  }
-  if (!ALLOWED_EXTENSIONS.includes(extension)) {
-    return { valid: false, reason: `Unsupported extension: ${extension}` };
-  }
-  const allowedExts = MIME_EXT_MAP[mimeType];
-  if (!allowedExts || !allowedExts.includes(extension)) {
-    return {
-      valid: false,
-      reason: `MIME type ${mimeType} does not match extension ${extension}`,
-    };
-  }
-  return { valid: true };
-}
 
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, UPLOADS_DIR),
