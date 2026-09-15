@@ -51,10 +51,15 @@ describe("GET /api/tickets/:id", () => {
       requestedPriority: "MEDIUM",
       itPriority: null,
       currentStatus: "NEW",
-      requester: { id: 1, name: "Jennifer Anderson" },
-      category: { id: 2, name: "Hardware" },
-      relatedSystem: { id: 7, name: "Corporate Laptop" },
+      // Echoed relations: assert the id matches what was sent and that names exist
+      // as strings, without binding the test to specific seed values.
+      requester: { id: validBody.requesterId },
+      category: { id: validBody.categoryId },
+      relatedSystem: { id: validBody.relatedSystemId },
     });
+    expect(typeof res.body.data.requester.name).toBe("string");
+    expect(typeof res.body.data.category.name).toBe("string");
+    expect(typeof res.body.data.relatedSystem.name).toBe("string");
     expect(res.body.data.ticketDate).toBeTruthy();
     expect(res.body.data.createdAt).toBeTruthy();
     expect(res.body.data.updatedAt).toBeTruthy();

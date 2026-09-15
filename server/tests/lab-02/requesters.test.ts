@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import request from "supertest";
 import app from "../../src/app.js";
+import { db } from "../../src/db.js";
 
 describe("GET /api/dev/requesters", () => {
   it("returns 200 with active requesters wrapped in { data }", async () => {
@@ -28,18 +29,28 @@ describe("GET /api/dev/requesters", () => {
     }
   });
 
-  it("does not return inactive requesters (Robert Brown)", async () => {
+  it("never returns inactive requesters", async () => {
+    const inactive = await db.requester.findMany({
+      where: { isActive: false },
+      select: { name: true },
+    });
+    expect(inactive.length).toBeGreaterThanOrEqual(1);
+
     const res = await request(app).get("/api/dev/requesters");
 
     expect(res.status).toBe(200);
-    const names = res.body.data.map((r: { name: string }) => r.name);
-    expect(names).not.toContain("Robert Brown");
+    const returned = res.body.data.map((r: { name: string }) => r.name);
+    for (const u of inactive) {
+      expect(returned).not.toContain(u.name);
+    }
   });
 
-  it("returns at least 4 active requesters from seed", async () => {
+  it("returns every active requester (count matches DB)", async () => {
+    const activeCount = await db.requester.count({ where: { isActive: true } });
+
     const res = await request(app).get("/api/dev/requesters");
 
     expect(res.status).toBe(200);
-    expect(res.body.data.length).toBeGreaterThanOrEqual(4);
+    expect(res.body.data.length).toBe(activeCount);
   });
 });

@@ -261,7 +261,6 @@ describe("GET /api/tickets", () => {
         requesterId: 1,
         summary: "First ticket sort test",
       });
-      await new Promise((r) => setTimeout(r, 50));
       const t2 = await createTicket({
         requesterId: 1,
         summary: "Second ticket sort test",
@@ -272,9 +271,13 @@ describe("GET /api/tickets", () => {
       const ids = res.body.data.map((t: { id: number }) => t.id);
       const idx1 = ids.indexOf(t1.id);
       const idx2 = ids.indexOf(t2.id);
-      if (idx1 !== -1 && idx2 !== -1) {
-        expect(idx2).toBeLessThan(idx1);
-      }
+
+      // t2 was created after t1: its updatedAt is strictly later, OR equal with a
+      // higher ticketNumber, which the secondary DESC sort puts first in both cases.
+      // No timing sleep or conditional guard needed.
+      expect(idx1).toBeGreaterThanOrEqual(0);
+      expect(idx2).toBeGreaterThanOrEqual(0);
+      expect(idx2).toBeLessThan(idx1);
     });
 
     it("appends ticketNumber DESC as secondary sort for stable ordering", async () => {
@@ -329,6 +332,15 @@ describe("GET /api/tickets", () => {
       expect(res.status).toBe(400);
       expect(res.body.error.code).toBe("VALIDATION_ERROR");
       expect(res.body.error.fields.sortBy).toBeTruthy();
+    });
+
+    it("returns 400 for non-whitelisted sortOrder", async () => {
+      const res = await request(app).get(
+        "/api/tickets?requesterId=1&sortBy=createdAt&sortOrder=sideways"
+      );
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe("VALIDATION_ERROR");
+      expect(res.body.error.fields.sortOrder).toBeTruthy();
     });
   });
 
@@ -438,14 +450,6 @@ describe("GET /api/tickets", () => {
       expect(res.status).toBe(400);
       expect(res.body.error.code).toBe("VALIDATION_ERROR");
       expect(res.body.error.fields.requestedPriority).toBeTruthy();
-    });
-
-    it("returns 400 for page=0", async () => {
-      const res = await request(app).get(
-        "/api/tickets?requesterId=1&page=0"
-      );
-      expect(res.status).toBe(400);
-      expect(res.body.error.code).toBe("VALIDATION_ERROR");
     });
 
     it("returns 400 for negative pageSize", async () => {

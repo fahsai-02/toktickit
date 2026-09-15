@@ -217,7 +217,7 @@ Migration strategy:
 1. Add the `User`, `PublicComment`, `InternalNote` models and `UserRole` enum.
 2. Expand `TicketStatus` enum to 8 values (existing `NEW` rows are unaffected).
 3. Add `ownerId`, `resolutionSummary`, `requesterIndicatedResolved`, `indicatedResolvedAt` to `Ticket`.
-4. Add `requesterUserId` (optional FK to User) on `Ticket` — a new column that links the ticket to the authenticated User. During migration, for each existing Requester that is mapped to a User, populate `requesterUserId` on their tickets. The existing `requesterId` (FK to legacy `Requester`) is kept for data integrity.
+4. Add `requesterUserId` (optional FK to User) on `Ticket` — a new column that links the ticket to the authenticated User. The migration SQL itself leaves this column `NULL`; the seed script backfills it after deploy by joining `Requester`/`User` on matching email (`WHERE "requesterUserId" IS NULL`), so no backfill logic lives in the migration. The existing `requesterId` (FK to legacy `Requester`) is kept for data integrity.
 5. Map existing Lab 2 Requester records to User accounts: each active Requester gets a corresponding User record with `role = REQUESTER`, a documented initial password, and `mustChangePassword = true`. The mapping is recorded in the seed script.
 6. Existing Tickets and Attachments retain their original `requesterId` FK values; no destructive data changes.
 
