@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { db } from "../db.js";
 import { validateNewPassword } from "../lib/passwordValidation.js";
 import { BCRYPT_ROUNDS } from "../lib/seedCredentials.js";
+import { sendError, validationError } from "../lib/httpErrors.js";
 import { requireAuth } from "../middleware/auth.js";
 
 // Authentication routes (Issue 16). Contract: `docs/lab-03/api-spec.md` section 2.
@@ -11,33 +12,16 @@ import { requireAuth } from "../middleware/auth.js";
 // (`docs/lab-03/specification.md` AC-05, AC-06, BR-01). The dummy bcrypt hash
 // keeps the password-compare cost similar across all three cases.
 
+const LOGIN_FAILED_MESSAGE = "Invalid email or password. Please try again.";
+
 const router: Router = Router();
 
-// Precomputed bcrypt hash (cost 12) of a throwaway string — used only to
-// equalize response timing when the email does not match any account.
-const DUMMY_PASSWORD_HASH =
-  "$2b$12$iZojWxWFm2m6zMmwZxpKYeNH7lyudoZXxUgWm2VKDXES8Oj/p.dJ2";
+// Precomputed at boot so the very first login can't be the slow one and the
+// cost always matches BCRYPT_ROUNDS. Compared against when the email does not
+// match any account so unknown-email vs wrong-password timing is ~equal.
+const DUMMY_PASSWORD_HASH = bcrypt.hashSync("dummy-password", BCRYPT_ROUNDS);
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-function validationError(
-  res: Response,
-  fields: Record<string, string>,
-  message = "Validation failed"
-): void {
-  res.status(400).json({
-    error: { code: "VALIDATION_ERROR", message, fields },
-  });
-}
-
-function unauthorized(res: Response): void {
-  res.status(401).json({
-    error: {
-      code: "UNAUTHORIZED",
-      message: "Invalid email or password. Please try again.",
-    },
-  });
-}
 
 router.post("/login", async (req: Request, res: Response) => {
   const body = req.body ?? {};
@@ -80,7 +64,7 @@ router.post("/login", async (req: Request, res: Response) => {
     );
 
     if (!user || !passwordMatches || !user.isActive) {
-      unauthorized(res);
+      sendError(res, 401, "UNAUTHORIZED", LOGIN_FAILED_MESSAGE);
       return;
     }
 
@@ -91,19 +75,17 @@ router.post("/login", async (req: Request, res: Response) => {
 
     const { passwordHash: _passwordHash, ...safeUser } = user;
     res.json({ data: safeUser });
-  } catch {
-    res.status(500).json({
-      error: { code: "INTERNAL_ERROR", message: "Internal server error" },
-    });
+  } catch (err) {
+    console.error("Login failed:", err);
+    sendError(res, 500, "INTERNAL_ERROR", "Internal server error");
   }
 });
 
 router.post("/logout", (req: Request, res: Response) => {
   req.session.destroy((err) => {
     if (err) {
-      res.status(500).json({
-        error: { code: "INTERNAL_ERROR", message: "Failed to log out" },
-      });
+      console.error("Logout failed:", err);
+      sendError(res, 500, "INTERNAL_ERROR", "Failed to log out");
       return;
     }
     res.json({ data: { message: "Logged out successfully" } });
@@ -148,12 +130,12 @@ router.post("/change-password", requireAuth, async (req: Request, res: Response)
       select: { passwordHash: true },
     });
     if (!user) {
-      res.status(401).json({
-        error: {
-          code: "UNAUTHORIZED",
-          message: "You must be logged in to access this resource.",
-        },
-      });
+      sendError(
+        res,
+        401,
+        "UNAUTHORIZED",
+        "You must be logged in to access this resource."
+      );
       return;
     }
 
@@ -170,10 +152,9 @@ router.post("/change-password", requireAuth, async (req: Request, res: Response)
     });
 
     res.json({ data: { message: "Password changed successfully" } });
-  } catch {
-    res.status(500).json({
-      error: { code: "INTERNAL_ERROR", message: "Internal server error" },
-    });
+  } catch (err) {
+    console.error("Change password failed:", err);
+    sendError(res, 500, "INTERNAL_ERROR", "Internal server error");
   }
 });
 

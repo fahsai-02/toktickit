@@ -8,26 +8,19 @@ export type PasswordValidationResult =
 
 const MIN_LENGTH = 8;
 
-const RULE_MESSAGES = [
-  "Password must be at least 8 characters.",
-  "Password must include at least one uppercase letter.",
-  "Password must include at least one lowercase letter.",
-  "Password must include at least one digit.",
-  "Password must include at least one special character.",
+const RULES: ReadonlyArray<{ test: (password: string) => boolean; message: string }> = [
+  { test: (password) => password.length >= MIN_LENGTH, message: "Password must be at least 8 characters." },
+  { test: (password) => /[A-Z]/.test(password), message: "Password must include at least one uppercase letter." },
+  { test: (password) => /[a-z]/.test(password), message: "Password must include at least one lowercase letter." },
+  { test: (password) => /\d/.test(password), message: "Password must include at least one digit." },
+  // A "special character" is any non-alphanumeric character that is not whitespace.
+  { test: (password) => /[^A-Za-z0-9\s]/.test(password), message: "Password must include at least one special character." },
 ];
 
 export function validateNewPassword(password: string): PasswordValidationResult {
-  const rules: Array<boolean> = [
-    password.length >= MIN_LENGTH,
-    /[A-Z]/.test(password),
-    /[a-z]/.test(password),
-    /\d/.test(password),
-    /[^A-Za-z0-9]/.test(password),
-  ];
-
-  for (let i = 0; i < RULE_MESSAGES.length; i += 1) {
-    if (!rules[i]) {
-      return { valid: false, fieldMessage: RULE_MESSAGES[i]! };
+  for (const rule of RULES) {
+    if (!rule.test(password)) {
+      return { valid: false, fieldMessage: rule.message };
     }
   }
   return { valid: true };

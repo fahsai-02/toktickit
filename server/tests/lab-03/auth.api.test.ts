@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, beforeEach, beforeAll, afterAll } from "vitest";
 import request from "supertest";
 import express, { type Request, type Response } from "express";
 import session from "express-session";
@@ -31,6 +31,7 @@ const THROWAWAY_PASSWORD_HASH = bcrypt.hashSync(THROWAWAY_PASSWORD, BCRYPT_ROUND
 const UNIQUE_TAG = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 const CHANGE_PW_EMAIL = `auth.changepw.${UNIQUE_TAG}@toktickit.dev`;
 const MIDDLEWARE_EMAIL = `auth.middleware.${UNIQUE_TAG}@toktickit.dev`;
+const MIDDLEWARE_GHOST_EMAIL = `auth.middleware.ghost.${UNIQUE_TAG}@toktickit.dev`;
 
 let changedPasswordUserId: number;
 
@@ -50,9 +51,19 @@ async function loginAs(
   return res;
 }
 
+// Restores the throwaway change-password user to a known state before each
+// change-password test so tests stay order-independent (re-uses the precomputed
+// hash; no extra bcrypt cost).
+async function resetChangePasswordUser(): Promise<void> {
+  await db.user.update({
+    where: { id: changedPasswordUserId },
+    data: { passwordHash: THROWAWAY_PASSWORD_HASH, mustChangePassword: true },
+  });
+}
+
 beforeAll(async () => {
   await db.user.deleteMany({
-    where: { email: { in: [CHANGE_PW_EMAIL, MIDDLEWARE_EMAIL] } },
+    where: { email: { in: [CHANGE_PW_EMAIL, MIDDLEWARE_EMAIL, MIDDLEWARE_GHOST_EMAIL] } },
   });
   const created = await db.user.create({
     data: {
@@ -81,7 +92,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await db.user.deleteMany({
-    where: { email: { in: [CHANGE_PW_EMAIL, MIDDLEWARE_EMAIL] } },
+    where: { email: { in: [CHANGE_PW_EMAIL, MIDDLEWARE_EMAIL, MIDDLEWARE_GHOST_EMAIL] } },
   });
   await db.$disconnect();
 });
@@ -99,10 +110,14 @@ describe("API-01 — Login, valid (AC-01, FR-01, FR-02)", () => {
       const cookies = res.headers["set-cookie"]?.join("") ?? "";
       expect(cookies).toContain("connect.sid=");
       expect(cookies.toLowerCase()).toContain("httponly");
+      expect(cookies.toLowerCase()).toContain("samesite=lax");
+      // maxAge is serialized as an Expires date (24h cookie, not a session cookie).
+      expect(cookies.toLowerCase()).toContain("expires=");
 
       expect(res.body.data).toMatchObject({
         email: adminAccount.email,
         role: adminAccount.role,
+        isActive: true,
         mustChangePassword: false,
       });
       expect(res.body.data.id).toBeGreaterThan(0);
@@ -181,6 +196,20 @@ describe("API-03 — Login, inactive account (AC-06, FR-03)", () => {
   it(
     "returns 401 with the same generic message (does not reveal the account is inactive)",
     async () => {
+      // Prove the 401 is caused by the isActive gate, not by a wrong seed
+      // password: the stored hash must match the documented requester password
+      // and the account must really be inactive. Otherwise this test would pass
+      // vacuously on any password.
+      const inactiveRow = await db.user.findUnique({
+        where: { email: inactiveRequester.email },
+        select: { passwordHash: true, isActive: true },
+      });
+      expect(inactiveRow).not.toBeNull();
+      expect(inactiveRow!.isActive).toBe(false);
+      expect(
+        await bcrypt.compare(requesterPassword, inactiveRow!.passwordHash)
+      ).toBe(true);
+
       const res = await request(app)
         .post("/api/auth/login")
         .send({ email: inactiveRequester.email, password: requesterPassword });
@@ -212,6 +241,16 @@ describe("API-04 — Logout (FR-04)", () => {
     },
     20000,
   );
+
+  it(
+    "returns 200 even when called without an existing session (idempotent)",
+    async () => {
+      const logout = await request(app).post("/api/auth/logout").send({});
+      expect(logout.status).toBe(200);
+      expect(logout.body).toEqual({ data: { message: "Logged out successfully" } });
+    },
+    20000,
+  );
 });
 
 describe("API-05 — Current user (AC-01, FR-05)", () => {
@@ -232,6 +271,7 @@ describe("API-05 — Current user (AC-01, FR-05)", () => {
       id: expect.any(Number),
       email: adminAccount.email,
       role: adminAccount.role,
+      isActive: true,
       mustChangePassword: false,
     });
     expect("passwordHash" in res.body.data).toBe(false);
@@ -243,8 +283,10 @@ describe("API — Login validation", () => {
     const res = await request(app).post("/api/auth/login").send({});
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe("VALIDATION_ERROR");
-    expect(res.body.error.fields.email).toBeTruthy();
-    expect(res.body.error.fields.password).toBeTruthy();
+    expect(res.body.error.fields).toEqual({
+      email: "A valid email address is required.",
+      password: "Password is required.",
+    });
   });
 
   it("returns 400 VALIDATION_ERROR for a malformed email", async () => {
@@ -253,14 +295,29 @@ describe("API — Login validation", () => {
       .send({ email: "not-an-email", password: `X${UNIQUE_TAG}!` });
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe("VALIDATION_ERROR");
-    expect(res.body.error.fields.email).toBeTruthy();
+    expect(res.body.error.fields).toEqual({
+      email: "A valid email address is required.",
+    });
+  });
+});
+
+describe("Change password — auth guard (FR-07)", () => {
+  it("returns 401 when called without a session", async () => {
+    const res = await request(app).post("/api/auth/change-password").send({
+      currentPassword: "Whatever1!",
+      newPassword: "NewSecure123!",
+      confirmPassword: "NewSecure123!",
+    });
+    expect(res.status).toBe(401);
+    expect(res.body.error.code).toBe("UNAUTHORIZED");
   });
 });
 
 describe("Change password — rejection paths (FR-07, api-spec 2.4)", () => {
-  // API-07..13 run BEFORE the valid change (API-06) because each failed attempt
-  // leaves the throwaway user's current password unchanged. The valid change
-  // swaps it to a new value and is therefore declared last.
+  // beforeEach resets the throwaway user to a known state, so the tests below
+  // are order-independent: they neither depend on the valid-change test below
+  // running later nor leave it a changed password to deal with.
+  beforeEach(resetChangePasswordUser);
   const changeFor = async (payload: Record<string, string>) => {
     const agent = request.agent(app);
     await loginAs(agent, CHANGE_PW_EMAIL, THROWAWAY_PASSWORD);
@@ -323,6 +380,8 @@ describe("Change password — rejection paths (FR-07, api-spec 2.4)", () => {
 });
 
 describe("API-06 — Change password, valid (AC-02, FR-07)", () => {
+  beforeEach(resetChangePasswordUser);
+
   it(
     "clears mustChangePassword and makes the new password usable for login",
     async () => {
@@ -458,23 +517,34 @@ describe("Auth middleware — requireAuth / requireRole", () => {
     await agent.get(`/login-as?userId=${midRow!.id}`);
 
     await db.user.update({ where: { id: midRow!.id }, data: { isActive: false } });
-    const deactivated = await agent.get("/user-info");
-    expect(deactivated.status).toBe(401);
-
-    await db.user.update({ where: { id: midRow!.id }, data: { isActive: true } });
+    try {
+      const deactivated = await agent.get("/user-info");
+      expect(deactivated.status).toBe(401);
+    } finally {
+      await db.user.update({ where: { id: midRow!.id }, data: { isActive: true } });
+    }
     const reactivated = await agent.get("/user-info");
     expect(reactivated.status).toBe(200);
   });
 
   it("requireAuth returns 401 when the session user no longer exists", async () => {
-    const midRow = await db.user.findUnique({
-      where: { email: MIDDLEWARE_EMAIL },
+    // Uses its own throwaway user so the shared MIDDLEWARE_EMAIL account
+    // survives even if tests get reordered later.
+    const ghost = await db.user.create({
+      data: {
+        name: "Auth Middleware Ghost User",
+        email: MIDDLEWARE_GHOST_EMAIL,
+        role: "REQUESTER",
+        isActive: true,
+        mustChangePassword: false,
+        passwordHash: THROWAWAY_PASSWORD_HASH,
+      },
       select: { id: true },
     });
     const agent = miniAgent();
-    await agent.get(`/login-as?userId=${midRow!.id}`);
+    await agent.get(`/login-as?userId=${ghost.id}`);
 
-    await db.user.delete({ where: { id: midRow!.id } });
+    await db.user.delete({ where: { id: ghost.id } });
     const res = await agent.get("/user-info");
     expect(res.status).toBe(401);
     expect(res.body.error.code).toBe("UNAUTHORIZED");

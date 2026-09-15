@@ -9,7 +9,8 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { db } from './db.js';
 import { buildNextTicketNumber } from './lib/ticketNumber.js';
-import { ALLOWED_MIME_TYPES, ALLOWED_EXTENSIONS, MIME_EXT_MAP, validateAttachmentType } from './lib/attachmentValidation.js';
+import { validateAttachmentType } from './lib/attachmentValidation.js';
+import { validationError } from './lib/httpErrors.js';
 import authRouter from './routes/auth.js';
 
 dotenv.config({ quiet: true });
@@ -162,16 +163,6 @@ const SORT_WHITELIST = ["updatedAt", "createdAt", "requestedPriority", "ticketNu
 const STATUSES = ["NEW"] as const;
 
 const PRIORITIES = ["LOW", "MEDIUM", "HIGH", "URGENT"];
-
-function validationError(
-  res: Response,
-  fields: Record<string, string>,
-  message = "Validation failed"
-): void {
-  res.status(400).json({
-    error: { code: "VALIDATION_ERROR", message, fields },
-  });
-}
 
 function parsePositiveInt(value: unknown): number | null {
   if (typeof value === "number") {
