@@ -10,7 +10,7 @@ import { defineConfig } from "vitest/config";
 // tickets concurrently, MIG-01 could observe their in-flight rows and fail
 // non-deterministically for reasons unrelated to the migration.
 //
-// The suite is small (12 files / ~135 tests) so the serialization cost is
+// The suite is small (14 files / ~170 tests) so the serialization cost is
 // negligible and the assertions become deterministic.
 export default defineConfig({
   test: {

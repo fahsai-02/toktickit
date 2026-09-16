@@ -14,6 +14,7 @@
 
 - **Base URL:** `http://localhost:5000` in development. The port comes from the `PORT` environment variable of `server/.env` and defaults to `5000` when unset. The Vite client runs on `http://localhost:5173` and reaches the API via the dev proxy (`client/vite.config.ts` forwards `/api` to the backend). When `VITE_API_URL` is set in `client/.env`, the client makes direct cross-origin calls.
 - **Authentication:** Session-based via `express-session`. After successful login, a `connect.sid` cookie is set. All protected endpoints require this cookie; unauthenticated requests receive 401.
+- **Session store:** In-memory `MemoryStore` from `express-session` (see `server/src/app.ts` and `specification.md` AD-02). Acceptable for local development; does not survive server restart. Production deployment is excluded from Lab 3 scope.
 - **Identity transport:** `requesterId` is NO LONGER sent by the client on ticket/attachment endpoints. The server derives the user identity from the session (AD-04). The client-supplied `requesterId` in `POST /api/tickets` is ignored.
 - **Content types:** `application/json` for all requests/responses except attachment upload (`multipart/form-data`) and download (`application/octet-stream`).
 - **IDs:** positive integers. Malformed ID (non-numeric, zero, negative) → `400`.

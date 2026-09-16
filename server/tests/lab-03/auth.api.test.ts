@@ -278,6 +278,7 @@ describe("API-05 — Current user (AC-01, FR-05)", () => {
   }, 20000);
 });
 
+// API-01..13 — docs/lab-03/api-spec.md section 2; tests.md API-01..13.
 describe("API — Login validation", () => {
   it("returns 400 VALIDATION_ERROR with field errors for empty body", async () => {
     const res = await request(app).post("/api/auth/login").send({});
@@ -414,6 +415,7 @@ describe("API-06 — Change password, valid (AC-02, FR-07)", () => {
   );
 });
 
+// API-01..13, FR-11 — docs/lab-03/specification.md section 6, FR-11.
 describe("Auth middleware — requireAuth / requireRole", () => {
   // Stand-alone Express app so middleware 401/403 behavior can be exercised
   // without exposing throwaway test routes on the production `app`.

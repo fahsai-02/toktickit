@@ -49,8 +49,8 @@ export async function requireAuth(
 
 export function requireRole(
   ...roles: UserRole[]
-): (req: Request, res: Response, next: NextFunction) => Promise<void> {
-  return async (req: Request, res: Response, next: NextFunction) => {
+): (req: Request, res: Response, next: NextFunction) => void {
+  return (req: Request, res: Response, next: NextFunction): void => {
     if (!req.user) {
       sendError(res, 401, "UNAUTHORIZED", UNAUTHENTICATED);
       return;
