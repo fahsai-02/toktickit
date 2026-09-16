@@ -1,5 +1,6 @@
 import express, { type Express, type Request, type Response } from 'express';
 import cors from 'cors';
+import session from 'express-session';
 import dotenv from 'dotenv';
 import multer from 'multer';
 import path from 'node:path';
@@ -8,7 +9,9 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { db } from './db.js';
 import { buildNextTicketNumber } from './lib/ticketNumber.js';
-import { ALLOWED_MIME_TYPES, ALLOWED_EXTENSIONS, MIME_EXT_MAP, validateAttachmentType } from './lib/attachmentValidation.js';
+import { validateAttachmentType } from './lib/attachmentValidation.js';
+import { validationError } from './lib/httpErrors.js';
+import authRouter from './routes/auth.js';
 
 dotenv.config({ quiet: true });
 
@@ -48,6 +51,33 @@ const app: Express = express();
 
 app.use(cors());
 app.use(express.json());
+
+// Session store choice (AD-02): in-memory MemoryStore is acceptable for this
+// local-development course stack and does NOT survive a server restart.
+// CSRF mitigation (AD-03): sameSite=lax cookie + JSON-only API.
+const SESSION_SECRET = process.env.SESSION_SECRET;
+if (!SESSION_SECRET) {
+  throw new Error(
+    "SESSION_SECRET is missing. Add it to server/.env (see .env.example)."
+  );
+}
+
+app.use(
+  session({
+    secret: SESSION_SECRET,
+    store: new session.MemoryStore(),
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      sameSite: "lax",
+      maxAge: 24 * 60 * 60 * 1000,
+      secure: process.env.NODE_ENV === "production",
+    },
+  })
+);
+
+app.use("/api/auth", authRouter);
 
 app.get("/api/health", (_req: Request, res: Response) => {
   res.json({ status: "ok", service: "TokTickIT API" });
@@ -133,16 +163,6 @@ const SORT_WHITELIST = ["updatedAt", "createdAt", "requestedPriority", "ticketNu
 const STATUSES = ["NEW"] as const;
 
 const PRIORITIES = ["LOW", "MEDIUM", "HIGH", "URGENT"];
-
-function validationError(
-  res: Response,
-  fields: Record<string, string>,
-  message = "Validation failed"
-): void {
-  res.status(400).json({
-    error: { code: "VALIDATION_ERROR", message, fields },
-  });
-}
 
 function parsePositiveInt(value: unknown): number | null {
   if (typeof value === "number") {

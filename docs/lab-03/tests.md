@@ -33,26 +33,26 @@ Status legend: `Planned` → written before implementation · updated to `Pass`/
 | Test ID | Type | Requirement/AC | What It Tests | Expected Result | Automated Test File | Final Status |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | UNIT-01 | Unit | BR-08 | Password hash verification | bcrypt.hash produces a hash starting with `$2`; bcrypt.compare succeeds against known plaintext | `server/tests/lab-03/password-hash.unit.test.ts` | Planned |
-| UNIT-02 | Unit | FR-07, AC-02 | New-password validation rules | Rejects <8 chars, missing uppercase, missing lowercase, missing digit, missing special char; accepts valid password | `server/tests/lab-03/password-validation.unit.test.ts` | Planned |
+| UNIT-02 | Unit | FR-07, AC-02 | New-password validation rules | Rejects <8 chars, missing uppercase, missing lowercase, missing digit, missing special char; accepts valid password | `server/tests/lab-03/password-validation.unit.test.ts` | Pass |
 | UNIT-03 | Unit | BR-12 | Status-transition matrix validation | Given a current status and target status, correctly determines if the transition is permitted | `server/tests/lab-03/status-transitions.unit.test.ts` | Planned |
 
 ### API (server/tests/lab-03)
 
 | Test ID | Type | Requirement/AC | What It Tests | Expected Result | Automated Test File | Final Status |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| API-01 | API | AC-01, FR-01 | Valid login | 200; session cookie set; user identity returned (id, name, email, role, mustChangePassword) | `auth.api.test.ts` | Planned |
-| API-02 | API | AC-05, FR-02 | Invalid credentials | 401 with generic "Invalid email or password" | `auth.api.test.ts` | Planned |
-| API-03 | API | AC-06, FR-03 | Inactive account login | 401 with same generic message (does not reveal account existence) | `auth.api.test.ts` | Planned |
-| API-04 | API | FR-04 | Logout | 200; subsequent protected calls return 401 | `auth.api.test.ts` | Planned |
-| API-05 | API | AC-01, FR-05 | Current user | 200 with user identity when authenticated; 401 when not | `auth.api.test.ts` | Planned |
-| API-06 | API | AC-02, FR-07 | Change password — valid | 200; mustChangePassword cleared; new password works for login | `auth.api.test.ts` | Planned |
-| API-07 | API | FR-07 | Change password — wrong current | 400 with `fields.currentPassword` error | `auth.api.test.ts` | Planned |
-| API-08 | API | FR-07 | Change password — too short | 400 with specific validation message | `auth.api.test.ts` | Planned |
-| API-09 | API | FR-07 | Change password — missing uppercase | 400 with specific validation message | `auth.api.test.ts` | Planned |
-| API-10 | API | FR-07 | Change password — missing lowercase | 400 with specific validation message | `auth.api.test.ts` | Planned |
-| API-11 | API | FR-07 | Change password — missing digit | 400 with specific validation message | `auth.api.test.ts` | Planned |
-| API-12 | API | FR-07 | Change password — missing special char | 400 with specific validation message | `auth.api.test.ts` | Planned |
-| API-13 | API | FR-07 | Change password — confirmation mismatch | 400 with `fields.confirmPassword` error | `auth.api.test.ts` | Planned |
+| API-01 | API | AC-01, FR-01 | Valid login | 200; session cookie set; user identity returned (id, name, email, role, mustChangePassword) | `auth.api.test.ts` | Pass |
+| API-02 | API | AC-05, FR-02 | Invalid credentials | 401 with generic "Invalid email or password" | `auth.api.test.ts` | Pass |
+| API-03 | API | AC-06, FR-03 | Inactive account login | 401 with same generic message (does not reveal account existence) | `auth.api.test.ts` | Pass |
+| API-04 | API | FR-04 | Logout | 200; subsequent protected calls return 401 | `auth.api.test.ts` | Pass |
+| API-05 | API | AC-01, FR-05 | Current user | 200 with user identity when authenticated; 401 when not | `auth.api.test.ts` | Pass |
+| API-06 | API | AC-02, FR-07 | Change password — valid | 200; mustChangePassword cleared; new password works for login | `auth.api.test.ts` | Pass |
+| API-07 | API | FR-07 | Change password — wrong current | 400 with `fields.currentPassword` error | `auth.api.test.ts` | Pass |
+| API-08 | API | FR-07 | Change password — too short | 400 with specific validation message | `auth.api.test.ts` | Pass |
+| API-09 | API | FR-07 | Change password — missing uppercase | 400 with specific validation message | `auth.api.test.ts` | Pass |
+| API-10 | API | FR-07 | Change password — missing lowercase | 400 with specific validation message | `auth.api.test.ts` | Pass |
+| API-11 | API | FR-07 | Change password — missing digit | 400 with specific validation message | `auth.api.test.ts` | Pass |
+| API-12 | API | FR-07 | Change password — missing special char | 400 with specific validation message | `auth.api.test.ts` | Pass |
+| API-13 | API | FR-07 | Change password — confirmation mismatch | 400 with `fields.confirmPassword` error | `auth.api.test.ts` | Pass |
 | API-14 | API | AC-03, FR-13 | Create ticket ignores client-supplied requesterId | Authenticated as user A; send `requesterId: B` in body; ticket is owned by A | `authorization.api.test.ts` | Planned |
 | API-15 | API | AC-03, FR-15 | Requester ownership on list | User A sees only A's tickets; 403/empty for B's tickets | `authorization.api.test.ts` | Planned |
 | API-16 | API | AC-03, FR-15 | Requester ownership on detail | User A requests B's ticket → 403 | `authorization.api.test.ts` | Planned |
@@ -215,7 +215,7 @@ cd .. && npx playwright test e2e/lab-03   # responsive + E2E (needs both servers
 
 | Suite | Command | Result |
 |-------|---------|--------|
-| Server (unit + API) | `cd server && pnpm test` | **Pass** — 12 files / 138 tests (2026-09-14) *(Migration & Regression Baseline: MIG-01 strengthened + Lab 1/2 tests only; Lab 3 endpoint tests remain Planned per Issues 16–21)* |
+| Server (unit + API) | `cd server && pnpm test` | **Pass** — 14 files / 173 tests (2026-09-16) *(Includes Lab 3 auth API tests API-01..13 + migration regression MIG-01 + unit tests UNIT-01..02; updated after review fix)* |
 | Client (component + style) | `cd client && pnpm test` | *TBD at sprint close* |
 | E2E + Responsive (Playwright) | `pnpm test:e2e` (from repo root) | *TBD at sprint close* |
 
