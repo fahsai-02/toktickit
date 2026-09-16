@@ -7,6 +7,9 @@ type BadgeVariant =
   | "priority-high"
   | "priority-urgent"
   | "it-priority"
+  | "role-requester"
+  | "role-it-staff"
+  | "role-administrator"
   | "neutral";
 
 interface BadgeProps {
@@ -22,6 +25,9 @@ const variantClass: Record<BadgeVariant, string> = {
   "priority-high": "badge-priority-high",
   "priority-urgent": "badge-priority-urgent",
   "it-priority": "badge-it-priority",
+  "role-requester": "badge-role-requester",
+  "role-it-staff": "badge-role-it-staff",
+  "role-administrator": "badge-role-administrator",
   neutral: "badge-neutral",
 };
 
@@ -44,6 +50,20 @@ export function priorityBadgeVariant(
       return "priority-high";
     case "URGENT":
       return "priority-urgent";
+    default:
+      return "neutral";
+  }
+}
+
+/** Role badge mapping (ui-spec.md section 3). */
+export function roleBadgeVariant(role: string | undefined): BadgeVariant {
+  switch (role) {
+    case "REQUESTER":
+      return "role-requester";
+    case "IT_STAFF":
+      return "role-it-staff";
+    case "ADMINISTRATOR":
+      return "role-administrator";
     default:
       return "neutral";
   }

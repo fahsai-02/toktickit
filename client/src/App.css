@@ -87,16 +87,14 @@
     gap: 12px;
   }
 
-  .requester-name {
-    font-size: 14px;
-    color: rgba(255, 255, 255, 0.9);
-    max-width: 160px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  .profile-menu {
+    position: relative;
   }
 
-  .btn-change-requester {
+  .profile-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     background: transparent;
     border: 1px solid rgba(255, 255, 255, 0.8);
     color: #ffffff;
@@ -106,19 +104,78 @@
     border-radius: var(--radius);
     cursor: pointer;
     transition: background 0.15s;
+    max-width: 280px;
   }
 
-  .btn-change-requester:hover {
+  .profile-button:hover {
     background: rgba(255, 255, 255, 0.1);
   }
 
-  .btn-change-requester:active {
+  .profile-button:active {
     background: rgba(255, 255, 255, 0.15);
   }
 
-  .btn-change-requester:focus-visible {
+  .profile-button:focus-visible {
     outline: 2px solid #fff;
     outline-offset: 2px;
+  }
+
+  .profile-name {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.9);
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .profile-dropdown {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 8px);
+    min-width: 240px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    box-shadow: 0 4px 12px var(--color-shadow);
+    padding: 8px;
+    z-index: 200;
+  }
+
+  .profile-dropdown__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: 4px;
+  }
+
+  .profile-dropdown__name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .profile-dropdown__item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    padding: 8px 12px;
+    font-size: 14px;
+    color: var(--color-text);
+    border-radius: var(--radius);
+    cursor: pointer;
+  }
+
+  .profile-dropdown__item:hover {
+    background: var(--color-pale);
   }
 
   .hamburger {

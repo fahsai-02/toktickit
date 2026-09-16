@@ -44,4 +44,19 @@
     background: #f3f4f6;
     color: var(--color-text-muted);
   }
+
+  .badge-role-requester {
+    background: #dbeafe;
+    color: #1d4ed8;
+  }
+
+  .badge-role-it-staff {
+    background: var(--color-pale);
+    color: var(--color-primary);
+  }
+
+  .badge-role-administrator {
+    background: #ede9fe;
+    color: #6d28d9;
+  }
 }

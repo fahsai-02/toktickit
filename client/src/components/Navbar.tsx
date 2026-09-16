@@ -1,36 +1,86 @@
-import { useState } from "react";
-import { NavLink } from "react-router-dom";
-import { useRequester } from "../RequesterContext.js";
-import Button from "./Button.js";
-import { Clock3, FileText, CirclePlus } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
+import { useAuth } from "../AuthContext.js";
+import Badge, { roleBadgeVariant } from "./Badge.js";
+import { Clock3, FileText, CirclePlus, ChevronDown } from "lucide-react";
 
 export default function Navbar() {
-  const { requester, clearRequester } = useRequester();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
 
   function closeMobile() {
     setMobileOpen(false);
   }
+
+  // Close the profile menu on Escape and on outside clicks.
+  useEffect(() => {
+    if (!profileOpen) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setProfileOpen(false);
+    }
+    function onPointer(e: PointerEvent) {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setProfileOpen(false);
+      }
+    }
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("pointerdown", onPointer);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("pointerdown", onPointer);
+    };
+  }, [profileOpen]);
+
+  async function handleLogout() {
+    setProfileOpen(false);
+    // logout() clears local state even on network failure, and the route
+    // guards bounce a null user to /login — so always navigate, and swallow
+    // the network error (nothing actionable to show on a logged-out screen).
+    try {
+      await logout();
+    } catch {
+      // Fall through to the login screen.
+    }
+    navigate("/login", { replace: true });
+  }
+
+  // Role-aware navigation (ui-spec.md section 4.1). Links to screens that
+  // do not exist yet (My Queue in Issue 19, User Management in Issue 21)
+  // stay hidden until their issue lands — never render a dead link.
+  const showMyTickets = user?.role === "REQUESTER";
 
   return (
     <header className="app-header">
       <div className="header-inner">
         <div className="header-left">
           <span className="brand">
-            <Clock3 />TokTickIT
+            <Clock3 />
+            TokTickIT
           </span>
-          <nav className={`nav ${mobileOpen ? "nav--open" : ""}`}>
-            <NavLink
-              to="/my-tickets"
-              className={({ isActive }) => `nav-link ${isActive ? "nav-link--active" : ""}`}
-              onClick={closeMobile}
-            >
-              <FileText size={16} />
-              My Tickets
-            </NavLink>
+          <nav
+            className={`nav ${mobileOpen ? "nav--open" : ""}`}
+            aria-label="Primary"
+          >
+            {showMyTickets && (
+              <NavLink
+                to="/my-tickets"
+                className={({ isActive }) =>
+                  `nav-link ${isActive ? "nav-link--active" : ""}`
+                }
+                onClick={closeMobile}
+              >
+                <FileText size={16} />
+                My Tickets
+              </NavLink>
+            )}
             <NavLink
               to="/create-ticket"
-              className={({ isActive }) => `nav-link ${isActive ? "nav-link--active" : ""}`}
+              className={({ isActive }) =>
+                `nav-link ${isActive ? "nav-link--active" : ""}`
+              }
               onClick={closeMobile}
             >
               <CirclePlus size={16} />
@@ -40,25 +90,53 @@ export default function Navbar() {
         </div>
 
         <div className="header-right">
-          {requester && (
-            <span className="requester-name">{requester.name}</span>
+          {user && (
+            <div className="profile-menu" ref={profileRef}>
+              <button
+                type="button"
+                className="profile-button"
+                aria-label={`Profile for ${user.name}`}
+                aria-expanded={profileOpen}
+                aria-haspopup="menu"
+                onClick={() => setProfileOpen((v) => !v)}
+              >
+                <span className="profile-name">{user.name}</span>
+                <Badge variant={roleBadgeVariant(user.role)}>
+                  {roleLabel(user.role)}
+                </Badge>
+                <ChevronDown size={16} aria-hidden="true" />
+              </button>
+              {profileOpen && (
+                <div className="profile-dropdown" role="menu">
+                  <div className="profile-dropdown__header">
+                    <span className="profile-dropdown__name">{user.name}</span>
+                    <Badge variant={roleBadgeVariant(user.role)}>
+                      {roleLabel(user.role)}
+                    </Badge>
+                  </div>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="profile-dropdown__item"
+                    onClick={() => {
+                      setProfileOpen(false);
+                      navigate("/change-password");
+                    }}
+                  >
+                    Change Password
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="profile-dropdown__item"
+                    onClick={() => void handleLogout()}
+                  >
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
           )}
-          <Button
-            className="btn-change-requester"
-            aria-label="Change Requester"
-            onClick={() => {
-              let ok = true;
-              try {
-                const result = window.confirm("Change requester? You will return to the selection screen.");
-                ok = result !== false;
-              } catch {
-                // jsdom: proceed without confirmation in test environment
-              }
-              if (ok) clearRequester();
-            }}
-          >
-            Change <span className="btn-change-requester__full">Requester</span>
-          </Button>
           <button
             type="button"
             className="hamburger"
@@ -73,4 +151,17 @@ export default function Navbar() {
       </div>
     </header>
   );
+}
+
+function roleLabel(role: string): string {
+  switch (role) {
+    case "REQUESTER":
+      return "Requester";
+    case "IT_STAFF":
+      return "IT Staff";
+    case "ADMINISTRATOR":
+      return "Administrator";
+    default:
+      return role;
+  }
 }

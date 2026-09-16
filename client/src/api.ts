@@ -2,16 +2,19 @@ const API_URL = import.meta.env.VITE_API_URL ?? "";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
-export interface Category {
-  id: number;
-  name: string;
-}
+export type UserRole = "REQUESTER" | "IT_STAFF" | "ADMINISTRATOR";
 
-export interface Requester {
+export interface User {
   id: number;
   name: string;
   email: string;
-  department: string | null;
+  role: UserRole;
+  mustChangePassword: boolean;
+}
+
+export interface Category {
+  id: number;
+  name: string;
 }
 
 export interface RelatedSystem {
@@ -22,19 +25,79 @@ export interface RelatedSystem {
 
 
 
-// ── Lab 2 Reference APIs ───────────────────────────────────────────────────
+// ── Lab 3 Authentication APIs (Issue 17) ────────────────────────────────────
+// Session-based auth: the server sets a `connect.sid` cookie on login.
+// Every call below sends `credentials: "include"` so the browser attaches
+// that cookie — without it the server sees every request as unauthenticated.
 
-export async function fetchRequesters(): Promise<Requester[]> {
-  const res = await fetch(`${API_URL}/api/dev/requesters`);
+export async function login(
+  email: string,
+  password: string
+): Promise<User> {
+  const res = await fetch(`${API_URL}/api/auth/login`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
   if (!res.ok) {
-    await handleApiError(res, "Failed to fetch requesters");
+    await handleApiError(res, "Failed to sign in");
   }
-  const { data } = (await res.json()) as { data: Requester[] };
+  const { data } = (await res.json()) as { data: User };
   return data;
 }
 
+export async function logout(): Promise<void> {
+  const res = await fetch(`${API_URL}/api/auth/logout`, {
+    method: "POST",
+    credentials: "include",
+  });
+  if (!res.ok) {
+    await handleApiError(res, "Failed to sign out");
+  }
+}
+
+export async function fetchMe(): Promise<User> {
+  const res = await fetch(`${API_URL}/api/auth/me`, {
+    credentials: "include",
+  });
+  if (!res.ok) {
+    await handleApiError(res, "Failed to fetch current user");
+  }
+  const { data } = (await res.json()) as { data: User };
+  return data;
+}
+
+export interface ChangePasswordInput {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+export async function changePassword(
+  input: ChangePasswordInput
+): Promise<void> {
+  const res = await fetch(`${API_URL}/api/auth/change-password`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    await handleApiError(res, "Failed to change password");
+  }
+}
+
+// ── Lab 2 Reference APIs ───────────────────────────────────────────────────
+// NOTE (Issue 17 fix): every call below sends `credentials: "include"` so the
+// session cookie travels with it. Without this the server will see these
+// requests as unauthenticated the moment Issue 18 enforces `requireAuth` on
+// the ticket/attachment routes.
+
 export async function fetchCategories(): Promise<Category[]> {
-  const res = await fetch(`${API_URL}/api/categories`);
+  const res = await fetch(`${API_URL}/api/categories`, {
+    credentials: "include",
+  });
   if (!res.ok) {
     await handleApiError(res, "Failed to fetch categories");
   }
@@ -49,7 +112,7 @@ export async function fetchRelatedSystems(
   if (categoryId !== undefined) {
     url.searchParams.set("categoryId", String(categoryId));
   }
-  const res = await fetch(url);
+  const res = await fetch(url, { credentials: "include" });
   if (!res.ok) {
     await handleApiError(res, "Failed to fetch related systems");
   }
@@ -143,7 +206,7 @@ export async function fetchTickets(
   if (params.pageSize !== undefined)
     url.searchParams.set("pageSize", String(params.pageSize));
 
-  const res = await fetch(url);
+  const res = await fetch(url, { credentials: "include" });
   if (!res.ok) {
     await handleApiError(res, `Failed to fetch tickets: ${res.status}`);
   }
@@ -185,6 +248,7 @@ async function handleApiError(
 export async function createTicket(input: NewTicketInput): Promise<Ticket> {
   const res = await fetch(`${API_URL}/api/tickets`, {
     method: "POST",
+    credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
   });
@@ -236,7 +300,7 @@ export async function fetchTicket(
   const url = new URL(`/api/tickets/${ticketId}`, base);
   url.searchParams.set("requesterId", String(requesterId));
 
-  const res = await fetch(url);
+  const res = await fetch(url, { credentials: "include" });
   if (!res.ok) {
     await handleApiError(res, `Failed to fetch ticket: ${res.status}`);
   }
@@ -257,6 +321,7 @@ export async function uploadAttachment(
 
   const res = await fetch(`${API_URL}/api/tickets/${ticketId}/attachments`, {
     method: "POST",
+    credentials: "include",
     body: formData,
   });
 
@@ -276,7 +341,7 @@ export async function downloadAttachment(
   const url = new URL(`/api/attachments/${attachmentId}/download`, base);
   url.searchParams.set("requesterId", String(requesterId));
 
-  const res = await fetch(url);
+  const res = await fetch(url, { credentials: "include" });
   if (!res.ok) {
     await handleApiError(res, `Failed to download attachment: ${res.status}`);
   }
@@ -291,6 +356,7 @@ export async function removeAttachment(
 ): Promise<Attachment> {
   const res = await fetch(`${API_URL}/api/attachments/${attachmentId}`, {
     method: "DELETE",
+    credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ requesterId, removalReason }),
   });

@@ -13,7 +13,7 @@ import {
   type Ticket,
   type Attachment,
 } from "./api.js";
-import { useRequester } from "./RequesterContext.js";
+import { useAuth } from "./AuthContext.js";
 import Button from "./components/Button.js";
 import SelectField from "./components/SelectField.js";
 import TextField from "./components/TextField.js";
@@ -54,7 +54,10 @@ function fileExtension(name: string): string {
 
 export default function CreateTicket() {
   const navigate = useNavigate();
-  const { requester } = useRequester();
+  // TODO(Issue 18): derive identity from the session instead of passing
+  // requesterId; until then the authenticated user's id is used as-is.
+  const { user } = useAuth();
+  const requester = user ? { id: user.id, name: user.name } : null;
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [relatedSystems, setRelatedSystems] = useState<RelatedSystem[]>([]);

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Inbox, SearchX } from "lucide-react";
-import { useRequester } from "./RequesterContext.js";
+import { useAuth } from "./AuthContext.js";
 import {
   fetchTickets,
   fetchCategories,
@@ -40,7 +40,10 @@ const SORT_WHITELIST = [
 ] as const;
 
 export default function MyTickets() {
-  const { requester } = useRequester();
+  // TODO(Issue 18): derive identity from the session instead of passing
+  // requesterId; until then the authenticated user's id is used as-is.
+  const { user } = useAuth();
+  const requester = user ? { id: user.id, name: user.name } : null;
   const navigate = useNavigate();
 
   const [tickets, setTickets] = useState<TicketListItem[]>([]);

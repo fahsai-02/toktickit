@@ -118,12 +118,12 @@ Status legend: `Planned` → written before implementation · updated to `Pass`/
 
 | Test ID | Type | Requirement/AC | What It Tests | Expected Result | Automated Test File | Final Status |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| UI-01 | UI component | AC-05, FR-02 | Login — invalid credentials | Error banner shown; no redirect; form retains values | `Login.test.tsx` | Planned |
-| UI-02 | UI component | AC-01, FR-01 | Login — valid credentials | Redirect to `/` on success; user identity in shell | `Login.test.tsx` | Planned |
-| UI-03 | UI component | AC-05 | Login — busy state | Button disabled + spinner during submission | `Login.test.tsx` | Planned |
-| UI-04 | UI component | FR-07, AC-02 | Change password — checklist rendering | Password strength checklist shows 3 grouped rules with live checkmarks (at least 8 chars; upper+lower case; number+special char) | `ChangePassword.test.tsx` | Planned |
-| UI-05 | UI component | FR-07 | Change password — valid submission | "Continue" button enabled when all rules met; submission succeeds; redirect to `/` | `ChangePassword.test.tsx` | Planned |
-| UI-06 | UI component | FR-07 | Change password — validation feedback | Specific rule failures shown in checklist; confirmation mismatch shown | `ChangePassword.test.tsx` | Planned |
+| UI-01 | UI component | AC-05, FR-02 | Login — invalid credentials | Error banner shown; no redirect; form retains values | `Login.test.tsx` | Pass |
+| UI-02 | UI component | AC-01, FR-01 | Login — valid credentials | Redirect to `/` on success; user identity in shell | `Login.test.tsx` | Pass |
+| UI-03 | UI component | AC-05 | Login — busy state | Button disabled + spinner during submission | `Login.test.tsx` | Pass |
+| UI-04 | UI component | FR-07, AC-02 | Change password — checklist rendering | Password strength checklist shows 3 grouped rules with live checkmarks (at least 8 chars; upper+lower case; number+special char) | `ChangePassword.test.tsx` | Pass |
+| UI-05 | UI component | FR-07 | Change password — valid submission | "Continue" button enabled when all rules met; submission succeeds; redirect to `/` | `ChangePassword.test.tsx` | Pass |
+| UI-06 | UI component | FR-07 | Change password — validation feedback | Specific rule failures shown in checklist; confirmation mismatch shown | `ChangePassword.test.tsx` | Pass |
 | UI-07 | UI component | FR-22, AC-08 | Staff queue — table rendering | Table shows all 9 columns with correct data | `StaffTicketQueue.test.tsx` | Planned |
 | UI-08 | UI component | FR-22, AC-08 | Staff queue — search and filter | Search and filter controls work; results update | `StaffTicketQueue.test.tsx` | Planned |
 | UI-09 | UI component | FR-22 | Staff queue — pagination | Prev/next/page controls work | `StaffTicketQueue.test.tsx` | Planned |

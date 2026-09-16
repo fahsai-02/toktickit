@@ -362,4 +362,80 @@
   @keyframes spin {
     to { transform: rotate(360deg); }
   }
+
+  /* Auth forms (Login, Change Password) */
+  .auth-submit {
+    width: 100%;
+    margin-top: 8px;
+  }
+
+  .auth-alt {
+    text-align: center;
+    margin-top: 16px;
+    font-size: 14px;
+  }
+
+  .link-button {
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--color-secondary);
+    font-size: 14px;
+    cursor: pointer;
+    text-decoration: underline;
+  }
+
+  .link-button:hover {
+    color: var(--color-primary);
+  }
+
+  .password-field-wrap {
+    position: relative;
+  }
+
+  .password-field-wrap .field-input {
+    padding-right: 64px;
+  }
+
+  .password-toggle {
+    position: absolute;
+    right: 8px;
+    top: 30px;
+    background: none;
+    border: none;
+    color: var(--color-text-muted);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 4px 8px;
+  }
+
+  .password-toggle:hover {
+    color: var(--color-primary);
+  }
+
+  .password-checklist {
+    list-style: none;
+    margin: 8px 0 16px;
+    padding: 0;
+    font-size: 14px;
+  }
+
+  .password-rule {
+    color: var(--color-text-muted);
+    padding: 2px 0;
+  }
+
+  .password-rule--met {
+    color: var(--color-success);
+  }
+
+  .show-passwords {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--color-text-muted);
+    margin-bottom: 16px;
+    cursor: pointer;
+  }
 }
