@@ -1,15 +1,16 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { RequesterProvider } from "../../src/RequesterContext.js";
+import { AuthProvider } from "../../src/AuthContext.js";
 import CreateTicket from "../../src/CreateTicket.js";
 import * as api from "../../src/api.js";
 
-const requester = {
+const authUser: api.User = {
   id: 1,
   name: "Jennifer Anderson",
   email: "jennifer.anderson@toktickit.dev",
-  department: "Marketing",
+  role: "REQUESTER",
+  mustChangePassword: false,
 };
 
 const categories: api.Category[] = [
@@ -29,11 +30,11 @@ function createFile(name: string, type: string, size: number, lastModified = 0):
 
 async function renderTicket() {
   render(
-    <RequesterProvider>
+    <AuthProvider>
       <MemoryRouter initialEntries={["/create-ticket"]}>
         <CreateTicket />
       </MemoryRouter>
-    </RequesterProvider>
+    </AuthProvider>
   );
   await screen.findByTestId("category");
 }
@@ -76,12 +77,10 @@ function fillValidForm() {
 
 describe("CreateTicket", () => {
   beforeEach(() => {
-    localStorage.clear();
-    localStorage.setItem(
-      "toktickit-requester",
-      JSON.stringify(requester)
-    );
     vi.restoreAllMocks();
+    // Auth identity now comes from GET /api/auth/me (Lab 3) instead of
+    // localStorage (removed Dev Requester selector, Issue 17).
+    vi.spyOn(api, "fetchMe").mockResolvedValue(authUser);
     vi.spyOn(api, "fetchCategories").mockResolvedValue(categories);
     vi.spyOn(api, "fetchRelatedSystems").mockImplementation(
       async (categoryId?: number) =>
@@ -110,6 +109,7 @@ describe("CreateTicket", () => {
   });
 
   it("updates the live character counter and rejects an over-long summary (UI-02)", async () => {
+    vi.spyOn(api, "createTicket").mockResolvedValue(validTicket);
     await renderTicket();
 
     fireEvent.change(screen.getByTestId("summary"), {
@@ -130,9 +130,8 @@ describe("CreateTicket", () => {
       target: { value: "a".repeat(121) },
     });
     fillValidForm();
-    screen
-      .getByTestId("summary")
-      .setAttribute("value", "a".repeat(121));
+    // Last write before submit: make the summary over-long again so the form is
+    // otherwise valid but the summary alone must fail client-side validation.
     fireEvent.change(screen.getByTestId("summary"), {
       target: { value: "a".repeat(121) },
     });
@@ -141,6 +140,7 @@ describe("CreateTicket", () => {
     expect(
       await screen.findByText("Summary is required (1-120 characters).")
     ).toBeInTheDocument();
+    expect(api.createTicket).not.toHaveBeenCalled();
   });
 
   it("disables the button and shows a busy state while submitting (UI-03)", async () => {

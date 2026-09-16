@@ -1,15 +1,16 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { RequesterProvider } from "../../src/RequesterContext.js";
+import { AuthProvider } from "../../src/AuthContext.js";
 import TicketDetail from "../../src/TicketDetail.js";
 import * as api from "../../src/api.js";
 
-const requester = {
+const authUser: api.User = {
   id: 1,
   name: "Jennifer Anderson",
   email: "jennifer.anderson@toktickit.dev",
-  department: "Marketing",
+  role: "REQUESTER",
+  mustChangePassword: false,
 };
 
 const ticketDetail: api.TicketDetail = {
@@ -43,25 +44,23 @@ const ticketDetail: api.TicketDetail = {
 
 function renderDetail(ticketId = "1") {
   render(
-    <RequesterProvider>
+    <AuthProvider>
       <MemoryRouter initialEntries={[`/tickets/${ticketId}`]}>
         <Routes>
           <Route path="/tickets/:ticketId" element={<TicketDetail />} />
           <Route path="/my-tickets" element={<div>My Tickets</div>} />
         </Routes>
       </MemoryRouter>
-    </RequesterProvider>
+    </AuthProvider>
   );
 }
 
 describe("TicketDetail", () => {
   beforeEach(() => {
-    localStorage.clear();
-    localStorage.setItem(
-      "toktickit-requester",
-      JSON.stringify(requester)
-    );
     vi.restoreAllMocks();
+    // Auth identity now comes from GET /api/auth/me (Lab 3) instead of
+    // localStorage (removed Dev Requester selector, Issue 17).
+    vi.spyOn(api, "fetchMe").mockResolvedValue(authUser);
   });
 
   afterEach(() => {
@@ -69,6 +68,17 @@ describe("TicketDetail", () => {
   });
 
   describe("UI-13: Read-only detail view", () => {
+    it("shows a loading state while the ticket is being fetched", async () => {
+      vi.spyOn(api, "fetchTicket").mockReturnValue(new Promise(() => {}));
+      renderDetail();
+
+      expect(
+        await screen.findByTestId("loading-state")
+      ).toBeInTheDocument();
+      expect(screen.getByText("Loading ticket...")).toBeInTheDocument();
+      expect(screen.queryByTestId("ticket-detail")).not.toBeInTheDocument();
+    });
+
     it("renders all ticket fields as read-only text", async () => {
       vi.spyOn(api, "fetchTicket").mockResolvedValue(ticketDetail);
       renderDetail();

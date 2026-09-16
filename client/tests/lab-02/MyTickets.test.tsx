@@ -1,15 +1,16 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { RequesterProvider } from "../../src/RequesterContext.js";
+import { AuthProvider } from "../../src/AuthContext.js";
 import MyTickets from "../../src/MyTickets.js";
 import * as api from "../../src/api.js";
 
-const requester = {
+const authUser: api.User = {
   id: 1,
   name: "Jennifer Anderson",
   email: "jennifer.anderson@toktickit.dev",
-  department: "Marketing",
+  role: "REQUESTER",
+  mustChangePassword: false,
 };
 
 const categories: api.Category[] = [
@@ -51,22 +52,20 @@ const emptyMeta: api.TicketListMeta = {
 
 function renderMyTickets() {
   render(
-    <RequesterProvider>
+    <AuthProvider>
       <MemoryRouter initialEntries={["/my-tickets"]}>
         <MyTickets />
       </MemoryRouter>
-    </RequesterProvider>
+    </AuthProvider>
   );
 }
 
 describe("MyTickets", () => {
   beforeEach(() => {
-    localStorage.clear();
-    localStorage.setItem(
-      "toktickit-requester",
-      JSON.stringify(requester)
-    );
     vi.restoreAllMocks();
+    // Auth identity now comes from GET /api/auth/me (Lab 3) instead of
+    // localStorage (removed Dev Requester selector, Issue 17).
+    vi.spyOn(api, "fetchMe").mockResolvedValue(authUser);
     vi.spyOn(api, "fetchCategories").mockResolvedValue(categories);
   });
 
@@ -75,7 +74,7 @@ describe("MyTickets", () => {
   });
 
   describe("UI-07: Search sends search param", () => {
-    it("debounces search input and sends search param to API", async () => {
+    it("debounces rapid keystrokes into a single API call", async () => {
       const mockFetch = vi
         .spyOn(api, "fetchTickets")
         .mockResolvedValue({
@@ -86,21 +85,27 @@ describe("MyTickets", () => {
 
       await screen.findByTestId("ticket-table-desktop");
 
-      const initialCallCount = mockFetch.mock.calls.length;
+      const baseCount = mockFetch.mock.calls.length;
 
       const searchInput = screen.getByTestId("search-input");
-      fireEvent.change(searchInput, { target: { value: "battery" } });
+      // Type several characters back-to-back: a correct debounce collapses all
+      // of them into ONE refetch with the final value. A naive "fetch on every
+      // keystroke" implementation would produce one call per change.
+      fireEvent.change(searchInput, { target: { value: "b" } });
+      fireEvent.change(searchInput, { target: { value: "ba" } });
+      fireEvent.change(searchInput, { target: { value: "bat" } });
 
-      // After debounce (300ms), search param should be set
       await waitFor(
         () => {
-          expect(mockFetch.mock.calls.length).toBeGreaterThan(initialCallCount);
+          expect(mockFetch.mock.calls.length).toBeGreaterThan(baseCount);
           expect(mockFetch).toHaveBeenLastCalledWith(
-            expect.objectContaining({ search: "battery" })
+            expect.objectContaining({ search: "bat" })
           );
         },
         { timeout: 1000 }
       );
+
+      expect(mockFetch.mock.calls.length).toBe(baseCount + 1);
     });
   });
 
