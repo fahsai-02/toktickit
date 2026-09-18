@@ -99,20 +99,22 @@ toktickit/
 | Backend | `cd server && pnpm dev` | http://localhost:5000 |
 | Frontend | `cd client && pnpm dev` | http://localhost:5173 |
 
-Open http://localhost:5173 in a browser. Pick a requester on the selection
-screen (redirects there on first visit), then use **Create Ticket** and
-**My Tickets**. Use the **Change Requester** control in the header to switch
-who you are acting as.
+Open http://localhost:5173 in a browser. Sign in using an account from
+`docs/lab-01/seed-credentials.md` (all seed accounts are in the
+`docs/lab-02/seed-credentials.md` and `docs/lab-03/seed-credentials.md`
+files; Lab 3 uses the `docs/lab-03/seed-credentials.md` set). Then use
+**Create Ticket** and **My Tickets** from the authenticated app shell. The
+current Requester comes from your session — there is no requester selection
+or **Change Requester** control (removed in Lab 3, Issue 18).
 
 ## API Endpoints
 
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/api/health` | Backend status → `{ "status": "ok", "service": "TokTickIT API" }` |
-| GET | `/api/dev/requesters` | Active requesters for the selection screen (dev-only seed source) |
 | GET | `/api/categories` | Request categories (Account and Access, Hardware, Software, Network) |
 | GET | `/api/related-systems?categoryId=` | Related systems, optionally filtered by category |
-| GET | `/api/tickets?requesterId=&search=&categoryId=&currentStatus=&requestedPriority=&sortBy=&sortOrder=&page=&pageSize=` | List tickets with search/filter/sort/pagination |
+| GET | `/api/tickets?search=&categoryId=&currentStatus=&requestedPriority=&sortBy=&sortOrder=&page=&pageSize=` | List tickets with search/filter/sort/pagination (identity from session, not `requesterId=`) |
 | POST | `/api/tickets` | Create a ticket (category + related system + priority + summary/description) |
 | GET | `/api/tickets/:id` | Ticket detail (with attachments) |
 | POST | `/api/tickets/:id/attachments` | Upload an attachment (JPG/PNG/WEBP/PDF, ≤ 5 MB) |

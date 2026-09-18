@@ -370,7 +370,7 @@ Ownership: ticket belongs to another user → `403`; no such ticket → `404`.
         "createdAt": "2026-09-10T10:05:00.000Z"
       }
     ],
-    "_count": { "publicComments": 3, "internalNotes": 1 }
+    "_count": { "attachments": 1, "comments": 3, "notes": 1 }
   }
 }
 ```
@@ -541,7 +541,9 @@ Requesters cannot set the resolution summary. This endpoint is reserved for IT S
 
 | Method | Path | Response |
 | :--- | :--- | :--- |
+| PUT | `/api/tickets/:id/comments` | 405 METHOD_NOT_ALLOWED |
 | PUT | `/api/tickets/:id/comments/:commentId` | 405 METHOD_NOT_ALLOWED |
+| DELETE | `/api/tickets/:id/comments` | 405 METHOD_NOT_ALLOWED |
 | DELETE | `/api/tickets/:id/comments/:commentId` | 405 METHOD_NOT_ALLOWED |
 
 ---
@@ -627,7 +629,7 @@ Full ticket detail for staff operations (FR-26).
     "createdAt": "2026-09-10T10:00:00.000Z",
     "updatedAt": "2026-09-10T14:30:00.000Z",
     "attachments": [ ... ],
-    "_count": { "publicComments": 3, "internalNotes": 1 }
+    "_count": { "attachments": 1, "comments": 3, "notes": 1 }
   }
 }
 ```
@@ -902,9 +904,13 @@ Only active users with role `IT_STAFF` or `ADMINISTRATOR` are returned.
 
 | Method | Path | Response |
 | :--- | :--- | :--- |
+| PUT | `/api/staff/tickets/:id/comments` | 405 METHOD_NOT_ALLOWED |
 | PUT | `/api/staff/tickets/:id/comments/:commentId` | 405 METHOD_NOT_ALLOWED |
+| DELETE | `/api/staff/tickets/:id/comments` | 405 METHOD_NOT_ALLOWED |
 | DELETE | `/api/staff/tickets/:id/comments/:commentId` | 405 METHOD_NOT_ALLOWED |
+| PUT | `/api/staff/tickets/:id/notes` | 405 METHOD_NOT_ALLOWED |
 | PUT | `/api/staff/tickets/:id/notes/:noteId` | 405 METHOD_NOT_ALLOWED |
+| DELETE | `/api/staff/tickets/:id/notes` | 405 METHOD_NOT_ALLOWED |
 | DELETE | `/api/staff/tickets/:id/notes/:noteId` | 405 METHOD_NOT_ALLOWED |
 
 ---
