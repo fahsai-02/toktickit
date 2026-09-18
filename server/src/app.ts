@@ -10,7 +10,8 @@ import { fileURLToPath } from 'node:url';
 import { db } from './db.js';
 import { buildNextTicketNumber } from './lib/ticketNumber.js';
 import { validateAttachmentType } from './lib/attachmentValidation.js';
-import { validationError } from './lib/httpErrors.js';
+import { sendError, validationError } from './lib/httpErrors.js';
+import { requireAuth } from './middleware/auth.js';
 import authRouter from './routes/auth.js';
 
 dotenv.config({ quiet: true });
@@ -83,21 +84,6 @@ app.get("/api/health", (_req: Request, res: Response) => {
   res.json({ status: "ok", service: "TokTickIT API" });
 });
 
-app.get("/api/dev/requesters", async (_req: Request, res: Response) => {
-  try {
-    const requesters = await db.requester.findMany({
-      where: { isActive: true },
-      orderBy: { id: "asc" },
-      select: { id: true, name: true, email: true, department: true },
-    });
-    res.json({ data: requesters });
-  } catch {
-    res.status(500).json({
-      error: { code: "INTERNAL_ERROR", message: "Failed to fetch requesters" },
-    });
-  }
-});
-
 app.get("/api/categories", async (_req: Request, res: Response) => {
   try {
     const categories = await db.category.findMany({
@@ -160,9 +146,21 @@ app.get("/api/related-systems", async (req: Request, res: Response) => {
 });
 
 const SORT_WHITELIST = ["updatedAt", "createdAt", "requestedPriority", "ticketNumber"] as const;
-const STATUSES = ["NEW"] as const;
+// TicketStatus filter is now the full Lab 3 set (specification.md section 7).
+const STATUSES = [
+  "NEW",
+  "OPEN",
+  "IN_PROGRESS",
+  "WAITING_FOR_REQUESTER",
+  "RESOLVED",
+  "CLOSED",
+  "REOPENED",
+  "CANCELLED",
+] as const;
 
 const PRIORITIES = ["LOW", "MEDIUM", "HIGH", "URGENT"];
+
+const COMMENT_MAX_LENGTH = 2000;
 
 function parsePositiveInt(value: unknown): number | null {
   if (typeof value === "number") {
@@ -175,13 +173,61 @@ function parsePositiveInt(value: unknown): number | null {
   return null;
 }
 
-app.get("/api/tickets", async (req: Request, res: Response) => {
-  const fields: Record<string, string> = {};
+// ── Session-identity helper (Issue 18) ─────────────────────────────────────
+// `requesterId` (legacy FK → Requester) is no longer the identity transport:
+// the authenticated User is. A helper resolves the legacy row so the non-null
+// `requesterId` FK stays valid, and computes the effective owner for
+// ownership checks (falling back to a Requester.email == User.email join for
+// tickets created before this issue that still have requesterUserId = NULL).
+// (specification.md FR-12, FR-13, BR-03; api-spec section 4.)
 
-  const requesterId = parsePositiveInt(req.query.requesterId);
-  if (requesterId === null) {
-    fields.requesterId = "requesterId is required and must be a positive integer.";
-  }
+/** Legacy `Requester.id` for a session user — matched by email, auto-created
+ *  if the user has no legacy row yet (e.g. an Admin-created Requester). */
+async function resolveLegacyRequesterIdForUser(name: string, email: string): Promise<number> {
+  const existing = await db.requester.findUnique({
+    where: { email },
+    select: { id: true },
+  });
+  if (existing) return existing.id;
+  const created = await db.requester.create({
+    data: { name, email, isActive: true },
+    select: { id: true },
+  });
+  return created.id;
+}
+
+/** Effective owning User.id for a ticket. Backfills the legacy link by email
+ *  when `requesterUserId` is still NULL (rows created pre-Issue 18). */
+async function ownerUserIdFor(ticket: {
+  requesterUserId: number | null;
+  requesterId: number;
+}): Promise<number | null> {
+  if (ticket.requesterUserId !== null) return ticket.requesterUserId;
+  const requester = await db.requester.findUnique({
+    where: { id: ticket.requesterId },
+    select: { email: true },
+  });
+  if (!requester) return null;
+  const user = await db.user.findUnique({
+    where: { email: requester.email },
+    select: { id: true },
+  });
+  return user?.id ?? null;
+}
+
+/** Ownership `where` clause for list queries: session user owns the ticket
+ *  via `requesterUserId`, or (pre-backfill rows) via their mapped email. */
+function ownershipWhereFor(user: { id: number; email: string }): Record<string, unknown> {
+  return {
+    OR: [
+      { requesterUserId: user.id },
+      { requesterUserId: null, requester: { email: user.email } },
+    ],
+  };
+}
+
+app.get("/api/tickets", requireAuth, async (req: Request, res: Response) => {
+  const fields: Record<string, string> = {};
 
   const search =
     typeof req.query.search === "string" ? req.query.search.trim() : "";
@@ -261,34 +307,27 @@ app.get("/api/tickets", async (req: Request, res: Response) => {
   }
 
   try {
-    const requester = await db.requester.findUnique({
-      where: { id: requesterId! },
-      select: { id: true },
-    });
-    if (!requester) {
-      res.status(404).json({
-        error: { code: "NOT_FOUND", message: "Requester not found" },
-      });
-      return;
-    }
-
-    const where: Record<string, unknown> = { requesterId };
+    const and: Array<Record<string, unknown>> = [ownershipWhereFor(req.user!)];
 
     if (search) {
-      where.OR = [
-        { ticketNumber: { contains: search, mode: "insensitive" } },
-        { summary: { contains: search, mode: "insensitive" } },
-      ];
+      and.push({
+        OR: [
+          { ticketNumber: { contains: search, mode: "insensitive" } },
+          { summary: { contains: search, mode: "insensitive" } },
+        ],
+      });
     }
     if (categoryId !== undefined) {
-      where.categoryId = categoryId;
+      and.push({ categoryId });
     }
     if (currentStatus !== undefined) {
-      where.currentStatus = currentStatus;
+      and.push({ currentStatus });
     }
     if (requestedPriority !== undefined) {
-      where.requestedPriority = requestedPriority;
+      and.push({ requestedPriority });
     }
+
+    const where = { AND: and };
 
     const orderBy: Array<Record<string, string>> = [
       { [sortBy]: sortOrder },
@@ -331,17 +370,15 @@ app.get("/api/tickets", async (req: Request, res: Response) => {
   }
 });
 
-app.post("/api/tickets", async (req: Request, res: Response) => {
+app.post("/api/tickets", requireAuth, async (req: Request, res: Response) => {
   const body = req.body ?? {};
   const fields: Record<string, string> = {};
 
-  const requesterId = parsePositiveInt(body.requesterId);
+  // `requesterId` is intentionally NOT read from the body (FR-13, BR-03) —
+  // ownership is derived from the authenticated session below.
   const categoryId = parsePositiveInt(body.categoryId);
   const relatedSystemId = parsePositiveInt(body.relatedSystemId);
 
-  if (requesterId === null) {
-    fields.requesterId = "Requester is required.";
-  }
   if (categoryId === null) {
     fields.categoryId = "Category is required.";
   }
@@ -372,40 +409,35 @@ app.post("/api/tickets", async (req: Request, res: Response) => {
     validationError(res, fields);
     return;
   }
-  if (
-    requesterId === null ||
-    categoryId === null ||
-    relatedSystemId === null
-  ) {
-    validationError(res, fields);
-    return;
-  }
+
+  // Type-only narrowing: categoryId/relatedSystemId are valid numbers here —
+  // the null branches above already recorded `fields` entries and returned.
+  // Asserting once lets the narrowed number flow into the transaction closure.
+  const categoryIdNum = categoryId as number;
+  const relatedSystemIdNum = relatedSystemId as number;
 
   try {
-    const requester = await db.requester.findUnique({
-      where: { id: requesterId },
-      select: { id: true, isActive: true },
-    });
+    const user = req.user!;
+    // The authenticated User must itself be active to create tickets
+    // (requireAuth already guarantees this, but keep the safe business rule).
+    if (!user.isActive) {
+      sendError(
+        res,
+        400,
+        "BUSINESS_RULE_VIOLATION",
+        "This account is inactive and cannot create tickets"
+      );
+      return;
+    }
 
-    if (!requester) {
-      res.status(404).json({
-        error: { code: "NOT_FOUND", message: "Requester not found" },
-      });
-      return;
-    }
-    if (!requester.isActive) {
-      res.status(400).json({
-        error: {
-          code: "BUSINESS_RULE_VIOLATION",
-          message: "This requester is inactive and cannot create tickets",
-        },
-      });
-      return;
-    }
+    const requesterId = await resolveLegacyRequesterIdForUser(
+      user.name,
+      user.email
+    );
 
     const [category, relatedSystem] = await Promise.all([
-      db.category.findUnique({ where: { id: categoryId } }),
-      db.relatedSystem.findUnique({ where: { id: relatedSystemId } }),
+      db.category.findUnique({ where: { id: categoryIdNum } }),
+      db.relatedSystem.findUnique({ where: { id: relatedSystemIdNum } }),
     ]);
 
     if (!category) {
@@ -441,10 +473,12 @@ app.post("/api/tickets", async (req: Request, res: Response) => {
               summary,
               description,
               requestedPriority,
+              itPriority: requestedPriority,
               currentStatus: "NEW",
               requesterId,
-              categoryId,
-              relatedSystemId,
+              requesterUserId: user.id,
+              categoryId: categoryIdNum,
+              relatedSystemId: relatedSystemIdNum,
             },
           });
         });
@@ -489,17 +523,12 @@ app.post("/api/tickets", async (req: Request, res: Response) => {
   }
 });
 
-app.get("/api/tickets/:id", async (req: Request, res: Response) => {
+app.get("/api/tickets/:id", requireAuth, async (req: Request, res: Response) => {
   const fields: Record<string, string> = {};
 
   const ticketId = parsePositiveInt(req.params.id);
   if (ticketId === null) {
     fields.id = "Ticket id must be a positive integer.";
-  }
-
-  const requesterId = parsePositiveInt(req.query.requesterId);
-  if (requesterId === null) {
-    fields.requesterId = "requesterId is required and must be a positive integer.";
   }
 
   if (Object.keys(fields).length > 0) {
@@ -508,17 +537,6 @@ app.get("/api/tickets/:id", async (req: Request, res: Response) => {
   }
 
   try {
-    const requester = await db.requester.findUnique({
-      where: { id: requesterId! },
-      select: { id: true },
-    });
-    if (!requester) {
-      res.status(404).json({
-        error: { code: "NOT_FOUND", message: "Requester not found" },
-      });
-      return;
-    }
-
     const ticket = await db.ticket.findUnique({
       where: { id: ticketId! },
       select: {
@@ -531,24 +549,34 @@ app.get("/api/tickets/:id", async (req: Request, res: Response) => {
         currentStatus: true,
         ticketDate: true,
         requesterId: true,
+        requesterUserId: true,
+        resolutionSummary: true,
+        requesterIndicatedResolved: true,
+        indicatedResolvedAt: true,
         requester: { select: { id: true, name: true } },
+        owner: {
+          select: { id: true, name: true, role: true },
+        },
         category: { select: { id: true, name: true } },
         relatedSystem: { select: { id: true, name: true } },
         createdAt: true,
         updatedAt: true,
+        _count: {
+          select: { attachments: true, comments: true, notes: true },
+        },
         attachments: {
           orderBy: { createdAt: "asc" },
-      select: {
-        id: true,
-        originalFileName: true,
-        fileSize: true,
-        mimeType: true,
-        isRemoved: true,
-        removedAt: true,
-        removalReason: true,
-        uploadedByRequesterId: true,
-        createdAt: true,
-      },
+          select: {
+            id: true,
+            originalFileName: true,
+            fileSize: true,
+            mimeType: true,
+            isRemoved: true,
+            removedAt: true,
+            removalReason: true,
+            uploadedByRequesterId: true,
+            createdAt: true,
+          },
         },
       },
     });
@@ -560,14 +588,15 @@ app.get("/api/tickets/:id", async (req: Request, res: Response) => {
       return;
     }
 
-    if (ticket.requesterId !== requesterId!) {
+    const ownerId = await ownerUserIdFor(ticket);
+    if (ownerId !== req.user!.id) {
       res.status(403).json({
         error: { code: "FORBIDDEN", message: "You don't have access to this ticket." },
       });
       return;
     }
 
-    const { requesterId: _, ...ticketData } = ticket;
+    const { requesterId: _, requesterUserId: __, ...ticketData } = ticket;
     res.json({ data: ticketData });
   } catch {
     res.status(500).json({
@@ -576,15 +605,11 @@ app.get("/api/tickets/:id", async (req: Request, res: Response) => {
   }
 });
 
-app.post("/api/tickets/:id/attachments", upload.single("file"), async (req: Request, res: Response) => {
+app.post("/api/tickets/:id/attachments", requireAuth, upload.single("file"), async (req: Request, res: Response) => {
   const ticketId = parsePositiveInt(req.params.id);
-  const requesterId = parsePositiveInt(req.body.requesterId);
 
-  if (ticketId === null || requesterId === null) {
-    const fields: Record<string, string> = {};
-    if (ticketId === null) fields.id = "Ticket id must be a positive integer.";
-    if (requesterId === null) fields.requesterId = "requesterId is required.";
-    validationError(res, fields);
+  if (ticketId === null) {
+    validationError(res, { id: "Ticket id must be a positive integer." });
     return;
   }
 
@@ -599,21 +624,11 @@ app.post("/api/tickets/:id/attachments", upload.single("file"), async (req: Requ
   }
 
   try {
-    const requester = await db.requester.findUnique({
-      where: { id: requesterId },
-      select: { id: true, isActive: true },
-    });
-
-    if (!requester) {
-      res.status(404).json({
-        error: { code: "NOT_FOUND", message: "Requester not found" },
-      });
-      return;
-    }
+    const user = req.user!;
 
     const ticket = await db.ticket.findUnique({
       where: { id: ticketId },
-      select: { id: true, requesterId: true },
+      select: { id: true, requesterId: true, requesterUserId: true },
     });
 
     if (!ticket) {
@@ -623,12 +638,18 @@ app.post("/api/tickets/:id/attachments", upload.single("file"), async (req: Requ
       return;
     }
 
-    if (ticket.requesterId !== requesterId) {
+    const ownerId = await ownerUserIdFor(ticket);
+    if (ownerId !== user.id) {
       res.status(403).json({
         error: { code: "FORBIDDEN", message: "You don't have access to this ticket." },
       });
       return;
     }
+
+    const requesterId = await resolveLegacyRequesterIdForUser(
+      user.name,
+      user.email
+    );
 
     const activeCount = await db.attachment.count({
       where: { ticketId, isRemoved: false },
@@ -639,16 +660,6 @@ app.post("/api/tickets/:id/attachments", upload.single("file"), async (req: Requ
         error: {
           code: "BUSINESS_RULE_VIOLATION",
           message: "Ticket already has the maximum of 5 active attachments.",
-        },
-      });
-      return;
-    }
-
-    if (req.file.size > MAX_FILE_SIZE) {
-      res.status(413).json({
-        error: {
-          code: "PAYLOAD_TOO_LARGE",
-          message: "File size exceeds the 5 MB limit.",
         },
       });
       return;
@@ -696,17 +707,12 @@ app.post("/api/tickets/:id/attachments", upload.single("file"), async (req: Requ
   }
 });
 
-app.get("/api/attachments/:id/download", async (req: Request, res: Response) => {
+app.get("/api/attachments/:id/download", requireAuth, async (req: Request, res: Response) => {
   const fields: Record<string, string> = {};
 
   const attachmentId = parsePositiveInt(req.params.id);
   if (attachmentId === null) {
     fields.id = "Attachment id must be a positive integer.";
-  }
-
-  const requesterId = parsePositiveInt(req.query.requesterId);
-  if (requesterId === null) {
-    fields.requesterId = "requesterId is required and must be a positive integer.";
   }
 
   if (Object.keys(fields).length > 0) {
@@ -715,17 +721,6 @@ app.get("/api/attachments/:id/download", async (req: Request, res: Response) => 
   }
 
   try {
-    const requester = await db.requester.findUnique({
-      where: { id: requesterId! },
-      select: { id: true },
-    });
-    if (!requester) {
-      res.status(404).json({
-        error: { code: "NOT_FOUND", message: "Requester not found" },
-      });
-      return;
-    }
-
     const attachment = await db.attachment.findUnique({
       where: { id: attachmentId! },
       select: {
@@ -735,7 +730,9 @@ app.get("/api/attachments/:id/download", async (req: Request, res: Response) => 
         fileSize: true,
         mimeType: true,
         isRemoved: true,
-        ticket: { select: { requesterId: true } },
+        ticket: {
+          select: { requesterId: true, requesterUserId: true },
+        },
       },
     });
 
@@ -753,7 +750,8 @@ app.get("/api/attachments/:id/download", async (req: Request, res: Response) => 
       return;
     }
 
-    if (attachment.ticket.requesterId !== requesterId!) {
+    const ownerId = await ownerUserIdFor(attachment.ticket);
+    if (ownerId !== req.user!.id) {
       res.status(403).json({
         error: { code: "FORBIDDEN", message: "You don't have access to this attachment." },
       });
@@ -787,15 +785,13 @@ app.get("/api/attachments/:id/download", async (req: Request, res: Response) => 
   }
 });
 
-app.delete("/api/attachments/:id", async (req: Request, res: Response) => {
+app.delete("/api/attachments/:id", requireAuth, async (req: Request, res: Response) => {
   const attachmentId = parsePositiveInt(req.params.id);
   const body = req.body ?? {};
-  const requesterId = parsePositiveInt(body.requesterId);
   const removalReason = typeof body.removalReason === "string" ? body.removalReason.trim() : "";
 
   const fields: Record<string, string> = {};
   if (attachmentId === null) fields.id = "Attachment id must be a positive integer.";
-  if (requesterId === null) fields.requesterId = "requesterId is required.";
   if (removalReason.length < 3 || removalReason.length > 200) {
     fields.removalReason = "removalReason must be 3-200 characters.";
   }
@@ -806,23 +802,14 @@ app.delete("/api/attachments/:id", async (req: Request, res: Response) => {
   }
 
   try {
-    const requester = await db.requester.findUnique({
-      where: { id: requesterId! },
-      select: { id: true },
-    });
-    if (!requester) {
-      res.status(404).json({
-        error: { code: "NOT_FOUND", message: "Requester not found" },
-      });
-      return;
-    }
-
     const attachment = await db.attachment.findUnique({
       where: { id: attachmentId! },
       select: {
         id: true,
         isRemoved: true,
-        ticket: { select: { requesterId: true } },
+        ticket: {
+          select: { requesterId: true, requesterUserId: true },
+        },
       },
     });
 
@@ -843,7 +830,8 @@ app.delete("/api/attachments/:id", async (req: Request, res: Response) => {
       return;
     }
 
-    if (attachment.ticket.requesterId !== requesterId!) {
+    const ownerId = await ownerUserIdFor(attachment.ticket);
+    if (ownerId !== req.user!.id) {
       res.status(403).json({
         error: { code: "FORBIDDEN", message: "You don't have access to this attachment." },
       });
@@ -876,6 +864,193 @@ app.delete("/api/attachments/:id", async (req: Request, res: Response) => {
       error: { code: "INTERNAL_ERROR", message: "Failed to remove attachment" },
     });
   }
+});
+
+// ── Requester Public Comments ───────────────────────────────────────────────
+// Append-only (FR-18): read via GET, write via POST, any edit/delete is a 405.
+
+const commentSelect = {
+  id: true,
+  ticketId: true,
+  authorId: true,
+  content: true,
+  createdAt: true,
+  author: { select: { id: true, name: true, role: true } },
+} as const;
+
+function validateCommentContent(raw: unknown): { content: string; error?: string } {
+  const content = typeof raw === "string" ? raw.trim() : "";
+  if (content.length < 1 || content.length > COMMENT_MAX_LENGTH) {
+    return {
+      content,
+      error: `Comment text is required (1-${COMMENT_MAX_LENGTH} characters).`,
+    };
+  }
+  return { content };
+}
+
+app.get("/api/tickets/:id/comments", requireAuth, async (req: Request, res: Response) => {
+  const ticketId = parsePositiveInt(req.params.id);
+  if (ticketId === null) {
+    validationError(res, { id: "Ticket id must be a positive integer." });
+    return;
+  }
+
+  try {
+    const ticket = await db.ticket.findUnique({
+      where: { id: ticketId },
+      select: { id: true, requesterId: true, requesterUserId: true },
+    });
+
+    if (!ticket) {
+      sendError(res, 404, "NOT_FOUND", "Ticket not found");
+      return;
+    }
+
+    const ownerId = await ownerUserIdFor(ticket);
+    if (ownerId !== req.user!.id) {
+      sendError(res, 403, "FORBIDDEN", "You don't have access to this ticket.");
+      return;
+    }
+
+    const comments = await db.publicComment.findMany({
+      where: { ticketId },
+      orderBy: { createdAt: "desc" },
+      select: commentSelect,
+    });
+
+    res.json({ data: comments });
+  } catch {
+    sendError(res, 500, "INTERNAL_ERROR", "Failed to fetch comments");
+  }
+});
+
+app.post("/api/tickets/:id/comments", requireAuth, async (req: Request, res: Response) => {
+  const ticketId = parsePositiveInt(req.params.id);
+  if (ticketId === null) {
+    validationError(res, { id: "Ticket id must be a positive integer." });
+    return;
+  }
+
+  const { content, error } = validateCommentContent(req.body?.content);
+  if (error) {
+    validationError(res, { content: error });
+    return;
+  }
+
+  try {
+    const ticket = await db.ticket.findUnique({
+      where: { id: ticketId },
+      select: { id: true, requesterId: true, requesterUserId: true },
+    });
+
+    if (!ticket) {
+      sendError(res, 404, "NOT_FOUND", "Ticket not found");
+      return;
+    }
+
+    const ownerId = await ownerUserIdFor(ticket);
+    if (ownerId !== req.user!.id) {
+      sendError(res, 403, "FORBIDDEN", "You don't have access to this ticket.");
+      return;
+    }
+
+    // Author + timestamp come from the backend, never the client (BR-16).
+    const comment = await db.publicComment.create({
+      data: {
+        ticketId,
+        authorId: req.user!.id,
+        content,
+      },
+      select: commentSelect,
+    });
+
+    res.status(201).json({ data: comment });
+  } catch {
+    sendError(res, 500, "INTERNAL_ERROR", "Failed to post comment");
+  }
+});
+
+app.put("/api/tickets/:id/comments", (_req: Request, res: Response) => {
+  sendError(res, 405, "METHOD_NOT_ALLOWED", "Public comments are append-only.");
+});
+
+app.put("/api/tickets/:id/comments/:commentId", (_req: Request, res: Response) => {
+  sendError(res, 405, "METHOD_NOT_ALLOWED", "Public comments are append-only.");
+});
+
+app.delete("/api/tickets/:id/comments", (_req: Request, res: Response) => {
+  sendError(res, 405, "METHOD_NOT_ALLOWED", "Public comments are append-only.");
+});
+
+app.delete("/api/tickets/:id/comments/:commentId", (_req: Request, res: Response) => {
+  sendError(res, 405, "METHOD_NOT_ALLOWED", "Public comments are append-only.");
+});
+
+// ── Requester: "Problem Appears Resolved" (FR-19, BR-05, BR-20) ─────────────
+// Only flags the request; it never transitions `currentStatus`.
+
+app.put("/api/tickets/:id/indicate-resolved", requireAuth, async (req: Request, res: Response) => {
+  const ticketId = parsePositiveInt(req.params.id);
+  if (ticketId === null) {
+    validationError(res, { id: "Ticket id must be a positive integer." });
+    return;
+  }
+
+  try {
+    const ticket = await db.ticket.findUnique({
+      where: { id: ticketId },
+      select: {
+        id: true,
+        requesterId: true,
+        requesterUserId: true,
+        requesterIndicatedResolved: true,
+      },
+    });
+
+    if (!ticket) {
+      sendError(res, 404, "NOT_FOUND", "Ticket not found");
+      return;
+    }
+
+    const ownerId = await ownerUserIdFor(ticket);
+    if (ownerId !== req.user!.id) {
+      sendError(res, 403, "FORBIDDEN", "You don't have access to this ticket.");
+      return;
+    }
+
+    // Toggle (api-spec 4.9): set + timestamp, or clear on a repeated call.
+    // `currentStatus` is NEVER touched (FR-19, BR-05, BR-20).
+    const nextState = ticket.requesterIndicatedResolved
+      ? { requesterIndicatedResolved: false, indicatedResolvedAt: null }
+      : { requesterIndicatedResolved: true, indicatedResolvedAt: new Date() };
+
+    const updated = await db.ticket.update({
+      where: { id: ticketId },
+      data: nextState,
+      select: {
+        id: true,
+        requesterIndicatedResolved: true,
+        indicatedResolvedAt: true,
+      },
+    });
+
+    res.json({ data: updated });
+  } catch {
+    sendError(res, 500, "INTERNAL_ERROR", "Failed to update ticket");
+  }
+});
+
+// Requesters cannot set the resolution summary (api-spec 4.10). The IT Staff
+// endpoint is added at release time; until then this path is a guarded 403 for
+// everyone.
+app.put("/api/tickets/:id/resolution-summary", requireAuth, (_req: Request, res: Response) => {
+  sendError(
+    res,
+    403,
+    "FORBIDDEN",
+    "The resolution summary can only be set by IT Staff."
+  );
 });
 
 app.use((_req: Request, res: Response) => {
