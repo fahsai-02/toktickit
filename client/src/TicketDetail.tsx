@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { useRequester } from "./RequesterContext.js";
+import { useAuth } from "./AuthContext.js";
 import {
   fetchTicket,
   type TicketDetail as TicketDetailType,
@@ -23,13 +23,18 @@ type DetailState = "loading" | "error" | "not-found" | "access-denied" | "idle";
 
 export default function TicketDetail() {
   const { ticketId } = useParams<{ ticketId: string }>();
-  const { requester } = useRequester();
+  // TODO(Issue 18): derive identity from the session instead of passing
+  // requesterId; until then the authenticated user's id is used as-is.
+  // NOTE: keep the primitive id (not an object) in the effect deps below —
+  // a fresh object literal every render would refire the fetch endlessly.
+  const { user } = useAuth();
+  const requesterId = user?.id;
   const [ticket, setTicket] = useState<TicketDetailType | null>(null);
   const [state, setState] = useState<DetailState>("loading");
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
-    if (!requester || !ticketId) return;
+    if (!requesterId || !ticketId) return;
     const id = Number(ticketId);
     if (!Number.isFinite(id) || id <= 0) {
       setState("not-found");
@@ -40,7 +45,7 @@ export default function TicketDetail() {
     setState("loading");
     setErrorMessage("");
 
-    fetchTicket(id, requester.id)
+    fetchTicket(id, requesterId)
       .then((data) => {
         if (cancelled) return;
         setTicket(data);
@@ -66,7 +71,7 @@ export default function TicketDetail() {
     return () => {
       cancelled = true;
     };
-  }, [ticketId, requester]);
+  }, [ticketId, requesterId]);
 
   if (state === "loading") {
     return (
@@ -192,7 +197,7 @@ export default function TicketDetail() {
       {/* Attachments */}
       <AttachmentSection
         ticketId={ticket.id}
-        requesterId={requester?.id ?? 0}
+        requesterId={requesterId ?? 0}
         attachments={ticket.attachments}
         onUpdate={handleAttachmentsUpdate}
       />

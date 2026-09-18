@@ -118,12 +118,12 @@ Status legend: `Planned` → written before implementation · updated to `Pass`/
 
 | Test ID | Type | Requirement/AC | What It Tests | Expected Result | Automated Test File | Final Status |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| UI-01 | UI component | AC-05, FR-02 | Login — invalid credentials | Error banner shown; no redirect; form retains values | `Login.test.tsx` | Planned |
-| UI-02 | UI component | AC-01, FR-01 | Login — valid credentials | Redirect to `/` on success; user identity in shell | `Login.test.tsx` | Planned |
-| UI-03 | UI component | AC-05 | Login — busy state | Button disabled + spinner during submission | `Login.test.tsx` | Planned |
-| UI-04 | UI component | FR-07, AC-02 | Change password — checklist rendering | Password strength checklist shows 3 grouped rules with live checkmarks (at least 8 chars; upper+lower case; number+special char) | `ChangePassword.test.tsx` | Planned |
-| UI-05 | UI component | FR-07 | Change password — valid submission | "Continue" button enabled when all rules met; submission succeeds; redirect to `/` | `ChangePassword.test.tsx` | Planned |
-| UI-06 | UI component | FR-07 | Change password — validation feedback | Specific rule failures shown in checklist; confirmation mismatch shown | `ChangePassword.test.tsx` | Planned |
+| UI-01 | UI component | AC-05, FR-02 | Login — invalid credentials | Error banner shown; no redirect; form retains values | `Login.test.tsx` | Pass |
+| UI-02 | UI component | AC-01, FR-01 | Login — valid credentials | Redirect to `/` on success; user identity in shell | `Login.test.tsx` | Pass |
+| UI-03 | UI component | AC-05 | Login — busy state | Button disabled + spinner during submission | `Login.test.tsx` | Pass |
+| UI-04 | UI component | FR-07, AC-02 | Change password — checklist rendering | Password strength checklist shows 3 grouped rules with live checkmarks (at least 8 chars; upper+lower case; number+special char) | `ChangePassword.test.tsx` | Pass |
+| UI-05 | UI component | FR-07 | Change password — valid submission | "Continue" button enabled when all rules met; submission succeeds; redirect to `/` | `ChangePassword.test.tsx` | Pass |
+| UI-06 | UI component | FR-07 | Change password — validation feedback | Specific rule failures shown in checklist; confirmation mismatch shown | `ChangePassword.test.tsx` | Pass |
 | UI-07 | UI component | FR-22, AC-08 | Staff queue — table rendering | Table shows all 9 columns with correct data | `StaffTicketQueue.test.tsx` | Planned |
 | UI-08 | UI component | FR-22, AC-08 | Staff queue — search and filter | Search and filter controls work; results update | `StaffTicketQueue.test.tsx` | Planned |
 | UI-09 | UI component | FR-22 | Staff queue — pagination | Prev/next/page controls work | `StaffTicketQueue.test.tsx` | Planned |
@@ -216,7 +216,7 @@ cd .. && npx playwright test e2e/lab-03   # responsive + E2E (needs both servers
 | Suite | Command | Result |
 |-------|---------|--------|
 | Server (unit + API) | `cd server && pnpm test` | **Pass** — 14 files / 173 tests (2026-09-16) *(Includes Lab 3 auth API tests API-01..13 + migration regression MIG-01 + unit tests UNIT-01..02; updated after review fix)* |
-| Client (component + style) | `cd client && pnpm test` | *TBD at sprint close* |
+| Client (component + style) | `cd client && pnpm test` | **Pass** — 11 files / 105 tests (2026-09-18) *(103 baseline + 2 role-badge assertions added in `zen-green-style.test.tsx` per review note)* |
 | E2E + Responsive (Playwright) | `pnpm test:e2e` (from repo root) | *TBD at sprint close* |
 
 ## 7. Known Limitations / Deferred
