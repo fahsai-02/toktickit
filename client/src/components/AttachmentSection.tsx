@@ -23,14 +23,12 @@ let tempIdSeq = 0;
 
 interface Props {
   ticketId: number;
-  requesterId: number;
   attachments: Attachment[];
   onUpdate: (attachments: Attachment[] | ((prev: Attachment[]) => Attachment[])) => void;
 }
 
 export default function AttachmentSection({
   ticketId,
-  requesterId,
   attachments,
   onUpdate,
 }: Props) {
@@ -116,7 +114,7 @@ export default function AttachmentSection({
   async function doUpload(file: File, tempId: number) {
     setUploading((prev) => new Set(prev).add(tempId));
     try {
-      const newAttachment = await uploadAttachment(ticketId, requesterId, file);
+      const newAttachment = await uploadAttachment(ticketId, file);
       onUpdate((prev) => [...prev, newAttachment]);
       setUploadFiles((prev) => {
         const next = new Map(prev);
@@ -176,7 +174,7 @@ export default function AttachmentSection({
   async function handleDownload(attachment: Attachment) {
     let url: string | null = null;
     try {
-      const blob = await downloadAttachment(attachment.id, requesterId);
+      const blob = await downloadAttachment(attachment.id);
       url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -223,11 +221,7 @@ export default function AttachmentSection({
 
     setRemoving(true);
     try {
-      const updated = await removeAttachment(
-        removeDialog.attachmentId,
-        requesterId,
-        reason
-      );
+      const updated = await removeAttachment(removeDialog.attachmentId, reason);
       onUpdate((prev) =>
         prev.map((a) => (a.id === updated.id ? updated : a))
       );

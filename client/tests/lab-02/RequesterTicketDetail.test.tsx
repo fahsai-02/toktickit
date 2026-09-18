@@ -25,6 +25,11 @@ const ticketDetail: api.TicketDetail = {
   requester: { id: 1, name: "Jennifer Anderson" },
   category: { id: 2, name: "Hardware" },
   relatedSystem: { id: 7, name: "Corporate Laptop" },
+  resolutionSummary: null,
+  requesterIndicatedResolved: false,
+  indicatedResolvedAt: null,
+  owner: null,
+  _count: { attachments: 1, comments: 0, notes: 0 },
   createdAt: "2026-08-29T10:00:00.000Z",
   updatedAt: "2026-08-29T10:00:00.000Z",
   attachments: [

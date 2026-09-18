@@ -54,8 +54,6 @@ function fileExtension(name: string): string {
 
 export default function CreateTicket() {
   const navigate = useNavigate();
-  // TODO(Issue 18): derive identity from the session instead of passing
-  // requesterId; until then the authenticated user's id is used as-is.
   const { user } = useAuth();
   const requester = user ? { id: user.id, name: user.name } : null;
 
@@ -200,7 +198,6 @@ export default function CreateTicket() {
     setSubmitting(true);
     try {
       const ticket = await createTicket({
-        requesterId: currentRequester.id,
         categoryId: categoryId as number,
         relatedSystemId: systemId as number,
         requestedPriority: priority as RequestedPriority,
@@ -219,7 +216,7 @@ export default function CreateTicket() {
 
         for (const sf of stagedFiles) {
           try {
-            const attachment = await uploadAttachment(ticket.id, currentRequester.id, sf.file);
+            const attachment = await uploadAttachment(ticket.id, sf.file);
             uploaded.push(attachment);
           } catch (err) {
             const message = err instanceof Error ? err.message : "Upload failed";
@@ -266,7 +263,7 @@ export default function CreateTicket() {
     });
     setUploadingFiles((prev) => new Set(prev).add(sf.id));
     try {
-      const attachment = await uploadAttachment(successTicket.id, currentRequester.id, sf.file);
+      const attachment = await uploadAttachment(successTicket.id, sf.file);
       setUploadedAttachments((prev) => [...prev, attachment]);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Upload failed";

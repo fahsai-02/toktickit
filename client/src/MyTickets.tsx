@@ -40,10 +40,7 @@ const SORT_WHITELIST = [
 ] as const;
 
 export default function MyTickets() {
-  // TODO(Issue 18): derive identity from the session instead of passing
-  // requesterId; until then the authenticated user's id is used as-is.
   const { user } = useAuth();
-  const requester = user ? { id: user.id, name: user.name } : null;
   const navigate = useNavigate();
 
   const [tickets, setTickets] = useState<TicketListItem[]>([]);
@@ -73,8 +70,6 @@ export default function MyTickets() {
     };
   }, []);
 
-  const requesterId = requester?.id;
-
   // Fetch categories once
   useEffect(() => {
     void fetchCategories()
@@ -85,13 +80,11 @@ export default function MyTickets() {
   }, []);
 
   const loadTickets = useCallback(async () => {
-    if (!requesterId) return;
     const reqId = ++abortRef.current;
     setListState("loading");
     setErrorMessage("");
     try {
       const params: Parameters<typeof fetchTickets>[0] = {
-        requesterId,
         page,
         pageSize,
         sortBy,
@@ -128,7 +121,7 @@ export default function MyTickets() {
       }
       setListState("error");
     }
-  }, [requesterId, page, pageSize, sortBy, sortOrder, filters]);
+  }, [page, pageSize, sortBy, sortOrder, filters]);
 
   useEffect(() => {
     void loadTickets();
@@ -181,7 +174,7 @@ export default function MyTickets() {
     navigate(`/tickets/${ticket.id}`);
   };
 
-  if (!requester) return null;
+  if (!user) return null;
 
   return (
     <div className="container my-tickets">
@@ -246,6 +239,13 @@ export default function MyTickets() {
             >
               <option value="">All</option>
               <option value="NEW">NEW</option>
+              <option value="OPEN">OPEN</option>
+              <option value="IN_PROGRESS">IN PROGRESS</option>
+              <option value="WAITING_FOR_REQUESTER">WAITING FOR REQUESTER</option>
+              <option value="RESOLVED">RESOLVED</option>
+              <option value="CLOSED">CLOSED</option>
+              <option value="REOPENED">REOPENED</option>
+              <option value="CANCELLED">CANCELLED</option>
             </select>
           </div>
           <div className="filter-select">
