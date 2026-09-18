@@ -430,7 +430,7 @@ export default function AttachmentSection({
                 data-testid="remove-reason-input"
               />
               {removeError && (
-                <div className="field-error" id="remove-reason-error" data-testid="remove-error">
+                <div className="field-error-msg" id="remove-reason-error" data-testid="remove-error">
                   {removeError}
                 </div>
               )}

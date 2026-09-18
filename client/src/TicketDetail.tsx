@@ -315,7 +315,7 @@ export default function TicketDetail() {
           </Button>
         )}
         {toggleError && (
-          <p className="field-error" data-testid="toggle-error">
+          <p className="field-error-msg" data-testid="toggle-error">
             {toggleError}
           </p>
         )}
@@ -396,7 +396,7 @@ export default function TicketDetail() {
             data-testid="comment-input"
           />
           {commentError && (
-            <div className="field-error" id="comment-error" data-testid="comment-error">
+            <div className="field-error-msg" id="comment-error" data-testid="comment-error">
               {commentError}
             </div>
           )}
