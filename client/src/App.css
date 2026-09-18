@@ -406,17 +406,7 @@
       min-height: 44px;
     }
 
-    .btn-change-requester {
-      min-height: 44px;
-      padding: 4px 10px;
-      white-space: nowrap;
-    }
-
-    .btn-change-requester__full {
-      display: none;
-    }
-
-    .requester-name {
+    .profile-name {
       max-width: 80px;
       min-width: 0;
     }

@@ -8,6 +8,7 @@ import ReadOnlyField from "../../src/components/ReadOnlyField.js";
 import Badge, {
   statusBadgeVariant,
   priorityBadgeVariant,
+  roleBadgeVariant,
 } from "../../src/components/Badge.js";
 
 interface CssRule {
@@ -149,6 +150,35 @@ describe("STYLE-03: Badge palette mapping (ui-spec section 3)", () => {
     expect(statusBadgeVariant("OPEN")).toBe("neutral");
     expect(priorityBadgeVariant(undefined)).toBe("neutral");
     expect(priorityBadgeVariant("BOGUS")).toBe("neutral");
+  });
+
+  it("maps REQUESTER/IT_STAFF/ADMINISTRATOR to role badge tints (docs/lab-03/ui-spec.md section 3)", () => {
+    const css = injectedCss();
+    expect(tokenValue(css, "--color-pale")).toBe("#EAF6EF");
+
+    expect(roleBadgeVariant("REQUESTER")).toBe("role-requester");
+    expect(roleBadgeVariant("IT_STAFF")).toBe("role-it-staff");
+    expect(roleBadgeVariant("ADMINISTRATOR")).toBe("role-administrator");
+
+    const requester = ruleBody(css, ".badge-role-requester", "background");
+    expect(requester).toMatch(/background\s*:\s*#dbeafe/);
+
+    const itStaff = ruleBody(css, ".badge-role-it-staff", "color-pale");
+    expect(itStaff).toMatch(/background\s*:\s*var\(--color-pale\)/);
+
+    const admin = ruleBody(css, ".badge-role-administrator", "background");
+    expect(admin).toMatch(/background\s*:\s*#ede9fe/);
+
+    render(<Badge variant="role-administrator">ADMINISTRATOR</Badge>);
+    expect(screen.getByText("ADMINISTRATOR")).toHaveClass(
+      "badge",
+      "badge-role-administrator"
+    );
+  });
+
+  it("falls back to neutral for unknown or missing roles", () => {
+    expect(roleBadgeVariant(undefined)).toBe("neutral");
+    expect(roleBadgeVariant("BOGUS")).toBe("neutral");
   });
 });
 

@@ -216,7 +216,7 @@ cd .. && npx playwright test e2e/lab-03   # responsive + E2E (needs both servers
 | Suite | Command | Result |
 |-------|---------|--------|
 | Server (unit + API) | `cd server && pnpm test` | **Pass** — 14 files / 173 tests (2026-09-16) *(Includes Lab 3 auth API tests API-01..13 + migration regression MIG-01 + unit tests UNIT-01..02; updated after review fix)* |
-| Client (component + style) | `cd client && pnpm test` | *TBD at sprint close* |
+| Client (component + style) | `cd client && pnpm test` | **Pass** — 11 files / 105 tests (2026-09-18) *(103 baseline + 2 role-badge assertions added in `zen-green-style.test.tsx` per review note)* |
 | E2E + Responsive (Playwright) | `pnpm test:e2e` (from repo root) | *TBD at sprint close* |
 
 ## 7. Known Limitations / Deferred
