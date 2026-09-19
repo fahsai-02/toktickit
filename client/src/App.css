@@ -841,6 +841,12 @@
     margin-top: 8px;
   }
 
+  /* Resolution Summary (ui-spec 5.3): read-only pale green, hidden when unset */
+  .field-readonly.resolution-summary {
+    background: var(--color-pale);
+    white-space: pre-wrap;
+  }
+
   /* ── Requester actions + Public Comments (Issue 18) ─────────────── */
 
   .ticket-actions {

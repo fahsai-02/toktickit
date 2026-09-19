@@ -100,9 +100,7 @@ toktickit/
 | Frontend | `cd client && pnpm dev` | http://localhost:5173 |
 
 Open http://localhost:5173 in a browser. Sign in using an account from
-`docs/lab-01/seed-credentials.md` (all seed accounts are in the
-`docs/lab-02/seed-credentials.md` and `docs/lab-03/seed-credentials.md`
-files; Lab 3 uses the `docs/lab-03/seed-credentials.md` set). Then use
+`docs/lab-03/seed-credentials.md`. Then use
 **Create Ticket** and **My Tickets** from the authenticated app shell. The
 current Requester comes from your session — there is no requester selection
 or **Change Requester** control (removed in Lab 3, Issue 18).

@@ -184,16 +184,13 @@ function parsePositiveInt(value: unknown): number | null {
 /** Legacy `Requester.id` for a session user — matched by email, auto-created
  *  if the user has no legacy row yet (e.g. an Admin-created Requester). */
 async function resolveLegacyRequesterIdForUser(name: string, email: string): Promise<number> {
-  const existing = await db.requester.findUnique({
+  const requester = await db.requester.upsert({
     where: { email },
+    update: {},
+    create: { name, email, isActive: true },
     select: { id: true },
   });
-  if (existing) return existing.id;
-  const created = await db.requester.create({
-    data: { name, email, isActive: true },
-    select: { id: true },
-  });
-  return created.id;
+  return requester.id;
 }
 
 /** Effective owning User.id for a ticket. Backfills the legacy link by email
