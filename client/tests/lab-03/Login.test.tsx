@@ -376,8 +376,8 @@ describe("auth api client", () => {
 
     await api.fetchCategories();
     await api.fetchRelatedSystems();
-    await api.fetchTickets({ requesterId: 1 });
-    await api.fetchTicket(1, 1);
+    await api.fetchTickets({});
+    await api.fetchTicket(1);
 
     expect(fetchMock).toHaveBeenCalledTimes(4);
     for (const call of fetchMock.mock.calls) {

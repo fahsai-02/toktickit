@@ -298,7 +298,7 @@ describe("CreateTicket", () => {
     await waitFor(() => {
       expect(uploadSpy).toHaveBeenCalledTimes(1);
     });
-    expect(uploadSpy).toHaveBeenCalledWith(12, 1, expect.any(File));
+    expect(uploadSpy).toHaveBeenCalledWith(12, expect.any(File));
 
     expect(
       await screen.findByText(/Ticket created: TKT-2026-000012/)

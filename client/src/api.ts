@@ -121,7 +121,15 @@ export async function fetchRelatedSystems(
 }
 
 export type RequestedPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
-export type TicketStatus = "NEW";
+export type TicketStatus =
+  | "NEW"
+  | "OPEN"
+  | "IN_PROGRESS"
+  | "WAITING_FOR_REQUESTER"
+  | "RESOLVED"
+  | "CLOSED"
+  | "REOPENED"
+  | "CANCELLED";
 
 export interface TicketRequester {
   id: number;
@@ -145,7 +153,6 @@ export interface Ticket {
 }
 
 export interface NewTicketInput {
-  requesterId: number;
   categoryId: number;
   relatedSystemId: number;
   requestedPriority: RequestedPriority;
@@ -175,7 +182,6 @@ export interface TicketListMeta {
 }
 
 export interface TicketListParams {
-  requesterId: number;
   search?: string;
   categoryId?: number;
   currentStatus?: string;
@@ -191,7 +197,6 @@ export async function fetchTickets(
 ): Promise<{ data: TicketListItem[]; meta: TicketListMeta }> {
   const base = API_URL || window.location.origin;
   const url = new URL("/api/tickets", base);
-  url.searchParams.set("requesterId", String(params.requesterId));
   if (params.search) url.searchParams.set("search", params.search);
   if (params.categoryId !== undefined)
     url.searchParams.set("categoryId", String(params.categoryId));
@@ -287,18 +292,19 @@ export interface TicketDetail {
   requester: TicketRequester;
   category: Category;
   relatedSystem: Pick<RelatedSystem, "id" | "name">;
+  resolutionSummary: string | null;
+  requesterIndicatedResolved: boolean;
+  indicatedResolvedAt: string | null;
+  owner: { id: number; name: string; role: UserRole } | null;
+  _count: { attachments: number; comments: number; notes: number };
   createdAt: string;
   updatedAt: string;
   attachments: Attachment[];
 }
 
-export async function fetchTicket(
-  ticketId: number,
-  requesterId: number
-): Promise<TicketDetail> {
+export async function fetchTicket(ticketId: number): Promise<TicketDetail> {
   const base = API_URL || window.location.origin;
   const url = new URL(`/api/tickets/${ticketId}`, base);
-  url.searchParams.set("requesterId", String(requesterId));
 
   const res = await fetch(url, { credentials: "include" });
   if (!res.ok) {
@@ -308,15 +314,79 @@ export async function fetchTicket(
   return data;
 }
 
+// ── Public Comments (Issue 18, api-spec 4.7-4.8) ──────────────────────────
+
+export interface PublicComment {
+  id: number;
+  ticketId: number;
+  authorId: number;
+  content: string;
+  createdAt: string;
+  author: { id: number; name: string; role: UserRole };
+}
+
+export async function fetchTicketComments(
+  ticketId: number
+): Promise<PublicComment[]> {
+  const base = API_URL || window.location.origin;
+  const url = new URL(`/api/tickets/${ticketId}/comments`, base);
+
+  const res = await fetch(url, { credentials: "include" });
+  if (!res.ok) {
+    await handleApiError(res, `Failed to fetch comments: ${res.status}`);
+  }
+  const { data } = (await res.json()) as { data: PublicComment[] };
+  return data;
+}
+
+export async function postPublicComment(
+  ticketId: number,
+  content: string
+): Promise<PublicComment> {
+  const res = await fetch(`${API_URL}/api/tickets/${ticketId}/comments`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ content }),
+  });
+  if (!res.ok) {
+    await handleApiError(res, "Failed to post comment");
+  }
+  const { data } = (await res.json()) as { data: PublicComment };
+  return data;
+}
+
+// ── "Problem Appears Resolved" toggle (Issue 18, api-spec 4.9) ────────────
+
+export interface ResolvedIndicator {
+  id: number;
+  requesterIndicatedResolved: boolean;
+  indicatedResolvedAt: string | null;
+}
+
+export async function indicateResolved(
+  ticketId: number
+): Promise<ResolvedIndicator> {
+  const res = await fetch(`${API_URL}/api/tickets/${ticketId}/indicate-resolved`, {
+    method: "PUT",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: "{}",
+  });
+  if (!res.ok) {
+    await handleApiError(res, "Failed to update resolved indicator");
+  }
+  const { data } = (await res.json()) as { data: ResolvedIndicator };
+  return data;
+}
+
 // ── Attachments (Issue 11) ─────────────────────────────────────────────
 
 export async function uploadAttachment(
   ticketId: number,
-  requesterId: number,
   file: File
 ): Promise<Attachment> {
   const formData = new FormData();
-  formData.append("requesterId", String(requesterId));
   formData.append("file", file);
 
   const res = await fetch(`${API_URL}/api/tickets/${ticketId}/attachments`, {
@@ -333,13 +403,9 @@ export async function uploadAttachment(
   return data;
 }
 
-export async function downloadAttachment(
-  attachmentId: number,
-  requesterId: number
-): Promise<Blob> {
+export async function downloadAttachment(attachmentId: number): Promise<Blob> {
   const base = API_URL || window.location.origin;
   const url = new URL(`/api/attachments/${attachmentId}/download`, base);
-  url.searchParams.set("requesterId", String(requesterId));
 
   const res = await fetch(url, { credentials: "include" });
   if (!res.ok) {
@@ -351,14 +417,13 @@ export async function downloadAttachment(
 
 export async function removeAttachment(
   attachmentId: number,
-  requesterId: number,
   removalReason: string
 ): Promise<Attachment> {
   const res = await fetch(`${API_URL}/api/attachments/${attachmentId}`, {
     method: "DELETE",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ requesterId, removalReason }),
+    body: JSON.stringify({ removalReason }),
   });
 
   if (!res.ok) {

@@ -2,31 +2,74 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import request from "supertest";
 import app from "../../src/app.js";
 import { db } from "../../src/db.js";
+import { seedUserFor, authedAgent } from "../helpers/auth.js";
+import { SEED_CATEGORIES, SEED_RELATED_SYSTEMS } from "../../src/lib/seedData.js";
+
+// Lab 2 list/search/filter/sort/pagination behavior migrated to the
+// authenticated contract (Issue 18): no `requesterId` query param — the session
+// user's tickets are returned (BR-03, api-spec section 4.2).
 
 const createdTicketIds: number[] = [];
 
 async function cleanUp(): Promise<void> {
+  await db.publicComment.deleteMany({
+    where: { ticketId: { in: createdTicketIds } },
+  });
+  await db.attachment.deleteMany({ where: { ticketId: { in: createdTicketIds } } });
   await db.ticket.deleteMany({ where: { id: { in: createdTicketIds } } });
   createdTicketIds.length = 0;
 }
 
 afterAll(async () => {
   await cleanUp();
+  await db.$disconnect();
 });
 
+let agentA: ReturnType<typeof request.agent>;
+let agentB: ReturnType<typeof request.agent>;
+let categoryIds: Record<string, number>;
+let relatedSystemId: number;
+
+beforeAll(async () => {
+  agentA = await authedAgent("REQUESTER", 0);
+  agentB = await authedAgent("REQUESTER", 1);
+
+  categoryIds = {} as Record<string, number>;
+  for (const c of SEED_CATEGORIES) {
+    categoryIds[c.name] = (await db.category.findUnique({
+      where: { name: c.name },
+      select: { id: true },
+    }))!.id;
+  }
+  relatedSystemId = (await db.relatedSystem.findUnique({
+    where: { name: SEED_RELATED_SYSTEMS[0].name },
+    select: { id: true },
+  }))!.id;
+}, 30000);
+
 async function createTicket(
+  agent: ReturnType<typeof request.agent>,
   overrides: Record<string, unknown> = {}
-): Promise<{ id: number; ticketNumber: string; summary: string; requestedPriority: string; itPriority: string | null; currentStatus: string; category: { id: number; name: string }; createdAt: string; updatedAt: string }> {
+): Promise<{
+  id: number;
+  ticketNumber: string;
+  summary: string;
+  requestedPriority: string;
+  itPriority: string | null;
+  currentStatus: string;
+  category: { id: number; name: string };
+  createdAt: string;
+  updatedAt: string;
+}> {
   const body = {
-    requesterId: 1,
-    categoryId: 2,
-    relatedSystemId: 7,
+    categoryId: categoryIds["Hardware"],
+    relatedSystemId,
     requestedPriority: "MEDIUM",
     summary: "Test ticket",
     description: "Test description",
     ...overrides,
   };
-  const res = await request(app).post("/api/tickets").send(body);
+  const res = await agent.post("/api/tickets").send(body);
   expect(res.status).toBe(201);
   const ticket = res.body.data;
   createdTicketIds.push(ticket.id);
@@ -35,80 +78,75 @@ async function createTicket(
 
 describe("GET /api/tickets", () => {
   describe("API-06: Ownership isolation", () => {
-    it("returns only requester 1's tickets when requesterId=1", async () => {
-      const ticketA = await createTicket({
-        requesterId: 1,
+    it("returns only user A's tickets", async () => {
+      const ticketA = await createTicket(agentA, {
         summary: "A's ticket",
       });
-      const ticketB = await createTicket({
-        requesterId: 2,
+      const ticketB = await createTicket(agentB, {
         summary: "B's ticket",
       });
 
-      const res = await request(app).get("/api/tickets?requesterId=1");
+      const res = await agentA.get("/api/tickets");
       expect(res.status).toBe(200);
       const ids = res.body.data.map((t: { id: number }) => t.id);
       expect(ids).toContain(ticketA.id);
       expect(ids).not.toContain(ticketB.id);
     });
 
-    it("returns only requester 2's tickets when requesterId=2", async () => {
-      const ticketA = await createTicket({
-        requesterId: 1,
+    it("returns only user B's tickets", async () => {
+      const ticketA = await createTicket(agentA, {
         summary: "A's ticket 2",
       });
-      const ticketB = await createTicket({
-        requesterId: 2,
+      const ticketB = await createTicket(agentB, {
         summary: "B's ticket 2",
       });
 
-      const res = await request(app).get("/api/tickets?requesterId=2");
+      const res = await agentB.get("/api/tickets");
       expect(res.status).toBe(200);
       const ids = res.body.data.map((t: { id: number }) => t.id);
       expect(ids).toContain(ticketB.id);
       expect(ids).not.toContain(ticketA.id);
     });
 
-    it("does not leak requester A's tickets even when searching B's keywords", async () => {
-      const ticketA = await createTicket({
-        requesterId: 1,
+    it("does not leak user A's tickets even when searching B's keywords", async () => {
+      const ticketA = await createTicket(agentA, {
         summary: "UniqueSecretKeywordXYZ",
       });
 
-      const res = await request(app).get(
-        "/api/tickets?requesterId=2&search=UniqueSecretKeywordXYZ"
+      const res = await agentB.get(
+        "/api/tickets?search=UniqueSecretKeywordXYZ"
       );
       expect(res.status).toBe(200);
       const ids = res.body.data.map((t: { id: number }) => t.id);
       expect(ids).not.toContain(ticketA.id);
     });
+
+    it("returns 401 when unauthenticated", async () => {
+      const res = await request(app).get("/api/tickets");
+      expect(res.status).toBe(401);
+      expect(res.body.error.code).toBe("UNAUTHORIZED");
+    });
   });
 
   describe("API-07: Search", () => {
     it("finds tickets by partial ticketNumber match (case-insensitive)", async () => {
-      const ticket = await createTicket({
-        requesterId: 1,
+      const ticket = await createTicket(agentA, {
         summary: "Search test",
       });
 
       const partial = ticket.ticketNumber.slice(0, 8);
-      const res = await request(app).get(
-        `/api/tickets?requesterId=1&search=${partial}`
-      );
+      const res = await agentA.get(`/api/tickets?search=${partial}`);
       expect(res.status).toBe(200);
       const ids = res.body.data.map((t: { id: number }) => t.id);
       expect(ids).toContain(ticket.id);
     });
 
     it("finds tickets by summary substring (case-insensitive)", async () => {
-      await createTicket({
-        requesterId: 1,
+      await createTicket(agentA, {
         summary: "Coffee machine broken in Building A",
       });
 
-      const res = await request(app).get(
-        "/api/tickets?requesterId=1&search=coffee"
-      );
+      const res = await agentA.get("/api/tickets?search=coffee");
       expect(res.status).toBe(200);
       expect(res.body.data.length).toBeGreaterThanOrEqual(1);
       const summaries = res.body.data.map((t: { summary: string }) =>
@@ -118,48 +156,41 @@ describe("GET /api/tickets", () => {
     });
 
     it("search is case-insensitive", async () => {
-      const ticket = await createTicket({
-        requesterId: 1,
+      const ticket = await createTicket(agentA, {
         summary: "UpperAndLower case Test",
       });
 
-      const res = await request(app).get(
-        "/api/tickets?requesterId=1&search=UPPERANDLOWER"
-      );
+      const res = await agentA.get("/api/tickets?search=UPPERANDLOWER");
       expect(res.status).toBe(200);
       const ids = res.body.data.map((t: { id: number }) => t.id);
       expect(ids).toContain(ticket.id);
     });
 
     it("combined search + filter returns correct subset", async () => {
-      await createTicket({
-        requesterId: 1,
+      await createTicket(agentA, {
         summary: "Laptop issue in Hardware category",
-        categoryId: 2,
+        categoryId: categoryIds["Hardware"],
         requestedPriority: "HIGH",
       });
-      await createTicket({
-        requesterId: 1,
+      await createTicket(agentA, {
         summary: "Laptop issue in Software category",
-        categoryId: 3,
+        categoryId: categoryIds["Software"],
         requestedPriority: "HIGH",
       });
 
-      const res = await request(app).get(
-        "/api/tickets?requesterId=1&search=Laptop&categoryId=2&requestedPriority=HIGH"
+      const res = await agentA.get(
+        `/api/tickets?search=Laptop&categoryId=${categoryIds["Hardware"]}&requestedPriority=HIGH`
       );
       expect(res.status).toBe(200);
       for (const t of res.body.data) {
         expect(t.summary.toLowerCase()).toContain("laptop");
-        expect(t.category.id).toBe(2);
+        expect(t.category.id).toBe(categoryIds["Hardware"]);
         expect(t.requestedPriority).toBe("HIGH");
       }
     });
 
     it("returns empty data (not error) when no tickets match search", async () => {
-      const res = await request(app).get(
-        "/api/tickets?requesterId=1&search=ZZZNONEXISTENTXYZ"
-      );
+      const res = await agentA.get("/api/tickets?search=ZZZNONEXISTENTXYZ");
       expect(res.status).toBe(200);
       expect(res.body.data).toEqual([]);
       expect(res.body.meta.total).toBe(0);
@@ -168,35 +199,30 @@ describe("GET /api/tickets", () => {
 
   describe("API-08: Filters", () => {
     it("filters by categoryId", async () => {
-      await createTicket({
-        requesterId: 1,
+      await createTicket(agentA, {
         summary: "Hardware ticket",
-        categoryId: 2,
+        categoryId: categoryIds["Hardware"],
       });
-      await createTicket({
-        requesterId: 1,
+      await createTicket(agentA, {
         summary: "Software ticket",
-        categoryId: 3,
+        categoryId: categoryIds["Software"],
       });
 
-      const res = await request(app).get(
-        "/api/tickets?requesterId=1&categoryId=2"
+      const res = await agentA.get(
+        `/api/tickets?categoryId=${categoryIds["Hardware"]}`
       );
       expect(res.status).toBe(200);
       for (const t of res.body.data) {
-        expect(t.category.id).toBe(2);
+        expect(t.category.id).toBe(categoryIds["Hardware"]);
       }
     });
 
     it("filters by currentStatus", async () => {
-      await createTicket({
-        requesterId: 1,
+      await createTicket(agentA, {
         summary: "Status NEW ticket",
       });
 
-      const res = await request(app).get(
-        "/api/tickets?requesterId=1&currentStatus=NEW"
-      );
+      const res = await agentA.get("/api/tickets?currentStatus=NEW");
       expect(res.status).toBe(200);
       for (const t of res.body.data) {
         expect(t.currentStatus).toBe("NEW");
@@ -204,20 +230,16 @@ describe("GET /api/tickets", () => {
     });
 
     it("filters by requestedPriority", async () => {
-      await createTicket({
-        requesterId: 1,
+      await createTicket(agentA, {
         summary: "Urgent priority ticket",
         requestedPriority: "URGENT",
       });
-      await createTicket({
-        requesterId: 1,
+      await createTicket(agentA, {
         summary: "Low priority ticket",
         requestedPriority: "LOW",
       });
 
-      const res = await request(app).get(
-        "/api/tickets?requesterId=1&requestedPriority=URGENT"
-      );
+      const res = await agentA.get("/api/tickets?requestedPriority=URGENT");
       expect(res.status).toBe(200);
       for (const t of res.body.data) {
         expect(t.requestedPriority).toBe("URGENT");
@@ -225,31 +247,28 @@ describe("GET /api/tickets", () => {
     });
 
     it("combines multiple filters with AND logic", async () => {
-      await createTicket({
-        requesterId: 1,
+      await createTicket(agentA, {
         summary: "Combined filter match",
-        categoryId: 2,
+        categoryId: categoryIds["Hardware"],
         requestedPriority: "HIGH",
       });
-      await createTicket({
-        requesterId: 1,
+      await createTicket(agentA, {
         summary: "Combined filter no match category",
-        categoryId: 3,
+        categoryId: categoryIds["Software"],
         requestedPriority: "HIGH",
       });
-      await createTicket({
-        requesterId: 1,
+      await createTicket(agentA, {
         summary: "Combined filter no match priority",
-        categoryId: 2,
+        categoryId: categoryIds["Hardware"],
         requestedPriority: "LOW",
       });
 
-      const res = await request(app).get(
-        "/api/tickets?requesterId=1&categoryId=2&requestedPriority=HIGH"
+      const res = await agentA.get(
+        `/api/tickets?categoryId=${categoryIds["Hardware"]}&requestedPriority=HIGH`
       );
       expect(res.status).toBe(200);
       for (const t of res.body.data) {
-        expect(t.category.id).toBe(2);
+        expect(t.category.id).toBe(categoryIds["Hardware"]);
         expect(t.requestedPriority).toBe("HIGH");
       }
     });
@@ -257,16 +276,14 @@ describe("GET /api/tickets", () => {
 
   describe("API-09: Sorting", () => {
     it("defaults to updatedAt descending", async () => {
-      const t1 = await createTicket({
-        requesterId: 1,
+      const t1 = await createTicket(agentA, {
         summary: "First ticket sort test",
       });
-      const t2 = await createTicket({
-        requesterId: 1,
+      const t2 = await createTicket(agentA, {
         summary: "Second ticket sort test",
       });
 
-      const res = await request(app).get("/api/tickets?requesterId=1");
+      const res = await agentA.get("/api/tickets");
       expect(res.status).toBe(200);
       const ids = res.body.data.map((t: { id: number }) => t.id);
       const idx1 = ids.indexOf(t1.id);
@@ -274,15 +291,14 @@ describe("GET /api/tickets", () => {
 
       // t2 was created after t1: its updatedAt is strictly later, OR equal with a
       // higher ticketNumber, which the secondary DESC sort puts first in both cases.
-      // No timing sleep or conditional guard needed.
       expect(idx1).toBeGreaterThanOrEqual(0);
       expect(idx2).toBeGreaterThanOrEqual(0);
       expect(idx2).toBeLessThan(idx1);
     });
 
     it("appends ticketNumber DESC as secondary sort for stable ordering", async () => {
-      const res = await request(app).get(
-        "/api/tickets?requesterId=1&sortBy=updatedAt&sortOrder=desc"
+      const res = await agentA.get(
+        "/api/tickets?sortBy=updatedAt&sortOrder=desc"
       );
       expect(res.status).toBe(200);
       expect(res.body.data.length).toBeGreaterThan(1);
@@ -300,8 +316,8 @@ describe("GET /api/tickets", () => {
     });
 
     it("supports sortBy=createdAt asc", async () => {
-      const res = await request(app).get(
-        "/api/tickets?requesterId=1&sortBy=createdAt&sortOrder=asc"
+      const res = await agentA.get(
+        "/api/tickets?sortBy=createdAt&sortOrder=asc"
       );
       expect(res.status).toBe(200);
       const dates = res.body.data.map((t: { createdAt: string }) =>
@@ -313,8 +329,8 @@ describe("GET /api/tickets", () => {
     });
 
     it("supports sortBy=ticketNumber desc", async () => {
-      const res = await request(app).get(
-        "/api/tickets?requesterId=1&sortBy=ticketNumber&sortOrder=desc"
+      const res = await agentA.get(
+        "/api/tickets?sortBy=ticketNumber&sortOrder=desc"
       );
       expect(res.status).toBe(200);
       const nums = res.body.data.map((t: { ticketNumber: string }) =>
@@ -326,17 +342,15 @@ describe("GET /api/tickets", () => {
     });
 
     it("returns 400 for non-whitelisted sortBy", async () => {
-      const res = await request(app).get(
-        "/api/tickets?requesterId=1&sortBy=description"
-      );
+      const res = await agentA.get("/api/tickets?sortBy=description");
       expect(res.status).toBe(400);
       expect(res.body.error.code).toBe("VALIDATION_ERROR");
       expect(res.body.error.fields.sortBy).toBeTruthy();
     });
 
     it("returns 400 for non-whitelisted sortOrder", async () => {
-      const res = await request(app).get(
-        "/api/tickets?requesterId=1&sortBy=createdAt&sortOrder=sideways"
+      const res = await agentA.get(
+        "/api/tickets?sortBy=createdAt&sortOrder=sideways"
       );
       expect(res.status).toBe(400);
       expect(res.body.error.code).toBe("VALIDATION_ERROR");
@@ -347,15 +361,12 @@ describe("GET /api/tickets", () => {
   describe("API-10: Pagination", () => {
     it("returns correct subset and metadata", async () => {
       for (let i = 0; i < 5; i++) {
-        await createTicket({
-          requesterId: 1,
+        await createTicket(agentA, {
           summary: `Pagination test ticket ${i}`,
         });
       }
 
-      const res = await request(app).get(
-        "/api/tickets?requesterId=1&page=1&pageSize=2"
-      );
+      const res = await agentA.get("/api/tickets?page=1&pageSize=2");
       expect(res.status).toBe(200);
       expect(res.body.data.length).toBeLessThanOrEqual(2);
       expect(res.body.meta).toMatchObject({
@@ -371,18 +382,13 @@ describe("GET /api/tickets", () => {
 
     it("returns different page 2 results", async () => {
       for (let i = 0; i < 5; i++) {
-        await createTicket({
-          requesterId: 1,
+        await createTicket(agentA, {
           summary: `Pagination page2 test ${i}`,
         });
       }
 
-      const page1 = await request(app).get(
-        "/api/tickets?requesterId=1&page=1&pageSize=2"
-      );
-      const page2 = await request(app).get(
-        "/api/tickets?requesterId=1&page=2&pageSize=2"
-      );
+      const page1 = await agentA.get("/api/tickets?page=1&pageSize=2");
+      const page2 = await agentA.get("/api/tickets?page=2&pageSize=2");
       expect(page1.status).toBe(200);
       expect(page2.status).toBe(200);
 
@@ -393,41 +399,31 @@ describe("GET /api/tickets", () => {
     });
 
     it("returns 400 for page=0", async () => {
-      const res = await request(app).get(
-        "/api/tickets?requesterId=1&page=0"
-      );
+      const res = await agentA.get("/api/tickets?page=0");
       expect(res.status).toBe(400);
       expect(res.body.error.fields.page).toBeTruthy();
     });
 
     it("returns 400 for negative page", async () => {
-      const res = await request(app).get(
-        "/api/tickets?requesterId=1&page=-1"
-      );
+      const res = await agentA.get("/api/tickets?page=-1");
       expect(res.status).toBe(400);
       expect(res.body.error.fields.page).toBeTruthy();
     });
 
     it("returns 400 for pageSize >50", async () => {
-      const res = await request(app).get(
-        "/api/tickets?requesterId=1&pageSize=51"
-      );
+      const res = await agentA.get("/api/tickets?pageSize=51");
       expect(res.status).toBe(400);
       expect(res.body.error.fields.pageSize).toBeTruthy();
     });
 
     it("returns 400 for non-numeric page", async () => {
-      const res = await request(app).get(
-        "/api/tickets?requesterId=1&page=abc"
-      );
+      const res = await agentA.get("/api/tickets?page=abc");
       expect(res.status).toBe(400);
       expect(res.body.error.fields.page).toBeTruthy();
     });
 
     it("caps pageSize at 50", async () => {
-      const res = await request(app).get(
-        "/api/tickets?requesterId=1&pageSize=50"
-      );
+      const res = await agentA.get("/api/tickets?pageSize=50");
       expect(res.status).toBe(200);
       expect(res.body.meta.pageSize).toBe(50);
     });
@@ -435,58 +431,28 @@ describe("GET /api/tickets", () => {
 
   describe("API-24: Edge cases", () => {
     it("returns 400 for unknown currentStatus enum", async () => {
-      const res = await request(app).get(
-        "/api/tickets?requesterId=1&currentStatus=BOGUS"
-      );
+      const res = await agentA.get("/api/tickets?currentStatus=BOGUS");
       expect(res.status).toBe(400);
       expect(res.body.error.code).toBe("VALIDATION_ERROR");
       expect(res.body.error.fields.currentStatus).toBeTruthy();
     });
 
     it("returns 400 for unknown requestedPriority enum", async () => {
-      const res = await request(app).get(
-        "/api/tickets?requesterId=1&requestedPriority=BOGUS"
-      );
+      const res = await agentA.get("/api/tickets?requestedPriority=BOGUS");
       expect(res.status).toBe(400);
       expect(res.body.error.code).toBe("VALIDATION_ERROR");
       expect(res.body.error.fields.requestedPriority).toBeTruthy();
     });
 
     it("returns 400 for negative pageSize", async () => {
-      const res = await request(app).get(
-        "/api/tickets?requesterId=1&pageSize=-1"
-      );
+      const res = await agentA.get("/api/tickets?pageSize=-1");
       expect(res.status).toBe(400);
       expect(res.body.error.code).toBe("VALIDATION_ERROR");
       expect(res.body.error.fields.pageSize).toBeTruthy();
     });
 
-    it("returns 400 for non-numeric requesterId", async () => {
-      const res = await request(app).get(
-        "/api/tickets?requesterId=abc"
-      );
-      expect(res.status).toBe(400);
-      expect(res.body.error.code).toBe("VALIDATION_ERROR");
-      expect(res.body.error.fields.requesterId).toBeTruthy();
-    });
-
-    it("returns 404 for unknown requester", async () => {
-      const res = await request(app).get(
-        "/api/tickets?requesterId=99999"
-      );
-      expect(res.status).toBe(404);
-      expect(res.body.error.code).toBe("NOT_FOUND");
-    });
-
-    it("returns 400 when requesterId is missing", async () => {
-      const res = await request(app).get("/api/tickets");
-      expect(res.status).toBe(400);
-      expect(res.body.error.code).toBe("VALIDATION_ERROR");
-      expect(res.body.error.fields.requesterId).toBeTruthy();
-    });
-
     it("returns correct response envelope shape", async () => {
-      const res = await request(app).get("/api/tickets?requesterId=1");
+      const res = await agentA.get("/api/tickets");
       expect(res.status).toBe(200);
       expect(res.body).toHaveProperty("data");
       expect(res.body).toHaveProperty("meta");
@@ -500,12 +466,11 @@ describe("GET /api/tickets", () => {
     });
 
     it("each ticket item has the correct shape", async () => {
-      await createTicket({
-        requesterId: 1,
+      await createTicket(agentA, {
         summary: "Shape check ticket",
       });
 
-      const res = await request(app).get("/api/tickets?requesterId=1");
+      const res = await agentA.get("/api/tickets");
       expect(res.status).toBe(200);
       expect(res.body.data.length).toBeGreaterThan(0);
 

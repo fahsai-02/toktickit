@@ -2,7 +2,6 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 import { createTicket, ApiError } from "../../src/api.js";
 
 const input = {
-  requesterId: 1,
   categoryId: 2,
   relatedSystemId: 7,
   requestedPriority: "MEDIUM" as const,

@@ -53,13 +53,13 @@ Status legend: `Planned` → written before implementation · updated to `Pass`/
 | API-11 | API | FR-07 | Change password — missing digit | 400 with specific validation message | `auth.api.test.ts` | Pass |
 | API-12 | API | FR-07 | Change password — missing special char | 400 with specific validation message | `auth.api.test.ts` | Pass |
 | API-13 | API | FR-07 | Change password — confirmation mismatch | 400 with `fields.confirmPassword` error | `auth.api.test.ts` | Pass |
-| API-14 | API | AC-03, FR-13 | Create ticket ignores client-supplied requesterId | Authenticated as user A; send `requesterId: B` in body; ticket is owned by A | `authorization.api.test.ts` | Planned |
-| API-15 | API | AC-03, FR-15 | Requester ownership on list | User A sees only A's tickets; 403/empty for B's tickets | `authorization.api.test.ts` | Planned |
-| API-16 | API | AC-03, FR-15 | Requester ownership on detail | User A requests B's ticket → 403 | `authorization.api.test.ts` | Planned |
+| API-14 | API | AC-03, FR-13 | Create ticket ignores client-supplied requesterId | Authenticated as user A; send `requesterId: B` in body; ticket is owned by A | `authorization.api.test.ts` | Pass |
+| API-15 | API | AC-03, FR-15 | Requester ownership on list | User A sees only A's tickets; 403/empty for B's tickets | `authorization.api.test.ts` | Pass |
+| API-16 | API | AC-03, FR-15 | Requester ownership on detail | User A requests B's ticket → 403 | `authorization.api.test.ts` | Pass |
 | API-17 | API | AC-04, FR-35 | Requester forbidden from internal notes | Requester calls POST /api/staff/tickets/:id/notes → 403 | `authorization.api.test.ts` | Planned |
 | API-18 | API | AC-13, FR-47 | Non-admin forbidden from admin endpoints | Requester calls GET /api/admin/users → 403 | `authorization.api.test.ts` | Planned |
 | API-19 | API | AC-13, FR-47 | Non-staff forbidden from staff endpoints | Requester calls GET /api/staff/tickets → 403 | `authorization.api.test.ts` | Planned |
-| API-20 | API | FR-14 | Ticket creation initializes itPriority | Created ticket has `itPriority` = `requestedPriority` | `authorization.api.test.ts` | Planned |
+| API-20 | API | FR-14 | Ticket creation initializes itPriority | Created ticket has `itPriority` = `requestedPriority` | `authorization.api.test.ts` | Pass |
 | API-21 | API | AC-08, FR-22 | Staff queue — basic retrieval | 200 with paginated ticket list | `staff-queue.api.test.ts` | Planned |
 | API-22 | API | AC-08, FR-22 | Staff queue — search by ticket number | Matching tickets returned | `staff-queue.api.test.ts` | Planned |
 | API-23 | API | AC-08, FR-22 | Staff queue — search by summary | Matching tickets returned | `staff-queue.api.test.ts` | Planned |
@@ -92,14 +92,14 @@ Status legend: `Planned` → written before implementation · updated to `Pass`/
 | API-49 | API | FR-33 | Create Internal Note (staff) | 201 with author and timestamp | `comments-notes.api.test.ts` | Planned |
 | API-50 | API | FR-33 | List Internal Notes (staff) | 200, newest-first | `comments-notes.api.test.ts` | Planned |
 | API-51 | API | AC-04, FR-35 | Internal Notes — Requester forbidden | 403 | `comments-notes.api.test.ts` | Planned |
-| API-52 | API | FR-18, FR-34 | Append-only: PUT on comments | 405 METHOD_NOT_ALLOWED | `comments-notes.api.test.ts` | Planned |
-| API-53 | API | FR-18, FR-34 | Append-only: DELETE on comments | 405 METHOD_NOT_ALLOWED | `comments-notes.api.test.ts` | Planned |
+| API-52 | API | FR-18, FR-34 | Append-only: PUT on comments | 405 METHOD_NOT_ALLOWED | `comments-notes.api.test.ts` | Pass |
+| API-53 | API | FR-18, FR-34 | Append-only: DELETE on comments | 405 METHOD_NOT_ALLOWED | `comments-notes.api.test.ts` | Pass |
 | API-54 | API | FR-34 | Append-only: PUT on notes | 405 METHOD_NOT_ALLOWED | `comments-notes.api.test.ts` | Planned |
 | API-55 | API | FR-34 | Append-only: DELETE on notes | 405 METHOD_NOT_ALLOWED | `comments-notes.api.test.ts` | Planned |
-| API-56 | API | FR-16, BR-15 | Comment content — empty/whitespace | 400 | `comments-notes.api.test.ts` | Planned |
-| API-57 | API | FR-16, BR-15 | Comment content — over 2000 chars | 400 | `comments-notes.api.test.ts` | Planned |
-| API-58 | API | AC-07, FR-19 | Indicate resolved — toggle set | Sets `requesterIndicatedResolved = true` with timestamp; `currentStatus` unchanged | `comments-notes.api.test.ts` | Planned |
-| API-59 | API | AC-07, FR-19 | Indicate resolved — toggle clear | Clears `requesterIndicatedResolved` to false; `currentStatus` unchanged | `comments-notes.api.test.ts` | Planned |
+| API-56 | API | FR-16, BR-15 | Comment content — empty/whitespace | 400 | `comments-notes.api.test.ts` | Pass |
+| API-57 | API | FR-16, BR-15 | Comment content — over 2000 chars | 400 | `comments-notes.api.test.ts` | Pass |
+| API-58 | API | AC-07, FR-19 | Indicate resolved — toggle set | Sets `requesterIndicatedResolved = true` with timestamp; `currentStatus` unchanged | `comments-notes.api.test.ts` | Pass |
+| API-59 | API | AC-07, FR-19 | Indicate resolved — toggle clear | Clears `requesterIndicatedResolved` to false; `currentStatus` unchanged | `comments-notes.api.test.ts` | Pass |
 | API-60 | API | AC-10, FR-41 | Admin create user — valid | 201; password hashed; mustChangePassword=true | `users-admin.api.test.ts` | Planned |
 | API-61 | API | AC-14, FR-42 | Admin create user — duplicate email | 409 CONFLICT | `users-admin.api.test.ts` | Planned |
 | API-62 | API | FR-41 | Admin create user — invalid role | 400 | `users-admin.api.test.ts` | Planned |
@@ -134,6 +134,8 @@ Status legend: `Planned` → written before implementation · updated to `Pass`/
 | UI-14 | UI component | FR-40, AC-13 | Admin — user list | Table shows Name, Email, Role, Status, Edit | `UserManagement.test.tsx` | Planned |
 | UI-15 | UI component | FR-41 | Admin — create user drawer | Drawer opens; form validates; submission works | `UserManagement.test.tsx` | Planned |
 | UI-16 | UI component | FR-43, FR-45, FR-46 | Admin — edit and safety | Edit loads data; self-deactivation blocked; last-admin blocked | `UserManagement.test.tsx` | Planned |
+| UI-17 | UI component | AC-03, AC-07, FR-16/18/19 | Requester ticket detail — comments + resolution indicator | Public comments render newest-first with author name + role; empty state; post prepends and clears input; invalid input posts nothing; toggle set/clear calls PUT and updates UI; failure surfaces error | `RequesterTicketComments.test.tsx` | Pass |
+| UI-18 | UI component | AC-03, FR-13/18/19 | Client API — authenticated identity, no `requesterId` | Detail/list/comments/indicate-resolved/attachment calls send no `requesterId`; correct method, URL, headers, body | `requester-ticket-api.test.tsx` | Pass |
 
 ### UI style (client/tests/lab-03)
 
@@ -158,7 +160,7 @@ Status legend: `Planned` → written before implementation · updated to `Pass`/
 | E2E-02 | E2E | AC-05, AC-06 | Invalid/inactive login | Invalid credentials → error; inactive account → safe error | `e2e/lab-03/authentication.spec.ts` | Planned |
 | E2E-03 | E2E | AC-08, AC-09 | Staff ticket flow | Queue → detail → claim → change status → post comment → create note → resolution summary | `e2e/lab-03/staff-ticket-flow.spec.ts` | Planned |
 | E2E-04 | E2E | AC-10, AC-11, AC-12 | User administration | Admin login → user list → create user → edit → deactivate (with confirmation) → safety rules | `e2e/lab-03/user-administration.spec.ts` | Planned |
-| E2E-05 | E2E | AC-03, AC-07 | Requester regression | Create ticket with auth identity → view → post comment → toggle indicate-resolved | `e2e/lab-03/requester-regression.spec.ts` | Planned |
+| E2E-05 | E2E | AC-03, AC-07 | Requester regression | Create ticket with auth identity → view → post comment → toggle indicate-resolved | `e2e/lab-03/requester-regression.spec.ts` | Pass |
 
 ### Migration / Regression
 
@@ -172,6 +174,8 @@ Status legend: `Planned` → written before implementation · updated to `Pass`/
 > **Parallelization guard:** `server/vitest.config.ts` sets `test.fileParallelism: false` so no other test file creates/deletes tickets while MIG-01's global count assertions run. Without this, the cross-file race with `POST /api/tickets` in `server/src/app.ts` (which skips `requesterUserId`) can cause non-deterministic MIG-01 failures.
 >
 > **Verified Pass 2026-09-14 (12 files / 138 tests).**
+>
+> **Verified Pass 2026-09-19 — Issue 18 close-out:** server 16 files / 191 tests (server suite + `pnpm build` green after review fixes; includes API-14..16, API-20, API-52/53, API-56..59), client 13 files / 119 tests (incl. new UI-17 `RequesterTicketComments.test.tsx` + UI-18 `requester-ticket-api.test.tsx`), and E2E-05 requester regression (1 spec / 1 test) passed. Run order used: `pnpm exec prisma db seed` before the server suite, and the E2E spec self-reseeds before and after (its initial-password change is undone so MIG-01 bcrypt checks stay green). Details in `ai-use.md` Issue 18 section.
 
 ## 3. Acceptance-Criterion Traceability
 
@@ -215,9 +219,9 @@ cd .. && npx playwright test e2e/lab-03   # responsive + E2E (needs both servers
 
 | Suite | Command | Result |
 |-------|---------|--------|
-| Server (unit + API) | `cd server && pnpm test` | **Pass** — 14 files / 173 tests (2026-09-16) *(Includes Lab 3 auth API tests API-01..13 + migration regression MIG-01 + unit tests UNIT-01..02; updated after review fix)* |
-| Client (component + style) | `cd client && pnpm test` | **Pass** — 11 files / 105 tests (2026-09-18) *(103 baseline + 2 role-badge assertions added in `zen-green-style.test.tsx` per review note)* |
-| E2E + Responsive (Playwright) | `pnpm test:e2e` (from repo root) | *TBD at sprint close* |
+| Server (unit + API) | `cd server && pnpm test` | **Pass** — 16 files / 191 tests (2026-09-19) *(API-01..20, API-52/53, API-56..59, MIG-01, UNIT-01..02; reseed before run)* |
+| Client (component + style) | `cd client && pnpm test` | **Pass** — 13 files / 119 tests (2026-09-19) *(incl. UI-17/UI-18 new Issue 18 suites)* |
+| E2E + Responsive (Playwright) | `npx playwright test` with a temporary local config pointing `testDir` at `e2e/lab-03` (repo wiring lands in Issue 22) | **Pass** — E2E-05 requester regression 1/1 (2026-09-19); RESP-01..24 + E2E-01..04 still *TBD at sprint close* |
 
 ## 7. Known Limitations / Deferred
 

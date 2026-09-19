@@ -148,8 +148,6 @@ export default function App() {
           </RequireAuth>
         }
       >
-        {/* TODO(Issue 18): ticket screens switch to session identity for
-            ownership; role guards below already land in this issue. */}
         <Route
           path="/my-tickets"
           element={
