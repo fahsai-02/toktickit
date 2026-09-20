@@ -32,7 +32,7 @@ Status legend: `Planned` → written before implementation · updated to `Pass`/
 
 | Test ID | Type | Requirement/AC | What It Tests | Expected Result | Automated Test File | Final Status |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| UNIT-01 | Unit | BR-08 | Password hash verification | bcrypt.hash produces a hash starting with `$2`; bcrypt.compare succeeds against known plaintext | `server/tests/lab-03/password-hash.unit.test.ts` | Planned |
+| UNIT-01 | Unit | BR-08 | Password hash verification | Stored hashes start with `$2`; bcrypt.compare succeeds for every seeded account | `migration-regression.api.test.ts` (covered by MIG-01) | Pass |
 | UNIT-02 | Unit | FR-07, AC-02 | New-password validation rules | Rejects <8 chars, missing uppercase, missing lowercase, missing digit, missing special char; accepts valid password | `server/tests/lab-03/password-validation.unit.test.ts` | Pass |
 | UNIT-03 | Unit | BR-12 | Status-transition matrix validation | Given a current status and target status, correctly determines if the transition is permitted | `server/tests/lab-03/status-transitions.unit.test.ts` | Planned |
 
@@ -58,21 +58,21 @@ Status legend: `Planned` → written before implementation · updated to `Pass`/
 | API-16 | API | AC-03, FR-15 | Requester ownership on detail | User A requests B's ticket → 403 | `authorization.api.test.ts` | Pass |
 | API-17 | API | AC-04, FR-35 | Requester forbidden from internal notes | Requester calls POST /api/staff/tickets/:id/notes → 403 | `authorization.api.test.ts` | Planned |
 | API-18 | API | AC-13, FR-47 | Non-admin forbidden from admin endpoints | Requester calls GET /api/admin/users → 403 | `authorization.api.test.ts` | Planned |
-| API-19 | API | AC-13, FR-47 | Non-staff forbidden from staff endpoints | Requester calls GET /api/staff/tickets → 403 | `authorization.api.test.ts` | Planned |
+| API-19 | API | AC-13, FR-47 | Non-staff forbidden from staff endpoints | Requester calls GET /api/staff/tickets → 403 | `staff-queue.api.test.ts` | Pass |
 | API-20 | API | FR-14 | Ticket creation initializes itPriority | Created ticket has `itPriority` = `requestedPriority` | `authorization.api.test.ts` | Pass |
-| API-21 | API | AC-08, FR-22 | Staff queue — basic retrieval | 200 with paginated ticket list | `staff-queue.api.test.ts` | Planned |
-| API-22 | API | AC-08, FR-22 | Staff queue — search by ticket number | Matching tickets returned | `staff-queue.api.test.ts` | Planned |
-| API-23 | API | AC-08, FR-22 | Staff queue — search by summary | Matching tickets returned | `staff-queue.api.test.ts` | Planned |
-| API-24 | API | AC-08, FR-22 | Staff queue — filter by status | Only matching status returned | `staff-queue.api.test.ts` | Planned |
-| API-25 | API | AC-08, FR-22 | Staff queue — filter by priority | Only matching priority returned | `staff-queue.api.test.ts` | Planned |
-| API-26 | API | AC-08, FR-22 | Staff queue — filter by category | Only matching category returned | `staff-queue.api.test.ts` | Planned |
-| API-27 | API | AC-08, FR-22 | Staff queue — filter by owner (specific) | Only tickets owned by that user returned | `staff-queue.api.test.ts` | Planned |
-| API-28 | API | AC-08, FR-22 | Staff queue — filter "Unassigned" | Only tickets with no owner returned | `staff-queue.api.test.ts` | Planned |
-| API-29 | API | AC-08, FR-22 | Staff queue — filter "Assigned to me" | Only tickets owned by current user returned | `staff-queue.api.test.ts` | Planned |
-| API-30 | API | AC-08, FR-23 | Staff queue — default ordering | Default is updatedAt desc | `staff-queue.api.test.ts` | Planned |
-| API-31 | API | AC-08, FR-22 | Staff queue — sort by itPriority | Sorting by IT Priority works asc/desc | `staff-queue.api.test.ts` | Planned |
-| API-32 | API | AC-08, FR-24 | Staff queue — invalid params | Unknown sortBy, non-numeric page, pageSize out of range → 400 | `staff-queue.api.test.ts` | Planned |
-| API-33 | API | AC-08 | Staff queue — empty results | Filters matching nothing → empty data array with total=0 | `staff-queue.api.test.ts` | Planned |
+| API-21 | API | AC-08, FR-22 | Staff queue — basic retrieval | 200 with paginated ticket list | `staff-queue.api.test.ts` | Pass |
+| API-22 | API | AC-08, FR-22 | Staff queue — search by ticket number | Matching tickets returned | `staff-queue.api.test.ts` | Pass |
+| API-23 | API | AC-08, FR-22 | Staff queue — search by summary | Matching tickets returned | `staff-queue.api.test.ts` | Pass |
+| API-24 | API | AC-08, FR-22 | Staff queue — filter by status | Only matching status returned | `staff-queue.api.test.ts` | Pass |
+| API-25 | API | AC-08, FR-22 | Staff queue — filter by priority | Only matching priority returned | `staff-queue.api.test.ts` | Pass |
+| API-26 | API | AC-08, FR-22 | Staff queue — filter by category | Only matching category returned | `staff-queue.api.test.ts` | Pass |
+| API-27 | API | AC-08, FR-22 | Staff queue — filter by owner (specific) | Only tickets owned by that user returned | `staff-queue.api.test.ts` | Pass |
+| API-28 | API | AC-08, FR-22 | Staff queue — filter "Unassigned" | Only tickets with no owner returned | `staff-queue.api.test.ts` | Pass |
+| API-29 | API | AC-08, FR-22 | Staff queue — filter "Assigned to me" | Only tickets owned by current user returned | `staff-queue.api.test.ts` | Pass |
+| API-30 | API | AC-08, FR-23 | Staff queue — default ordering | Default is updatedAt desc | `staff-queue.api.test.ts` | Pass |
+| API-31 | API | AC-08, FR-22 | Staff queue — sort by itPriority | Sorting by IT Priority works asc/desc | `staff-queue.api.test.ts` | Pass |
+| API-32 | API | AC-08, FR-24 | Staff queue — invalid params | Unknown sortBy, non-numeric page, pageSize out of range → 400 | `staff-queue.api.test.ts` | Pass |
+| API-33 | API | AC-08 | Staff queue — empty results | Filters matching nothing → empty data array with total=0 | `staff-queue.api.test.ts` | Pass |
 | API-34 | API | FR-26 | Staff ticket detail — full payload | 200 with all fields including owner, resolutionSummary, requesterIndicatedResolved, counts | `staff-ticket-detail.api.test.ts` | Planned |
 | API-35 | API | FR-27 | Claim ticket | 200; owner set to current user | `staff-ticket-detail.api.test.ts` | Planned |
 | API-36 | API | FR-27 | Claim already-claimed ticket | 409 if already claimed by self | `staff-ticket-detail.api.test.ts` | Planned |
@@ -124,10 +124,10 @@ Status legend: `Planned` → written before implementation · updated to `Pass`/
 | UI-04 | UI component | FR-07, AC-02 | Change password — checklist rendering | Password strength checklist shows 3 grouped rules with live checkmarks (at least 8 chars; upper+lower case; number+special char) | `ChangePassword.test.tsx` | Pass |
 | UI-05 | UI component | FR-07 | Change password — valid submission | "Continue" button enabled when all rules met; submission succeeds; redirect to `/` | `ChangePassword.test.tsx` | Pass |
 | UI-06 | UI component | FR-07 | Change password — validation feedback | Specific rule failures shown in checklist; confirmation mismatch shown | `ChangePassword.test.tsx` | Pass |
-| UI-07 | UI component | FR-22, AC-08 | Staff queue — table rendering | Table shows all 9 columns with correct data | `StaffTicketQueue.test.tsx` | Planned |
-| UI-08 | UI component | FR-22, AC-08 | Staff queue — search and filter | Search and filter controls work; results update | `StaffTicketQueue.test.tsx` | Planned |
-| UI-09 | UI component | FR-22 | Staff queue — pagination | Prev/next/page controls work | `StaffTicketQueue.test.tsx` | Planned |
-| UI-10 | UI component | FR-22 | Staff queue — empty/no-results states | Distinct messages for empty vs no-results | `StaffTicketQueue.test.tsx` | Planned |
+| UI-07 | UI component | FR-22, AC-08 | Staff queue — table rendering | Table shows all 9 columns with correct data | `StaffTicketQueue.test.tsx` | Pass |
+| UI-08 | UI component | FR-22, AC-08 | Staff queue — search and filter | Search and filter controls work; results update | `StaffTicketQueue.test.tsx` | Pass |
+| UI-09 | UI component | FR-22 | Staff queue — pagination | Prev/next/page controls work | `StaffTicketQueue.test.tsx` | Pass |
+| UI-10 | UI component | FR-22 | Staff queue — empty/no-results states | Distinct messages for empty vs no-results | `StaffTicketQueue.test.tsx` | Pass |
 | UI-11 | UI component | FR-26, FR-37 | Staff detail — ticket info rendering | All meta fields shown with correct editability | `StaffTicketDetail.test.tsx` | Planned |
 | UI-12 | UI component | FR-30, FR-38 | Staff detail — status dropdown | Only permitted next states shown in dropdown | `StaffTicketDetail.test.tsx` | Planned |
 | UI-13 | UI component | FR-32, FR-33 | Staff detail — comments/notes tabs | Both tabs render; comment/note input present | `StaffTicketDetail.test.tsx` | Planned |
@@ -215,12 +215,12 @@ cd .. && npx playwright test e2e/lab-03   # responsive + E2E (needs both servers
 
 ## 6. Final Results
 
-*Server suite recorded 2026-09-12 (follow-up after MIG-01 review); client and E2E suites updated at sprint close with actual test output evidence.*
+*Server suite recorded 2026-09-12 (follow-up after MIG-01 review); client and E2E suites updated at sprint close with actual test output evidence. Issue 19 (#60) queue suites recorded 2026-09-20.*
 
 | Suite | Command | Result |
 |-------|---------|--------|
-| Server (unit + API) | `cd server && pnpm test` | **Pass** — 16 files / 191 tests (2026-09-19) *(API-01..20, API-52/53, API-56..59, MIG-01, UNIT-01..02; reseed before run)* |
-| Client (component + style) | `cd client && pnpm test` | **Pass** — 13 files / 119 tests (2026-09-19) *(incl. UI-17/UI-18 new Issue 18 suites)* |
+| Server (unit + API) | `cd server && pnpm test` | **Pass** — 17 files / 210 tests (2026-09-20) *(API-01..20, API-21..33, API-52/53, API-56..59, MIG-01, UNIT-01..02; reseed before run)* |
+| Client (component + style) | `cd client && pnpm test` | **Pass** — 14 files / 137 tests (2026-09-20) *(incl. UI-07..10 `StaffTicketQueue` suite + UI-17/UI-18 Issue 18 suites)* |
 | E2E + Responsive (Playwright) | `npx playwright test` with a temporary local config pointing `testDir` at `e2e/lab-03` (repo wiring lands in Issue 22) | **Pass** — E2E-05 requester regression 1/1 (2026-09-19); RESP-01..24 + E2E-01..04 still *TBD at sprint close* |
 
 ## 7. Known Limitations / Deferred
