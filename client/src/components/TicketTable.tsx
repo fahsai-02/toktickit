@@ -129,7 +129,7 @@ export default function TicketTable({
                   key={key}
                   className={`${isSortable ? "sortable-th" : ""} ${
                     hideAtTablet ? "staff-col-date" : ""
-                  }`.trim()}
+                  } ${isStaff ? `staff-col-${key}` : ""}`.trim()}
                   onClick={isSortable ? () => onSort(key) : undefined}
                   scope="col"
                   data-testid={isStaff ? `staff-th-${key}` : undefined}
@@ -159,22 +159,32 @@ export default function TicketTable({
                 isStaff ? `staff-ticket-row-${t.id}` : `ticket-row-${t.id}`
               }
             >
-              <td className="col-ticket-number">{t.ticketNumber}</td>
-              {isStaff && <td className="staff-col-date">{formatDate(t.createdAt)}</td>}
-              <td className={isStaff ? "col-summary staff-col-summary" : "col-summary"}>
+              <td className={`col-ticket-number ${isStaff ? "staff-col-ticketNumber" : ""}`}>
+                {t.ticketNumber}
+              </td>
+              {isStaff && (
+                <td className="staff-col-createdAt staff-col-date">
+                  {formatDate(t.createdAt)}
+                </td>
+              )}
+              <td
+                className={`col-summary ${isStaff ? "staff-col-summary" : ""}`}
+              >
                 {isStaff ? (
                   <span className="ticket-summary-clamp">{t.summary}</span>
                 ) : (
                   t.summary
                 )}
               </td>
-              <td>{t.category.name}</td>
-              <td>
+              <td className={isStaff ? "staff-col-category" : ""}>
+                {t.category.name}
+              </td>
+              <td className={isStaff ? "staff-col-requestedPriority" : ""}>
                 <Badge variant={priorityBadgeVariant(t.requestedPriority)}>
                   {t.requestedPriority}
                 </Badge>
               </td>
-              <td>
+              <td className={isStaff ? "staff-col-itPriority" : ""}>
                 {t.itPriority ? (
                   <Badge variant={priorityBadgeVariant(t.itPriority)}>
                     {t.itPriority}
@@ -183,13 +193,13 @@ export default function TicketTable({
                   <Badge variant="neutral">{"\u2014"}</Badge>
                 )}
               </td>
-              <td>
+              <td className={isStaff ? "staff-col-currentStatus" : ""}>
                 <Badge variant={coloredStatusBadgeVariant(t.currentStatus)}>
                   {t.currentStatus}
                 </Badge>
               </td>
               {isStaff && (
-                <td>
+                <td className="staff-col-owner">
                   <span
                     className={`col-owner ${
                       t.owner ? "" : "col-owner--unassigned"
@@ -199,7 +209,9 @@ export default function TicketTable({
                   </span>
                 </td>
               )}
-              <td className={isStaff ? "staff-col-date" : ""}>
+              <td
+                className={`${isStaff ? "staff-col-updatedAt staff-col-date" : ""}`}
+              >
                 {formatDate(t.updatedAt)}
               </td>
             </tr>

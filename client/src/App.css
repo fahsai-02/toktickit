@@ -636,6 +636,35 @@
     max-width: 300px;
   }
 
+  /* ui-spec 5.4 column widths — preferred widths on the header cells so the
+     9 columns match the spec table instead of pure auto-layout. The Summary
+     column stays flexible (auto) and absorbs the remaining width. */
+  .staff-table-desktop .ticket-table th.staff-col-ticketNumber {
+    width: 180px;
+  }
+
+  .staff-table-desktop .ticket-table th.staff-col-createdAt,
+  .staff-table-desktop .ticket-table th.staff-col-updatedAt {
+    width: 120px;
+  }
+
+  .staff-table-desktop .ticket-table th.staff-col-category {
+    width: 120px;
+  }
+
+  .staff-table-desktop .ticket-table th.staff-col-requestedPriority,
+  .staff-table-desktop .ticket-table th.staff-col-itPriority {
+    width: 100px;
+  }
+
+  .staff-table-desktop .ticket-table th.staff-col-currentStatus {
+    width: 130px;
+  }
+
+  .staff-table-desktop .ticket-table th.staff-col-owner {
+    width: 140px;
+  }
+
   /* `-webkit-line-clamp` cannot sit on the `td` itself (table-cell display
      would break, so the text overflows the row). It clamps the inner span. */
   .staff-col-summary .ticket-summary-clamp {

@@ -15,6 +15,8 @@ import TicketTable, { type TicketRow } from "./components/TicketTable.js";
 import TicketCard from "./components/TicketCard.js";
 import PaginationBar from "./components/PaginationBar.js";
 import Spinner from "./components/Spinner.js";
+import MobileSortSelect from "./components/MobileSortSelect.js";
+import { TICKET_STATUSES, PRIORITY_OPTIONS } from "./lib/options.js";
 
 type ListState = "loading" | "empty" | "no-results" | "error" | "idle";
 
@@ -48,6 +50,22 @@ const SORT_WHITELIST = [
 
 const STAFF_ROLES = ["IT_STAFF", "ADMINISTRATOR"] as const;
 
+// Explicit markup for the shared MobileSortSelect. Mirrors SORT_WHITELIST —
+// `requestedPriority` is intentionally absent (server 400s on it), staff gets
+// `itPriority` + `currentStatus` instead.
+const STAFF_MOBILE_SORT_OPTIONS = [
+  { value: "updatedAt:desc", label: "Last Updated (newest)" },
+  { value: "updatedAt:asc", label: "Last Updated (oldest)" },
+  { value: "createdAt:desc", label: "Created (newest)" },
+  { value: "createdAt:asc", label: "Created (oldest)" },
+  { value: "ticketNumber:desc", label: "Ticket Number (Z–A)" },
+  { value: "ticketNumber:asc", label: "Ticket Number (A–Z)" },
+  { value: "itPriority:desc", label: "IT Priority (high to low)" },
+  { value: "itPriority:asc", label: "IT Priority (low to high)" },
+  { value: "currentStatus:desc", label: "Status (Z–A)" },
+  { value: "currentStatus:asc", label: "Status (A–Z)" },
+];
+
 export default function StaffTicketQueue() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -75,6 +93,14 @@ export default function StaffTicketQueue() {
   const [errorMessage, setErrorMessage] = useState("");
   const [categories, setCategories] = useState<Category[]>([]);
   const [searchInput, setSearchInput] = useState("");
+
+  const hasActiveFilters =
+    filters.search ||
+    filters.categoryId ||
+    filters.status ||
+    filters.requestedPriority ||
+    filters.itPriority ||
+    filters.ownerId;
 
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef(0);
@@ -169,14 +195,6 @@ export default function StaffTicketQueue() {
     setPage(1);
   };
 
-  const hasActiveFilters =
-    filters.search ||
-    filters.categoryId ||
-    filters.status ||
-    filters.requestedPriority ||
-    filters.itPriority ||
-    filters.ownerId;
-
   // ui-spec 5.4: a non-staff caller who somehow reaches the queue sees a
   // forbidden state, never the ticket data itself.
   if (user && !isStaff) {
@@ -246,14 +264,11 @@ export default function StaffTicketQueue() {
                 data-testid="filter-status"
               >
                 <option value="">All</option>
-                <option value="NEW">NEW</option>
-                <option value="OPEN">OPEN</option>
-                <option value="IN_PROGRESS">IN PROGRESS</option>
-                <option value="WAITING_FOR_REQUESTER">WAITING FOR REQUESTER</option>
-                <option value="RESOLVED">RESOLVED</option>
-                <option value="CLOSED">CLOSED</option>
-                <option value="REOPENED">REOPENED</option>
-                <option value="CANCELLED">CANCELLED</option>
+                {TICKET_STATUSES.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
               </select>
             </div>
             <div className="filter-select">
@@ -270,10 +285,11 @@ export default function StaffTicketQueue() {
                 data-testid="filter-req-priority"
               >
                 <option value="">All</option>
-                <option value="LOW">LOW</option>
-                <option value="MEDIUM">MEDIUM</option>
-                <option value="HIGH">HIGH</option>
-                <option value="URGENT">URGENT</option>
+                {PRIORITY_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
               </select>
             </div>
             <div className="filter-select">
@@ -288,10 +304,11 @@ export default function StaffTicketQueue() {
                 data-testid="filter-it-priority"
               >
                 <option value="">All</option>
-                <option value="LOW">LOW</option>
-                <option value="MEDIUM">MEDIUM</option>
-                <option value="HIGH">HIGH</option>
-                <option value="URGENT">URGENT</option>
+                {PRIORITY_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
               </select>
             </div>
             <div className="filter-select">
@@ -350,34 +367,16 @@ export default function StaffTicketQueue() {
       )}
 
       {/* Mobile sort-by */}
-      <div className="mobile-sort" data-testid="mobile-sort">
-        <label htmlFor="mobile-sort-select" className="field-label">
-          Sort by
-        </label>
-        <select
-          id="mobile-sort-select"
-          className="field-select"
-          value={`${sortBy}:${sortOrder}`}
-          onChange={(e) => {
-            const [field, order] = e.target.value.split(":");
-            setSortBy(field);
-            setSortOrder(order as "asc" | "desc");
-            setPage(1);
-          }}
-          data-testid="mobile-sort-select"
-        >
-          <option value="updatedAt:desc">Last Updated (newest)</option>
-          <option value="updatedAt:asc">Last Updated (oldest)</option>
-          <option value="createdAt:desc">Created (newest)</option>
-          <option value="createdAt:asc">Created (oldest)</option>
-          <option value="ticketNumber:desc">Ticket Number (Z–A)</option>
-          <option value="ticketNumber:asc">Ticket Number (A–Z)</option>
-          <option value="itPriority:desc">IT Priority (high to low)</option>
-          <option value="itPriority:asc">IT Priority (low to high)</option>
-          <option value="currentStatus:desc">Status (Z–A)</option>
-          <option value="currentStatus:asc">Status (A–Z)</option>
-        </select>
-      </div>
+      <MobileSortSelect
+        sortBy={sortBy}
+        sortOrder={sortOrder}
+        options={STAFF_MOBILE_SORT_OPTIONS}
+        onChange={(field, order) => {
+          setSortBy(field);
+          setSortOrder(order);
+          setPage(1);
+        }}
+      />
 
       {/* Content states */}
       {listState === "loading" && (

@@ -308,3 +308,8 @@ describe("ownerId filters incl 'me' + sorting + pagination + empty (API-27, API-
     expect(byOwner.body.data).toEqual([]);
   });
 });
+
+// AGENTS.md Test-writing rule 8: every suite that opens the DB must tear it down.
+afterAll(async () => {
+  await db.$disconnect();
+});
