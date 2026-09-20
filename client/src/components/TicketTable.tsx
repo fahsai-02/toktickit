@@ -162,7 +162,11 @@ export default function TicketTable({
               <td className="col-ticket-number">{t.ticketNumber}</td>
               {isStaff && <td className="staff-col-date">{formatDate(t.createdAt)}</td>}
               <td className={isStaff ? "col-summary staff-col-summary" : "col-summary"}>
-                {t.summary}
+                {isStaff ? (
+                  <span className="ticket-summary-clamp">{t.summary}</span>
+                ) : (
+                  t.summary
+                )}
               </td>
               <td>{t.category.name}</td>
               <td>

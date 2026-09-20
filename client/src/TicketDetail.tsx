@@ -16,7 +16,8 @@ import Badge, {
   roleBadgeVariant,
 } from "./components/Badge.js";
 import ReadOnlyField from "./components/ReadOnlyField.js";
-import Spinner from "./components/Spinner.js";
+import ListState from "./components/ListState.js";
+import TextArea from "./components/TextArea.js";
 import Button from "./components/Button.js";
 import AttachmentSection from "./components/AttachmentSection.js";
 import { ArrowLeft, CheckCircle2 } from "lucide-react";
@@ -104,10 +105,7 @@ export default function TicketDetail() {
   if (state === "loading") {
     return (
       <div className="container ticket-detail">
-        <div className="list-state" data-testid="loading-state">
-          <Spinner />
-          <span>Loading ticket...</span>
-        </div>
+        <ListState testId="loading-state" loading message="Loading ticket..." />
       </div>
     );
   }
@@ -119,12 +117,11 @@ export default function TicketDetail() {
           <ArrowLeft size={16} />
           My Tickets
         </Link>
-        <div className="list-state" data-testid="not-found-state">
-          <p>Ticket not found.</p>
+        <ListState testId="not-found-state" message="Ticket not found.">
           <Button variant="secondary" onClick={() => window.history.back()}>
             Go Back
           </Button>
-        </div>
+        </ListState>
       </div>
     );
   }
@@ -136,12 +133,15 @@ export default function TicketDetail() {
           <ArrowLeft size={16} />
           My Tickets
         </Link>
-        <div className="list-state list-state--error" data-testid="access-denied-state">
-          <p>You don&apos;t have access to this ticket.</p>
+        <ListState
+          testId="access-denied-state"
+          variant="error"
+          message="You don't have access to this ticket."
+        >
           <Button variant="secondary" onClick={() => window.history.back()}>
             Go Back
           </Button>
-        </div>
+        </ListState>
       </div>
     );
   }
@@ -153,12 +153,15 @@ export default function TicketDetail() {
           <ArrowLeft size={16} />
           My Tickets
         </Link>
-        <div className="list-state list-state--error" data-testid="error-state">
-          <p className="error-banner">{errorMessage}</p>
+        <ListState
+          testId="error-state"
+          variant="error"
+          message={<p className="error-banner">{errorMessage}</p>}
+        >
           <Button variant="secondary" onClick={() => window.history.back()}>
             Go Back
           </Button>
-        </div>
+        </ListState>
       </div>
     );
   }
@@ -238,53 +241,42 @@ export default function TicketDetail() {
           <ReadOnlyField id="requester" label="Requester" value={ticket.requester.name} />
           <ReadOnlyField id="category" label="Category" value={ticket.category.name} />
           <ReadOnlyField id="related-system" label="Related System" value={ticket.relatedSystem.name} />
-          <div className="field-group">
-            <span className="field-label">Requested Priority</span>
-            <div className="field-readonly">
-              <Badge variant={priorityBadgeVariant(ticket.requestedPriority)}>
-                {ticket.requestedPriority}
+          <ReadOnlyField id="requested-priority" label="Requested Priority">
+            <Badge variant={priorityBadgeVariant(ticket.requestedPriority)}>
+              {ticket.requestedPriority}
+            </Badge>
+          </ReadOnlyField>
+          <ReadOnlyField id="it-priority" label="IT Priority">
+            {ticket.itPriority ? (
+              <Badge variant={priorityBadgeVariant(ticket.itPriority)}>
+                {ticket.itPriority}
               </Badge>
-            </div>
-          </div>
-<div className="field-group">
-              <span className="field-label">IT Priority</span>
-              <div className="field-readonly">
-                {ticket.itPriority ? (
-                  <Badge variant={priorityBadgeVariant(ticket.itPriority)}>
-                    {ticket.itPriority}
-                  </Badge>
-                ) : (
-                  <Badge variant="neutral">&mdash;</Badge>
-                )}
-              </div>
-            </div>
+            ) : (
+              <Badge variant="neutral">&mdash;</Badge>
+            )}
+          </ReadOnlyField>
           <ReadOnlyField id="ticket-date" label="Ticket Date" value={formatDate(ticket.ticketDate)} />
           <ReadOnlyField id="created" label="Created" value={formatDate(ticket.createdAt)} />
           <ReadOnlyField id="updated" label="Last Updated" value={formatDate(ticket.updatedAt)} />
         </div>
 
-        <div className="field-group">
-          <span className="field-label">Summary</span>
-          <div className="field-readonly">{ticket.summary}</div>
-        </div>
+        <ReadOnlyField id="summary" label="Summary" value={ticket.summary} />
 
-        <div className="field-group">
-          <span className="field-label">Description</span>
-          <div className="field-readonly ticket-detail-description">
-            {ticket.description}
-          </div>
-        </div>
+        <ReadOnlyField
+          id="description"
+          label="Description"
+          className="ticket-detail-description"
+          value={ticket.description}
+        />
 
         {ticket.resolutionSummary && (
-          <div className="field-group">
-            <span className="field-label">Resolution Summary</span>
-            <div
-              className="field-readonly resolution-summary"
-              data-testid="resolution-summary"
-            >
-              {ticket.resolutionSummary}
-            </div>
-          </div>
+          <ReadOnlyField
+            id="resolution-summary"
+            label="Resolution Summary"
+            className="resolution-summary"
+            testId="resolution-summary"
+            value={ticket.resolutionSummary}
+          />
         )}
       </div>
 
@@ -337,10 +329,7 @@ export default function TicketDetail() {
         </h2>
 
         {commentsState === "loading" && (
-          <div className="list-state" data-testid="comments-loading">
-            <Spinner />
-            <span>Loading comments...</span>
-          </div>
+          <ListState testId="comments-loading" loading message="Loading comments..." />
         )}
 
         {commentsState === "error" && (
@@ -379,12 +368,9 @@ export default function TicketDetail() {
         )}
 
         <div className="comment-composer">
-          <label htmlFor="comment-input" className="field-label">
-            Add a comment
-          </label>
-          <textarea
+          <TextArea
             id="comment-input"
-            className="field-input"
+            label="Add a comment"
             rows={3}
             maxLength={COMMENT_MAX_LENGTH}
             placeholder="Type your comment here..."
@@ -393,15 +379,10 @@ export default function TicketDetail() {
               setCommentText(e.target.value);
               setCommentError("");
             }}
-            aria-invalid={!!commentError}
-            aria-describedby={commentError ? "comment-error" : undefined}
+            error={commentError}
+            errorTestId="comment-error"
             data-testid="comment-input"
           />
-          {commentError && (
-            <div className="field-error-msg" id="comment-error" data-testid="comment-error">
-              {commentError}
-            </div>
-          )}
           <div className="comment-composer-actions">
             <Button
               variant="primary"

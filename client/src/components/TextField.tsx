@@ -4,6 +4,7 @@ interface TextFieldProps extends InputHTMLAttributes<HTMLInputElement> {
   label: string;
   required?: boolean;
   error?: string;
+  errorTestId?: string;
   counter?: { value: number; max: number };
 }
 
@@ -11,6 +12,7 @@ export default function TextField({
   label,
   required = false,
   error,
+  errorTestId,
   counter,
   id,
   className = "",
@@ -39,7 +41,7 @@ export default function TextField({
       {(counter || error) && (
         <div className="field-footer">
           {error && (
-            <p id={errorId} className="field-error-msg">
+            <p id={errorId} className="field-error-msg" data-testid={errorTestId}>
               {error}
             </p>
           )}

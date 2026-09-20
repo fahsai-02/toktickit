@@ -479,6 +479,10 @@
     margin-bottom: 4px;
   }
 
+  .filter-row .field-group {
+    margin-bottom: 0;
+  }
+
   .filter-row .field-input,
   .filter-row .field-select {
     height: 36px;
@@ -630,6 +634,11 @@
 
   .staff-col-summary {
     max-width: 300px;
+  }
+
+  /* `-webkit-line-clamp` cannot sit on the `td` itself (table-cell display
+     would break, so the text overflows the row). It clamps the inner span. */
+  .staff-col-summary .ticket-summary-clamp {
     display: -webkit-box;
     -webkit-line-clamp: 2;
     line-clamp: 2;
@@ -994,7 +1003,12 @@
     padding-top: 16px;
   }
 
-  .comment-composer textarea.field-input {
+  .comment-composer .field-group {
+    margin-bottom: 8px;
+  }
+
+  .comment-composer textarea.field-input,
+  .comment-composer textarea.field-textarea {
     min-height: 80px;
     padding: 8px 12px;
     resize: vertical;
