@@ -11,7 +11,7 @@ import PasswordChecklist, {
 } from "./components/PasswordChecklist.js";
 
 export default function ChangePassword() {
-  const { refresh } = useAuth();
+  const { user, refresh } = useAuth();
   const navigate = useNavigate();
 
   const [currentPassword, setCurrentPassword] = useState("");
@@ -70,12 +70,19 @@ export default function ChangePassword() {
     }
   }
 
+  // ui-spec 5.2: Cancel is only for a VOLUNTARY visit (mustChangePassword
+  // already false). Under BR-02 a forced-change user must not be able to
+  // leave the flow, so the button stays hidden there.
+  const isVoluntary = user != null && !user.mustChangePassword;
+
   return (
     <div className="selection-page">
       <div className="selection-card">
         <h1 className="selection-title">Change Your Password</h1>
         <p className="selection-subtitle">
-          You must change your password to continue.
+          {isVoluntary
+            ? "Choose a new password for your account."
+            : "You must change your password to continue."}
         </p>
 
         {banner && (
@@ -142,6 +149,19 @@ export default function ChangePassword() {
           >
             {busy ? "Changing password…" : "Continue"}
           </Button>
+
+          {isVoluntary && (
+            <Button
+              type="button"
+              variant="ghost"
+              disabled={busy}
+              onClick={() => navigate("/")}
+              data-testid="change-password-cancel"
+              className="auth-cancel"
+            >
+              Cancel
+            </Button>
+          )}
         </form>
       </div>
     </div>

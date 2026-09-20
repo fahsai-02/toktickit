@@ -218,6 +218,65 @@ export async function fetchTickets(
   return (await res.json()) as { data: TicketListItem[]; meta: TicketListMeta };
 }
 
+// ── IT Staff Ticket Queue (Issue 19) ────────────────────────────────────────
+
+export interface StaffTicketListItem {
+  id: number;
+  ticketNumber: string;
+  summary: string;
+  requestedPriority: RequestedPriority;
+  itPriority: RequestedPriority | null;
+  currentStatus: TicketStatus;
+  category: Category;
+  requester: TicketRequester;
+  owner: { id: number; name: string } | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StaffTicketListParams {
+  search?: string;
+  categoryId?: number;
+  currentStatus?: string;
+  requestedPriority?: string;
+  itPriority?: string;
+  /** "me" | "unassigned" | an integer owner id (api-spec section 5.1). */
+  ownerId?: string;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+  page?: number;
+  pageSize?: number;
+}
+
+export async function fetchStaffTickets(
+  params: StaffTicketListParams
+): Promise<{ data: StaffTicketListItem[]; meta: TicketListMeta }> {
+  const base = API_URL || window.location.origin;
+  const url = new URL("/api/staff/tickets", base);
+  if (params.search) url.searchParams.set("search", params.search);
+  if (params.categoryId !== undefined)
+    url.searchParams.set("categoryId", String(params.categoryId));
+  if (params.currentStatus)
+    url.searchParams.set("currentStatus", params.currentStatus);
+  if (params.requestedPriority)
+    url.searchParams.set("requestedPriority", params.requestedPriority);
+  if (params.itPriority)
+    url.searchParams.set("itPriority", params.itPriority);
+  if (params.ownerId) url.searchParams.set("ownerId", params.ownerId);
+  if (params.sortBy) url.searchParams.set("sortBy", params.sortBy);
+  if (params.sortOrder) url.searchParams.set("sortOrder", params.sortOrder);
+  if (params.page !== undefined)
+    url.searchParams.set("page", String(params.page));
+  if (params.pageSize !== undefined)
+    url.searchParams.set("pageSize", String(params.pageSize));
+
+  const res = await fetch(url, { credentials: "include" });
+  if (!res.ok) {
+    await handleApiError(res, `Failed to fetch staff queue: ${res.status}`);
+  }
+  return (await res.json()) as { data: StaffTicketListItem[]; meta: TicketListMeta };
+}
+
 export class ApiError extends Error {
   code: string;
   fields?: Record<string, string>;

@@ -13,6 +13,8 @@ import { ROLE_TO_PASSWORD } from "../../src/lib/seedCredentials.js";
 // number of logins per suite low and set explicit timeouts where many logins
 // happen; reuse one agent across a describe when possible.
 
+export type AuthedAgent = ReturnType<typeof request.agent>;
+
 export function seedUserFor(role: UserRole, index = 0): {
   name: string;
   email: string;

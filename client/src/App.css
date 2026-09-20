@@ -582,6 +582,76 @@
     display: none;
   }
 
+  /* ── Staff Queue (Issue 19) ─────────────────────────────────────── */
+
+  .queue-toolbar {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+
+  .queue-toolbar .filter-search {
+    flex: 1 1 280px;
+    min-width: 200px;
+    margin: 0;
+  }
+
+  .queue-toolbar .field-input {
+    height: 38px;
+    font-size: 13px;
+  }
+
+  .queue-toolbar .btn {
+    height: 38px;
+    padding: 0 16px;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+
+  .queue-toolbar .btn svg {
+    margin-right: 6px;
+  }
+
+  .queue-results-count {
+    margin: 0 0 8px;
+    font-size: 13px;
+    color: var(--color-text-muted);
+  }
+
+  .staff-table-desktop {
+    display: block;
+  }
+
+  .staff-cards-mobile {
+    display: none;
+  }
+
+  .staff-col-summary {
+    max-width: 300px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    white-space: normal;
+  }
+
+  .staff-col-date {
+    white-space: nowrap;
+  }
+
+  .col-owner {
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  .col-owner--unassigned {
+    color: var(--color-text-muted);
+    font-style: italic;
+  }
+
   /* ── Ticket Card (Mobile) ─────────────────────────────────────────── */
 
   .ticket-card {
@@ -1283,6 +1353,25 @@
       display: block;
     }
 
+    .staff-table-desktop {
+      display: none;
+    }
+
+    .staff-cards-mobile {
+      display: block;
+    }
+
+    .queue-toolbar .field-input {
+      height: 34px;
+      font-size: 12px;
+    }
+
+    .queue-toolbar .btn {
+      height: 34px;
+      padding: 0 12px;
+      font-size: 12px;
+    }
+
     .pagination-bar {
       flex-direction: column;
       align-items: stretch;
@@ -1314,6 +1403,12 @@
 
     .filter-select {
       flex: 0 1 100px;
+    }
+
+    /* Tablet: the 9-column staff table drops the two date columns so the
+       remaining 7 columns still fit (ui-spec 5.4). */
+    .staff-col-date {
+      display: none;
     }
   }
 }

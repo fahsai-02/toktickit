@@ -11,7 +11,7 @@ import {
   ApiError,
 } from "./api.js";
 import Badge, {
-  statusBadgeVariant,
+  coloredStatusBadgeVariant,
   priorityBadgeVariant,
   roleBadgeVariant,
 } from "./components/Badge.js";
@@ -228,7 +228,7 @@ export default function TicketDetail() {
 
       <div className="ticket-detail-header">
         <h1 className="ticket-detail-number">{ticket.ticketNumber}</h1>
-        <Badge variant={statusBadgeVariant(ticket.currentStatus)}>
+        <Badge variant={coloredStatusBadgeVariant(ticket.currentStatus)}>
           {ticket.currentStatus}
         </Badge>
       </div>
@@ -246,16 +246,18 @@ export default function TicketDetail() {
               </Badge>
             </div>
           </div>
-          <div className="field-group">
-            <span className="field-label">IT Priority</span>
-            <div className="field-readonly">
-              {ticket.itPriority ? (
-                <Badge variant="it-priority">{ticket.itPriority}</Badge>
-              ) : (
-                <Badge variant="it-priority">&mdash;</Badge>
-              )}
+<div className="field-group">
+              <span className="field-label">IT Priority</span>
+              <div className="field-readonly">
+                {ticket.itPriority ? (
+                  <Badge variant={priorityBadgeVariant(ticket.itPriority)}>
+                    {ticket.itPriority}
+                  </Badge>
+                ) : (
+                  <Badge variant="neutral">&mdash;</Badge>
+                )}
+              </div>
             </div>
-          </div>
           <ReadOnlyField id="ticket-date" label="Ticket Date" value={formatDate(ticket.ticketDate)} />
           <ReadOnlyField id="created" label="Created" value={formatDate(ticket.createdAt)} />
           <ReadOnlyField id="updated" label="Last Updated" value={formatDate(ticket.updatedAt)} />

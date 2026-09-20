@@ -15,6 +15,42 @@
     color: var(--color-success);
   }
 
+  /* ui-spec "Badges" table — all 8 status colors (Issue 19 queue, STYLE-02) */
+  .badge-status-open {
+    background: #ffedd5;
+    color: #c2410c;
+  }
+
+  .badge-status-in-progress {
+    background: #fef3c7;
+    color: #b45309;
+  }
+
+  .badge-status-waiting {
+    background: #dbeafe;
+    color: #1d4ed8;
+  }
+
+  .badge-status-resolved {
+    background: #d1fae5;
+    color: #047857;
+  }
+
+  .badge-status-closed {
+    background: #f3f4f6;
+    color: #374151;
+  }
+
+  .badge-status-reopened {
+    background: #ede9fe;
+    color: #6d28d9;
+  }
+
+  .badge-status-cancelled {
+    background: rgba(185, 28, 28, 0.1);
+    color: var(--color-error);
+  }
+
   .badge-priority-low {
     background: #f3f4f6;
     color: #374151;

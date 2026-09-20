@@ -175,6 +175,38 @@ describe("ChangePassword", () => {
     vi.spyOn(api, "fetchMe").mockResolvedValue(changedUser);
     renderChangePassword();
     expect(await screen.findByText("Change Your Password")).toBeInTheDocument();
+    // Voluntary visit — Cancel is offered so the user can leave in place.
+    expect(screen.getByTestId("change-password-cancel")).toBeInTheDocument();
+  });
+
+  it("does not offer Cancel while mustChangePassword is true (BR-02)", async () => {
+    // A forced-change user must not be able to skip the flow, so the Cancel
+    // button is hidden. (Issue 19 — the button only appears on a voluntary
+    // visit when the password change is optional.)
+    renderChangePassword();
+    await screen.findByText("Change Your Password");
+    expect(screen.queryByTestId("change-password-cancel")).not.toBeInTheDocument();
+  });
+
+  it("Cancel from a voluntary visit returns the user to their role home", async () => {
+    vi.spyOn(api, "fetchMe").mockResolvedValue(changedUser);
+    vi.spyOn(api, "fetchCategories").mockResolvedValue([]);
+    vi.spyOn(api, "fetchTickets").mockResolvedValue({
+      data: [],
+      meta: { total: 0, page: 1, pageSize: 10, totalPages: 0 },
+    });
+    renderChangePassword();
+    await screen.findByText("Change Your Password");
+
+    fireEvent.click(screen.getByTestId("change-password-cancel"));
+    // Requester home is /my-tickets (HomeRedirect role default); the empty
+    // ticket list is its idle state.
+    expect(
+      await screen.findByText("You haven't created any tickets yet.")
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("Change Your Password")
+    ).not.toBeInTheDocument();
   });
 
   it("surfaces a server-side newPassword rejection under its own field", async () => {

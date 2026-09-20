@@ -8,6 +8,8 @@ import AppShell from "./AppShell.js";
 import MyTickets from "./MyTickets.js";
 import CreateTicket from "./CreateTicket.js";
 import TicketDetail from "./TicketDetail.js";
+import StaffTicketQueue from "./StaffTicketQueue.js";
+import StaffTicketDetail from "./StaffTicketDetail.js";
 import Spinner from "./components/Spinner.js";
 
 /** Landing page: sends each user to the default screen for their state. */
@@ -22,10 +24,12 @@ function HomeRedirect() {
   }
   if (!user) return <Navigate to="/login" replace />;
   if (user.mustChangePassword) return <Navigate to="/change-password" replace />;
-  // TODO(Issue 19/21): IT_STAFF → /staff/queue, ADMINISTRATOR → /admin/users
-  // once those screens exist. Until then non-requesters land on
-  // /create-ticket (the one screen ui-spec.md section 4.1 grants every role).
   if (user.role === "REQUESTER") return <Navigate to="/my-tickets" replace />;
+  // ui-spec section 4.1: IT Staff and Admins land on the staff queue; the
+  // admin user-management screen is added at release time (ui-spec 4.4).
+  if (user.role === "IT_STAFF" || user.role === "ADMINISTRATOR") {
+    return <Navigate to="/staff/queue" replace />;
+  }
   return <Navigate to="/create-ticket" replace />;
 }
 
@@ -166,7 +170,26 @@ export default function App() {
         />
         {/* Create Ticket is granted to every role (ui-spec.md section 4.1). */}
         <Route path="/create-ticket" element={<CreateTicket />} />
-        {/* TODO(Issue 19): /staff/queue — IT Staff Ticket Queue. */}
+        {/* IT Staff Ticket Queue (Issue 19): Admins may also open it
+            (issue 19 AC — api-spec 5.1 grants the staff queue to both). */}
+        <Route
+          path="/staff/queue"
+          element={
+            <RequireRole roles={["IT_STAFF", "ADMINISTRATOR"]}>
+              <StaffTicketQueue />
+            </RequireRole>
+          }
+        />
+        {/* Placeholder so a row click lands somewhere instead of bouncing
+            back to the queue (Issue 19). Full staff detail: later issue. */}
+        <Route
+          path="/staff/tickets/:ticketId"
+          element={
+            <RequireRole roles={["IT_STAFF", "ADMINISTRATOR"]}>
+              <StaffTicketDetail />
+            </RequireRole>
+          }
+        />
         {/* TODO(Issue 21): /admin/users — Administrator User Management. */}
       </Route>
       <Route path="/" element={<HomeRedirect />} />
