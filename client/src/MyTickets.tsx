@@ -14,7 +14,11 @@ import Button from "./components/Button.js";
 import TicketTable from "./components/TicketTable.js";
 import TicketCard from "./components/TicketCard.js";
 import PaginationBar from "./components/PaginationBar.js";
-import Spinner from "./components/Spinner.js";
+import TextField from "./components/TextField.js";
+import SelectField from "./components/SelectField.js";
+import ListState from "./components/ListState.js";
+import MobileSortSelect from "./components/MobileSortSelect.js";
+import { TICKET_STATUSES, PRIORITY_OPTIONS } from "./lib/options.js";
 
 type ListState = "loading" | "empty" | "no-results" | "error" | "idle";
 
@@ -38,6 +42,17 @@ const SORT_WHITELIST = [
   "requestedPriority",
   "ticketNumber",
 ] as const;
+
+const MOBILE_SORT_OPTIONS = [
+  { value: "updatedAt:desc", label: "Last Updated (newest)" },
+  { value: "updatedAt:asc", label: "Last Updated (oldest)" },
+  { value: "createdAt:desc", label: "Created (newest)" },
+  { value: "createdAt:asc", label: "Created (oldest)" },
+  { value: "ticketNumber:desc", label: "Ticket Number (Z–A)" },
+  { value: "ticketNumber:asc", label: "Ticket Number (A–Z)" },
+  { value: "requestedPriority:desc", label: "Requested Priority (high to low)" },
+  { value: "requestedPriority:asc", label: "Requested Priority (low to high)" },
+];
 
 export default function MyTickets() {
   const { user } = useAuth();
@@ -191,83 +206,47 @@ export default function MyTickets() {
 
       <div className="filter-card" data-testid="filter-card">
         <div className="filter-row">
-          <div className="filter-search">
-            <label htmlFor="search-input" className="field-label">
-              Search
-            </label>
-            <input
-              id="search-input"
-              type="text"
-              className="field-input"
-              placeholder="Search ticket number or summary"
-              value={searchInput}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              data-testid="search-input"
-            />
-          </div>
-          <div className="filter-select">
-            <label htmlFor="filter-category" className="field-label">
-              Category
-            </label>
-            <select
-              id="filter-category"
-              className="field-select"
-              value={filters.categoryId}
-              onChange={(e) => handleFilterChange("categoryId", e.target.value)}
-              data-testid="filter-category"
-            >
-              <option value="">All</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="filter-select">
-            <label htmlFor="filter-status" className="field-label">
-              Current Status
-            </label>
-            <select
-              id="filter-status"
-              className="field-select"
-              value={filters.currentStatus}
-              onChange={(e) =>
-                handleFilterChange("currentStatus", e.target.value)
-              }
-              data-testid="filter-status"
-            >
-              <option value="">All</option>
-              <option value="NEW">NEW</option>
-              <option value="OPEN">OPEN</option>
-              <option value="IN_PROGRESS">IN PROGRESS</option>
-              <option value="WAITING_FOR_REQUESTER">WAITING FOR REQUESTER</option>
-              <option value="RESOLVED">RESOLVED</option>
-              <option value="CLOSED">CLOSED</option>
-              <option value="REOPENED">REOPENED</option>
-              <option value="CANCELLED">CANCELLED</option>
-            </select>
-          </div>
-          <div className="filter-select">
-            <label htmlFor="filter-priority" className="field-label">
-              Priority
-            </label>
-            <select
-              id="filter-priority"
-              className="field-select"
-              value={filters.requestedPriority}
-              onChange={(e) =>
-                handleFilterChange("requestedPriority", e.target.value)
-              }
-              data-testid="filter-priority"
-            >
-              <option value="">All</option>
-              <option value="LOW">LOW</option>
-              <option value="MEDIUM">MEDIUM</option>
-              <option value="HIGH">HIGH</option>
-              <option value="URGENT">URGENT</option>
-            </select>
-          </div>
+          <TextField
+            id="search-input"
+            label="Search"
+            className="filter-search"
+            placeholder="Search ticket number or summary"
+            value={searchInput}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            data-testid="search-input"
+          />
+          <SelectField
+            id="filter-category"
+            label="Category"
+            className="filter-select"
+            placeholder="All"
+            value={filters.categoryId}
+            onChange={(e) => handleFilterChange("categoryId", e.target.value)}
+            data-testid="filter-category"
+            options={categories.map((c) => ({ value: c.id, label: c.name }))}
+          />
+          <SelectField
+            id="filter-status"
+            label="Current Status"
+            className="filter-select"
+            placeholder="All"
+            value={filters.currentStatus}
+            onChange={(e) => handleFilterChange("currentStatus", e.target.value)}
+            data-testid="filter-status"
+            options={TICKET_STATUSES}
+          />
+          <SelectField
+            id="filter-priority"
+            label="Priority"
+            className="filter-select"
+            placeholder="All"
+            value={filters.requestedPriority}
+            onChange={(e) =>
+              handleFilterChange("requestedPriority", e.target.value)
+            }
+            data-testid="filter-priority"
+            options={PRIORITY_OPTIONS}
+          />
           {hasActiveFilters && (
             <Button
               variant="ghost"
@@ -281,75 +260,59 @@ export default function MyTickets() {
       </div>
 
       {/* Mobile sort-by */}
-      <div className="mobile-sort" data-testid="mobile-sort">
-        <label htmlFor="mobile-sort-select" className="field-label">
-          Sort by
-        </label>
-        <select
-          id="mobile-sort-select"
-          className="field-select"
-          value={`${sortBy}:${sortOrder}`}
-          onChange={(e) => {
-            const [field, order] = e.target.value.split(":");
-            setSortBy(field);
-            setSortOrder(order as "asc" | "desc");
-            setPage(1);
-          }}
-          data-testid="mobile-sort-select"
-        >
-          <option value="updatedAt:desc">Last Updated (newest)</option>
-          <option value="updatedAt:asc">Last Updated (oldest)</option>
-          <option value="createdAt:desc">Created (newest)</option>
-          <option value="createdAt:asc">Created (oldest)</option>
-          <option value="ticketNumber:desc">Ticket Number (Z–A)</option>
-          <option value="ticketNumber:asc">Ticket Number (A–Z)</option>
-          <option value="requestedPriority:desc">
-            Requested Priority (high to low)
-          </option>
-          <option value="requestedPriority:asc">
-            Requested Priority (low to high)
-          </option>
-        </select>
-      </div>
+      <MobileSortSelect
+        sortBy={sortBy}
+        sortOrder={sortOrder}
+        options={MOBILE_SORT_OPTIONS}
+        onChange={(field, order) => {
+          setSortBy(field);
+          setSortOrder(order);
+          setPage(1);
+        }}
+      />
 
       {/* Content states */}
       {listState === "loading" && (
-        <div className="list-state" data-testid="loading-state">
-          <Spinner />
-          <span>Loading tickets...</span>
-        </div>
+        <ListState testId="loading-state" loading message="Loading tickets..." />
       )}
 
       {listState === "error" && (
-        <div className="list-state list-state--error" data-testid="error-state">
-          <p className="error-banner">{errorMessage}</p>
+        <ListState
+          testId="error-state"
+          variant="error"
+          message={<p className="error-banner">{errorMessage}</p>}
+        >
           <Button variant="secondary" onClick={handleRetry} data-testid="retry-btn">
             Retry
           </Button>
-        </div>
+        </ListState>
       )}
 
       {listState === "empty" && (
-        <div className="list-state" data-testid="empty-state">
-          <Inbox size={48} strokeWidth={1.5} />
-          <p>You haven&apos;t created any tickets yet.</p>
+        <ListState
+          testId="empty-state"
+          icon={<Inbox size={48} strokeWidth={1.5} />}
+          message="You haven't created any tickets yet."
+        >
           <Button
             variant="primary"
             onClick={() => navigate("/create-ticket")}
           >
             Create Ticket
           </Button>
-        </div>
+        </ListState>
       )}
 
       {listState === "no-results" && (
-        <div className="list-state" data-testid="no-results-state">
-          <SearchX size={48} strokeWidth={1.5} />
-          <p>No tickets match your filters.</p>
+        <ListState
+          testId="no-results-state"
+          icon={<SearchX size={48} strokeWidth={1.5} />}
+          message="No tickets match your filters."
+        >
           <Button variant="secondary" onClick={clearFilters}>
             Clear Filters
           </Button>
-        </div>
+        </ListState>
       )}
 
       {/* Ticket list */}

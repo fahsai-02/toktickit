@@ -10,7 +10,7 @@
 | #66 | feature/15-data-foundation | approved (merged 2026-09-15) |
 | #67 | feature/16-auth-api-middleware | approved (merged 2026-09-16) |
 | #68 | feature/17-auth-ui-login-change-password | approved (merged 2026-09-18) |
-| #69 | feature/18-requester-regression | changes requested (2026-09-19, addressing feedback) |
+| #69 | feature/18-requester-regression | approved (merged 2026-09-19) |
 |  | feature/19-staff-ticket-queue |  |
 |  | feature/20-staff-ticket-detail |  |
 |  | feature/21-admin-user-management |  |
@@ -352,7 +352,41 @@ Reviewer comment (CHANGES_REQUESTED, 2026-09-19):
 
 How I responded:
 
-> *(addressing feedback — fixes in progress, awaiting re-review)*
+> **Thanks for the careful review! Both actionable items are fixed, and the atomic-upsert nit is applied too. Committed as `b039dd5` on `feature/18-requester-regression`.**
+>
+> ## 1. Resolution Summary CSS (`docs/lab-03/ui-spec.md` section 5.3)
+>
+> Fixed. Added in `client/src/App.css` (inside `@layer layout`):
+> ```css
+> .field-readonly.resolution-summary {
+>   background: var(--color-pale);
+>   white-space: pre-wrap;
+> }
+> ```
+> The read-only field now renders with the documented pale-green background (`var(--color-pale)`, `#EAF6EF`) instead of the neutral `--color-field-readonly` fallback, and stays hidden when `resolutionSummary` is null.
+>
+> ## 2. README seed-credentials typo
+>
+> Fixed. The sentence now points directly to `docs/lab-03/seed-credentials.md` (the only such file that exists — auth was first introduced in Lab 3).
+>
+> ## Nits
+>
+> - **Atomic requester upsert (`server/src/app.ts`)** — applied. `resolveLegacyRequesterIdForUser` now uses `db.requester.upsert({ where: { email }, update: {}, create: { name, email, isActive: true } })`, closing the `P2002` race for concurrent first requests while keeping identical behavior (existing rows untouched; `isActive` only set on create).
+> - **E2E hard-coded credentials (`e2e/lab-03/helpers.ts`)** — considered, intentionally left as-is. `seedData.ts` imports the generated Prisma client, so importing it into the standalone Playwright root package would drag a heavy cross-package dependency in for no behavioral gain — and `REQ_PASSWORD` (`E2ERequester1!`) is deliberately e2e-local, not a seed value, so the single-source-of-truth rule does not apply to it. Happy to revisit in a later issue if you'd like.
+>
+> ## Verification (on `feature/18-requester-regression`)
+>
+> ```
+> cd server && pnpm exec prisma db seed   # restores documented passwords (needed before the suite)
+> cd server && pnpm test  → 16 files / 193 tests Pass
+> cd server && pnpm build → Pass (tsc, zero errors)
+> cd client && pnpm test  → 13 files / 119 tests Pass
+> cd client && pnpm build → Pass (tsc && vite build)
+> ```
+>
+> Note: the first test run surfaced 2 MIG-01 failures — the seeded passwords had been rotated by earlier E2E runs; a fresh `prisma db seed` restored them and the full suite is green.
+>
+> Ready for your re-review.
 
 Reviewer approved comment:
 

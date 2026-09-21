@@ -123,7 +123,7 @@ Pill shape, 12px/600 text, tinted background + dark text:
 
 - Centered card (max-width 480px) on page background.
 - Title: "Change Your Password" (20px/600).
-- Subtitle: "You must change your password to continue." (14px, muted text).
+- Subtitle: "You must change your password to continue." (14px, muted text). On a **voluntary** visit (user has already changed once), show the friendlier "Choose a new password for your account." instead.
 - Fields: Current (temporary) password, New password, Confirm new password.
 - **Password strength checklist** (14px, below the new-password field):
   - [ ] Be at least 8 characters
@@ -132,6 +132,7 @@ Pill shape, 12px/600 text, tinted background + dark text:
   - Each item shows a green checkmark ✓ when the rule is met, gray unchecked when not. Updates in real time as the user types.
   - The checklist rules MUST mirror the backend validation rules exactly (FR-07).
 - Button: "Continue" (primary, full width, disabled until all rules met).
+- Button: "Cancel" (grey ghost, full width) — ONLY on a voluntary visit (`mustChangePassword` already false); navigates back to `/` (role home). Hidden while `mustChangePassword = true` so a forced-change user cannot leave the flow (BR-02).
 - States:
   - Loading: button shows spinner + "Changing password…"
   - Success: redirect to `/`
@@ -169,7 +170,7 @@ Extends Lab 2 Ticket Detail (read-only) with:
 | Owner | 140px | Name text (or "Unassigned" in muted text) |
 | Last Updated | 120px | Formatted date |
 
-- Row click → navigate to `/staff/tickets/:id`.
+- Row click → navigate to `/staff/tickets/:id`. Until the detail screen (section 5.5) ships, this route renders a placeholder that links back to My Queue — so a row click never bounces the user back to the list.
 - Hover: pale-green tint.
 - **Pagination bar:** "Showing X–Y of Z", Prev / page numbers / Next. Default page size 10.
 - **States:**

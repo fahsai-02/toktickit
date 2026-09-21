@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../AuthContext.js";
 import Badge, { roleBadgeVariant } from "./Badge.js";
-import { Clock3, FileText, CirclePlus, ChevronDown } from "lucide-react";
+import { Clock3, FileText, CirclePlus, ListTodo, ChevronDown } from "lucide-react";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -47,10 +47,13 @@ export default function Navbar() {
     navigate("/login", { replace: true });
   }
 
-  // Role-aware navigation (ui-spec.md section 4.1). Links to screens that
-  // do not exist yet (My Queue in Issue 19, User Management in Issue 21)
-  // stay hidden until their issue lands — never render a dead link.
+  // Role-aware navigation (ui-spec.md section 4.1). My Queue is available to
+  // IT Staff and Administrators (api-spec 5.1 grants the staff queue to both);
+  // the User Management admin screen stays hidden until Issue 21 lands — never
+  // render a dead link.
   const showMyTickets = user?.role === "REQUESTER";
+  const showMyQueue =
+    user?.role === "IT_STAFF" || user?.role === "ADMINISTRATOR";
 
   return (
     <header className="app-header">
@@ -74,6 +77,18 @@ export default function Navbar() {
               >
                 <FileText size={16} />
                 My Tickets
+              </NavLink>
+            )}
+            {showMyQueue && (
+              <NavLink
+                to="/staff/queue"
+                className={({ isActive }) =>
+                  `nav-link ${isActive ? "nav-link--active" : ""}`
+                }
+                onClick={closeMobile}
+              >
+                <ListTodo size={16} />
+                My Queue
               </NavLink>
             )}
             <NavLink

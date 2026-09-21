@@ -420,6 +420,11 @@ describe("role-aware routing and shell (FR-10, ui-spec.md section 4.1)", () => {
       data: [],
       meta: { total: 0, page: 1, pageSize: 10, totalPages: 0 },
     });
+    // Staff/Admin homes land on the staff queue (Issue 19) — fetch must resolve.
+    vi.spyOn(api, "fetchStaffTickets").mockResolvedValue({
+      data: [],
+      meta: { total: 0, page: 1, pageSize: 10, totalPages: 0 },
+    });
     render(
       <MemoryRouter initialEntries={initialEntries}>
         <AuthProvider>
@@ -435,15 +440,16 @@ describe("role-aware routing and shell (FR-10, ui-spec.md section 4.1)", () => {
     expect(screen.queryByText("Sign in to your account")).not.toBeInTheDocument();
   });
 
-  it("lands IT Staff on Create Ticket (interim default until /staff/queue)", async () => {
+  it("lands IT Staff on My Queue (staff queue home, ui-spec 4.1)", async () => {
     renderAuthedAs(staffUser, ["/"]);
-    // CreateTicket page heading — the nav link alone would also match.
+    // StaffTicketQueue page heading — the "My Queue" nav link alone would
+    // also match, so target the heading role.
     expect(
-      await screen.findByRole("heading", { name: "Create Ticket" })
+      await screen.findByRole("heading", { name: "My Queue" })
     ).toBeInTheDocument();
     // Role badge + name in the profile button; requester-only link hidden.
-    // (Name also appears in the CreateTicket form header, so assert the
-    // profile button by its accessible name instead of bare text.)
+    // (Name also appears in the queue's own headers, so assert the profile
+    // button by its accessible name instead of bare text.)
     expect(
       screen.getByRole("button", { name: /profile for michael brown/i })
     ).toBeInTheDocument();
@@ -454,15 +460,15 @@ describe("role-aware routing and shell (FR-10, ui-spec.md section 4.1)", () => {
   it("bounces IT Staff away from the requester-only /my-tickets", async () => {
     renderAuthedAs(staffUser, ["/my-tickets"]);
     expect(
-      await screen.findByRole("heading", { name: "Create Ticket" })
+      await screen.findByRole("heading", { name: "My Queue" })
     ).toBeInTheDocument();
     expect(screen.queryByTestId("ticket-table-desktop")).not.toBeInTheDocument();
   });
 
-  it("lands Administrators on Create Ticket with the Administrator badge", async () => {
+  it("lands Administrators on My Queue with the Administrator badge", async () => {
     renderAuthedAs(adminUser, ["/"]);
     expect(
-      await screen.findByRole("heading", { name: "Create Ticket" })
+      await screen.findByRole("heading", { name: "My Queue" })
     ).toBeInTheDocument();
     expect(screen.getByText("Administrator")).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /my tickets/i })).not.toBeInTheDocument();

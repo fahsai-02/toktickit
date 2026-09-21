@@ -11,7 +11,8 @@ import { db } from './db.js';
 import { buildNextTicketNumber } from './lib/ticketNumber.js';
 import { validateAttachmentType } from './lib/attachmentValidation.js';
 import { sendError, validationError } from './lib/httpErrors.js';
-import { requireAuth } from './middleware/auth.js';
+import { requireAuth, requireRole } from './middleware/auth.js';
+import { runTicketListQuery, STAFF_SORT_WHITELIST } from './lib/ticketListQuery.js';
 import authRouter from './routes/auth.js';
 
 dotenv.config({ quiet: true });
@@ -159,6 +160,12 @@ const STATUSES = [
 ] as const;
 
 const PRIORITIES = ["LOW", "MEDIUM", "HIGH", "URGENT"];
+
+// STAFF_SORT_WHITELIST is imported from ./lib/ticketListQuery.ts — the single
+// source of truth shared with the client-facing query builder. Only the 5
+// api-spec 5.1 fields are accepted (updatedAt, createdAt, itPriority,
+// currentStatus, ticketNumber); `requestedPriority` sorting is NOT part of the
+// contract, so `sortBy=requestedPriority` must 400.
 
 const COMMENT_MAX_LENGTH = 2000;
 
@@ -333,13 +340,214 @@ app.get("/api/tickets", requireAuth, async (req: Request, res: Response) => {
       orderBy.push({ ticketNumber: "desc" });
     }
 
-    const [total, tickets] = await Promise.all([
-      db.ticket.count({ where }),
-      db.ticket.findMany({
+    const result = await runTicketListQuery({
+      where,
+      orderBy,
+      select: {
+        id: true,
+        ticketNumber: true,
+        summary: true,
+        requestedPriority: true,
+        itPriority: true,
+        currentStatus: true,
+        category: { select: { id: true, name: true } },
+        createdAt: true,
+        updatedAt: true,
+      },
+      page,
+      pageSize,
+    });
+
+    res.json(result);
+  } catch {
+    res.status(500).json({
+      error: { code: "INTERNAL_ERROR", message: "Failed to fetch tickets" },
+    });
+  }
+});
+
+/**
+ * IT Staff Ticket Queue (api-spec section 5.1; FR-22/23/24, AC-08). Only IT
+ * Staff and Administrators may use staff endpoints (requireRole regression
+ * canary: a Requester must still get 403 here, never leak staff data).
+ *
+ * Unlike the Requester list, staff see EVERY ticket (no ownership where)
+ * plus two staff-only axes the requester screen cannot use:
+ *   - `itPriority` filter (api-spec 5.1)
+ *   - `ownerId` filter: `"unassigned"`, `"me"`, or an integer owner id
+ * Every ticket also carries its `owner` (nullable, via TicketOwner) and the
+ * legacy `requester` so the queue table can show both columns.
+ */
+app.get(
+  "/api/staff/tickets",
+  requireAuth,
+  requireRole("IT_STAFF", "ADMINISTRATOR"),
+  async (req: Request, res: Response) => {
+    const fields: Record<string, string> = {};
+
+    const search =
+      typeof req.query.search === "string" ? req.query.search.trim() : "";
+
+    const categoryIdParam = req.query.categoryId;
+    let categoryId: number | undefined;
+    if (categoryIdParam !== undefined) {
+      const parsed = parsePositiveInt(categoryIdParam);
+      if (parsed === null) {
+        fields.categoryId = "categoryId must be a positive integer.";
+      } else {
+        categoryId = parsed;
+      }
+    }
+
+    const currentStatusParam = req.query.currentStatus;
+    let currentStatus: string | undefined;
+    if (currentStatusParam !== undefined) {
+      if (
+        typeof currentStatusParam === "string" &&
+        STATUSES.includes(currentStatusParam as typeof STATUSES[number])
+      ) {
+        currentStatus = currentStatusParam;
+      } else {
+        fields.currentStatus = `currentStatus must be one of: ${STATUSES.join(", ")}.`;
+      }
+    }
+
+    const requestedPriorityParam = req.query.requestedPriority;
+    let requestedPriority: string | undefined;
+    if (requestedPriorityParam !== undefined) {
+      if (
+        typeof requestedPriorityParam === "string" &&
+        PRIORITIES.includes(requestedPriorityParam)
+      ) {
+        requestedPriority = requestedPriorityParam;
+      } else {
+        fields.requestedPriority = `requestedPriority must be one of: ${PRIORITIES.join(", ")}.`;
+      }
+    }
+
+    const itPriorityParam = req.query.itPriority;
+    let itPriority: string | undefined;
+    if (itPriorityParam !== undefined) {
+      if (typeof itPriorityParam === "string" && PRIORITIES.includes(itPriorityParam)) {
+        itPriority = itPriorityParam;
+      } else {
+        fields.itPriority = `itPriority must be one of: ${PRIORITIES.join(", ")}.`;
+      }
+    }
+
+    // ownerId (api-spec 5.1): integer = filter by owner id; "unassigned" = no
+    // owner (ownerId null); "me" = owned by the current staff session user.
+    const ownerIdParam = req.query.ownerId;
+    let ownerIdWhere: Record<string, unknown> | undefined;
+    if (ownerIdParam !== undefined) {
+      if (ownerIdParam === "unassigned") {
+        ownerIdWhere = { ownerId: null };
+      } else if (ownerIdParam === "me") {
+        ownerIdWhere = { ownerId: req.user!.id };
+      } else {
+        const parsed = parsePositiveInt(ownerIdParam);
+        if (parsed === null) {
+          fields.ownerId =
+            "ownerId must be a positive integer, unassigned, or me.";
+        } else {
+          ownerIdWhere = { ownerId: parsed };
+        }
+      }
+    }
+
+    let sortBy: string = "updatedAt";
+    if (req.query.sortBy !== undefined) {
+      if (
+        typeof req.query.sortBy === "string" &&
+        STAFF_SORT_WHITELIST.includes(req.query.sortBy as typeof STAFF_SORT_WHITELIST[number])
+      ) {
+        sortBy = req.query.sortBy;
+      } else {
+        fields.sortBy = `sortBy must be one of: ${STAFF_SORT_WHITELIST.join(", ")}.`;
+      }
+    }
+
+    let sortOrder: "asc" | "desc" = "desc";
+    if (req.query.sortOrder !== undefined) {
+      if (
+        typeof req.query.sortOrder === "string" &&
+        (req.query.sortOrder === "asc" || req.query.sortOrder === "desc")
+      ) {
+        sortOrder = req.query.sortOrder;
+      } else {
+        fields.sortOrder = "sortOrder must be asc or desc.";
+      }
+    }
+
+    let page = 1;
+    if (req.query.page !== undefined) {
+      const parsed = Number(req.query.page);
+      if (!Number.isFinite(parsed) || !Number.isInteger(parsed) || parsed < 1) {
+        fields.page = "page must be an integer >= 1.";
+      } else {
+        page = parsed;
+      }
+    }
+
+    let pageSize = 10;
+    if (req.query.pageSize !== undefined) {
+      const parsed = Number(req.query.pageSize);
+      if (
+        !Number.isFinite(parsed) ||
+        !Number.isInteger(parsed) ||
+        parsed < 1 ||
+        parsed > 50
+      ) {
+        fields.pageSize = "pageSize must be an integer between 1 and 50.";
+      } else {
+        pageSize = parsed;
+      }
+    }
+
+    if (Object.keys(fields).length > 0) {
+      validationError(res, fields);
+      return;
+    }
+
+    const and: Array<Record<string, unknown>> = [];
+
+    if (search) {
+      and.push({
+        OR: [
+          { ticketNumber: { contains: search, mode: "insensitive" } },
+          { summary: { contains: search, mode: "insensitive" } },
+        ],
+      });
+    }
+    if (categoryId !== undefined) {
+      and.push({ categoryId });
+    }
+    if (currentStatus !== undefined) {
+      and.push({ currentStatus });
+    }
+    if (requestedPriority !== undefined) {
+      and.push({ requestedPriority });
+    }
+    if (itPriority !== undefined) {
+      and.push({ itPriority });
+    }
+    if (ownerIdWhere !== undefined) {
+      and.push(ownerIdWhere);
+    }
+
+    const where = { AND: and };
+
+    const orderBy: Array<Record<string, string>> = [
+      { [sortBy]: sortOrder },
+    ];
+    if (sortBy !== "ticketNumber") {
+      orderBy.push({ ticketNumber: "desc" });
+    }
+
+    try {
+      const result = await runTicketListQuery({
         where,
         orderBy,
-        skip: (page - 1) * pageSize,
-        take: pageSize,
         select: {
           id: true,
           ticketNumber: true,
@@ -348,24 +556,26 @@ app.get("/api/tickets", requireAuth, async (req: Request, res: Response) => {
           itPriority: true,
           currentStatus: true,
           category: { select: { id: true, name: true } },
+          owner: { select: { id: true, name: true } },
+          requester: { select: { id: true, name: true } },
           createdAt: true,
           updatedAt: true,
         },
-      }),
-    ]);
+        page,
+        pageSize,
+      });
 
-    const totalPages = Math.ceil(total / pageSize);
-
-    res.json({
-      data: tickets,
-      meta: { total, page, pageSize, totalPages },
-    });
-  } catch {
-    res.status(500).json({
-      error: { code: "INTERNAL_ERROR", message: "Failed to fetch tickets" },
-    });
+      res.json(result);
+    } catch {
+      res.status(500).json({
+        error: {
+          code: "INTERNAL_ERROR",
+          message: "Failed to fetch tickets",
+        },
+      });
+    }
   }
-});
+);
 
 app.post("/api/tickets", requireAuth, async (req: Request, res: Response) => {
   const body = req.body ?? {};

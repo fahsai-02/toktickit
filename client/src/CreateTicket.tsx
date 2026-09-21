@@ -22,8 +22,7 @@ import ReadOnlyField from "./components/ReadOnlyField.js";
 import Callout from "./components/Callout.js";
 import Spinner from "./components/Spinner.js";
 import { formatFileSize } from "./lib/format.js";
-
-const PRIORITIES: RequestedPriority[] = ["LOW", "MEDIUM", "HIGH", "URGENT"];
+import { PRIORITY_OPTIONS } from "./lib/options.js";
 
 const ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "webp", "pdf"];
 const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
@@ -443,7 +442,7 @@ export default function CreateTicket() {
               setPriority(e.target.value as RequestedPriority | "")
             }
             error={fieldErrors.requestedPriority}
-            options={PRIORITIES.map((p) => ({ value: p, label: p }))}
+            options={PRIORITY_OPTIONS}
           />
         </div>
 
