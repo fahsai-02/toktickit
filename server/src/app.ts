@@ -13,7 +13,13 @@ import { validateAttachmentType } from './lib/attachmentValidation.js';
 import { sendError, validationError } from './lib/httpErrors.js';
 import { requireAuth, requireRole } from './middleware/auth.js';
 import { runTicketListQuery, STAFF_SORT_WHITELIST } from './lib/ticketListQuery.js';
+import {
+  canTransition,
+  transitionViolationMessage,
+  isTicketStatus,
+} from './lib/statusTransitions.js';
 import authRouter from './routes/auth.js';
+import type { TicketStatus } from './generated/prisma/client.js';
 
 dotenv.config({ quiet: true });
 
@@ -846,17 +852,25 @@ app.post("/api/tickets/:id/attachments", requireAuth, upload.single("file"), asy
     }
 
     const ownerId = await ownerUserIdFor(ticket);
-    if (ownerId !== user.id) {
+    // IT Staff/Administrator may attach to any ticket (Issue 20); Requesters
+    // keep ownership checks.
+    const canActOnAnyTicket =
+      user.role === "IT_STAFF" || user.role === "ADMINISTRATOR";
+    if (!canActOnAnyTicket && ownerId !== user.id) {
       res.status(403).json({
         error: { code: "FORBIDDEN", message: "You don't have access to this ticket." },
       });
       return;
     }
 
-    const requesterId = await resolveLegacyRequesterIdForUser(
-      user.name,
-      user.email
-    );
+    // Issue 20 decision #1: IT Staff/Admin may attach to any ticket. The
+    // legacy `uploadedByRequesterId` FK must still point at a Requester row
+    // (Attachment model is untouched), so staff uploads are tagged with the
+    // ticket's OWN requester instead of fabricating a Requester row from the
+    // staff member's identity. Requester uploads keep the session-mapped row.
+    const requesterId = canActOnAnyTicket
+      ? ticket.requesterId
+      : await resolveLegacyRequesterIdForUser(user.name, user.email);
 
     const activeCount = await db.attachment.count({
       where: { ticketId, isRemoved: false },
@@ -958,7 +972,9 @@ app.get("/api/attachments/:id/download", requireAuth, async (req: Request, res: 
     }
 
     const ownerId = await ownerUserIdFor(attachment.ticket);
-    if (ownerId !== req.user!.id) {
+    const canActOnAnyTicket =
+      req.user!.role === "IT_STAFF" || req.user!.role === "ADMINISTRATOR";
+    if (!canActOnAnyTicket && ownerId !== req.user!.id) {
       res.status(403).json({
         error: { code: "FORBIDDEN", message: "You don't have access to this attachment." },
       });
@@ -1038,7 +1054,11 @@ app.delete("/api/attachments/:id", requireAuth, async (req: Request, res: Respon
     }
 
     const ownerId = await ownerUserIdFor(attachment.ticket);
-    if (ownerId !== req.user!.id) {
+    if (
+      req.user!.role !== "IT_STAFF" &&
+      req.user!.role !== "ADMINISTRATOR" &&
+      ownerId !== req.user!.id
+    ) {
       res.status(403).json({
         error: { code: "FORBIDDEN", message: "You don't have access to this attachment." },
       });
@@ -1192,6 +1212,591 @@ app.delete("/api/tickets/:id/comments", (_req: Request, res: Response) => {
 
 app.delete("/api/tickets/:id/comments/:commentId", (_req: Request, res: Response) => {
   sendError(res, 405, "METHOD_NOT_ALLOWED", "Public comments are append-only.");
+});
+
+// ── IT Staff Ticket Detail (FR-26..39; api-spec section 5.2-5.13) ───────────
+// Every route is guarded by requireRole("IT_STAFF", "ADMINISTRATOR"); there is
+// NO per-ticket ownership restriction — staff/admin operate on any ticket.
+
+const staffDetailSelect = {
+  id: true,
+  ticketNumber: true,
+  summary: true,
+  description: true,
+  requestedPriority: true,
+  itPriority: true,
+  currentStatus: true,
+  ticketDate: true,
+  requesterId: true,
+  requesterUserId: true,
+  ownerId: true,
+  resolutionSummary: true,
+  requesterIndicatedResolved: true,
+  indicatedResolvedAt: true,
+  requester: { select: { id: true, name: true } },
+  owner: { select: { id: true, name: true, role: true } },
+  category: { select: { id: true, name: true } },
+  relatedSystem: { select: { id: true, name: true } },
+  createdAt: true,
+  updatedAt: true,
+  _count: { select: { attachments: true, comments: true, notes: true } },
+  attachments: {
+    orderBy: { createdAt: "asc" },
+    select: {
+      id: true,
+      originalFileName: true,
+      fileSize: true,
+      mimeType: true,
+      isRemoved: true,
+      removedAt: true,
+      removalReason: true,
+      uploadedByRequesterId: true,
+      createdAt: true,
+    },
+  },
+} as const;
+
+app.get(
+  "/api/staff/tickets/:id",
+  requireAuth,
+  requireRole("IT_STAFF", "ADMINISTRATOR"),
+  async (req: Request, res: Response) => {
+    const ticketId = parsePositiveInt(req.params.id);
+    if (ticketId === null) {
+      validationError(res, { id: "Ticket id must be a positive integer." });
+      return;
+    }
+
+    try {
+      const ticket = await db.ticket.findUnique({
+        where: { id: ticketId },
+        select: staffDetailSelect,
+      });
+
+      if (!ticket) {
+        sendError(res, 404, "NOT_FOUND", "Ticket not found");
+        return;
+      }
+
+      const {
+        requesterId: _,
+        requesterUserId: __,
+        ownerId: ___,
+        ...ticketData
+      } = ticket;
+      res.json({ data: ticketData });
+    } catch {
+      sendError(res, 500, "INTERNAL_ERROR", "Failed to fetch ticket");
+    }
+  }
+);
+
+app.put(
+  "/api/staff/tickets/:id/claim",
+  requireAuth,
+  requireRole("IT_STAFF", "ADMINISTRATOR"),
+  async (req: Request, res: Response) => {
+    const ticketId = parsePositiveInt(req.params.id);
+    if (ticketId === null) {
+      validationError(res, { id: "Ticket id must be a positive integer." });
+      return;
+    }
+
+    try {
+      const ticket = await db.ticket.findUnique({
+        where: { id: ticketId },
+        select: { id: true, ownerId: true },
+      });
+
+      if (!ticket) {
+        sendError(res, 404, "NOT_FOUND", "Ticket not found");
+        return;
+      }
+      if (ticket.ownerId === req.user!.id) {
+        sendError(res, 409, "CONFLICT", "You already own this ticket.");
+        return;
+      }
+
+      await db.ticket.update({
+        where: { id: ticketId },
+        data: { ownerId: req.user!.id },
+      });
+      const owner = await db.user.findUnique({
+        where: { id: req.user!.id },
+        select: { id: true, name: true, role: true },
+      });
+      res.json({ data: { owner } });
+    } catch {
+      sendError(res, 500, "INTERNAL_ERROR", "Failed to claim ticket");
+    }
+  }
+);
+
+app.put(
+  "/api/staff/tickets/:id/assign",
+  requireAuth,
+  requireRole("IT_STAFF", "ADMINISTRATOR"),
+  async (req: Request, res: Response) => {
+    const ticketId = parsePositiveInt(req.params.id);
+    const ownerId = parsePositiveInt(req.body?.ownerId);
+
+    const fields: Record<string, string> = {};
+    if (ticketId === null) {
+      fields.id = "Ticket id must be a positive integer.";
+    }
+    if (ownerId === null) {
+      fields.ownerId =
+        "ownerId is required and must be a positive integer.";
+    }
+    if (Object.keys(fields).length > 0) {
+      validationError(res, fields);
+      return;
+    }
+
+    try {
+      const ticket = await db.ticket.findUnique({
+        where: { id: ticketId! },
+        select: { id: true },
+      });
+      if (!ticket) {
+        sendError(res, 404, "NOT_FOUND", "Ticket not found");
+        return;
+      }
+
+      // BR-13: the owner must be an active IT Staff or Administrator user.
+      const target = await db.user.findFirst({
+        where: {
+          id: ownerId!,
+          isActive: true,
+          OR: [{ role: "IT_STAFF" }, { role: "ADMINISTRATOR" }],
+        },
+        select: { id: true, name: true, role: true },
+      });
+      if (!target) {
+        sendError(
+          res,
+          404,
+          "NOT_FOUND",
+          "Owner must be an active IT Staff or Administrator user"
+        );
+        return;
+      }
+
+      await db.ticket.update({
+        where: { id: ticketId! },
+        data: { ownerId: target.id },
+      });
+      res.json({ data: { owner: target } });
+    } catch {
+      sendError(res, 500, "INTERNAL_ERROR", "Failed to assign ticket");
+    }
+  }
+);
+
+app.put(
+  "/api/staff/tickets/:id/priority",
+  requireAuth,
+  requireRole("IT_STAFF", "ADMINISTRATOR"),
+  async (req: Request, res: Response) => {
+    const ticketId = parsePositiveInt(req.params.id);
+    const itPriority =
+      typeof req.body?.itPriority === "string" ? req.body.itPriority : "";
+
+    const fields: Record<string, string> = {};
+    if (ticketId === null) {
+      fields.id = "Ticket id must be a positive integer.";
+    }
+    if (!PRIORITIES.includes(itPriority)) {
+      fields.itPriority = "itPriority must be LOW, MEDIUM, HIGH, or URGENT.";
+    }
+    if (Object.keys(fields).length > 0) {
+      validationError(res, fields);
+      return;
+    }
+
+    try {
+      const ticket = await db.ticket.findUnique({
+        where: { id: ticketId! },
+        select: { id: true },
+      });
+      if (!ticket) {
+        sendError(res, 404, "NOT_FOUND", "Ticket not found");
+        return;
+      }
+
+      await db.ticket.update({
+        where: { id: ticketId! },
+        data: { itPriority: itPriority as "LOW" | "MEDIUM" | "HIGH" | "URGENT" },
+      });
+      res.json({ data: { itPriority } });
+    } catch {
+      sendError(res, 500, "INTERNAL_ERROR", "Failed to set IT priority");
+    }
+  }
+);
+
+app.put(
+  "/api/staff/tickets/:id/status",
+  requireAuth,
+  requireRole("IT_STAFF", "ADMINISTRATOR"),
+  async (req: Request, res: Response) => {
+    const ticketId = parsePositiveInt(req.params.id);
+    const raw =
+      typeof req.body?.currentStatus === "string" ? req.body.currentStatus : "";
+
+    const fields: Record<string, string> = {};
+    if (ticketId === null) {
+      fields.id = "Ticket id must be a positive integer.";
+    }
+    if (!isTicketStatus(raw)) {
+      fields.currentStatus = "Invalid status value.";
+    }
+    if (Object.keys(fields).length > 0) {
+      validationError(res, fields);
+      return;
+    }
+
+    try {
+      const to = raw as TicketStatus;
+      const ticket = await db.ticket.findUnique({
+        where: { id: ticketId! },
+        select: { id: true, currentStatus: true },
+      });
+      if (!ticket) {
+        sendError(res, 404, "NOT_FOUND", "Ticket not found");
+        return;
+      }
+
+      if (!canTransition(ticket.currentStatus, to)) {
+        sendError(
+          res,
+          400,
+          "BUSINESS_RULE_VIOLATION",
+          transitionViolationMessage(ticket.currentStatus, to)
+        );
+        return;
+      }
+
+      const updated = await db.ticket.update({
+        where: { id: ticketId! },
+        data: { currentStatus: to },
+        select: { currentStatus: true },
+      });
+      res.json({ data: updated });
+    } catch {
+      sendError(res, 500, "INTERNAL_ERROR", "Failed to update ticket status");
+    }
+  }
+);
+
+// Issue 20 decision: the Category dropdown is editable (ui-spec 5.5), which
+// needs a dedicated endpoint since api-spec section 5 has none for it.
+app.put(
+  "/api/staff/tickets/:id/category",
+  requireAuth,
+  requireRole("IT_STAFF", "ADMINISTRATOR"),
+  async (req: Request, res: Response) => {
+    const ticketId = parsePositiveInt(req.params.id);
+    const categoryId = parsePositiveInt(req.body?.categoryId);
+
+    const fields: Record<string, string> = {};
+    if (ticketId === null) {
+      fields.id = "Ticket id must be a positive integer.";
+    }
+    if (categoryId === null) {
+      fields.categoryId = "categoryId must be a positive integer.";
+    }
+    if (Object.keys(fields).length > 0) {
+      validationError(res, fields);
+      return;
+    }
+
+    try {
+      const ticket = await db.ticket.findUnique({
+        where: { id: ticketId! },
+        select: { id: true },
+      });
+      if (!ticket) {
+        sendError(res, 404, "NOT_FOUND", "Ticket not found");
+        return;
+      }
+
+      // api-spec section 5.14: only an ACTIVE category may be referenced.
+      // Inactive or unknown categories both resolve to 404 (same safe shape).
+      const category = await db.category.findFirst({
+        where: { id: categoryId!, isActive: true },
+        select: { id: true, name: true },
+      });
+      if (!category) {
+        sendError(res, 404, "NOT_FOUND", "Category not found");
+        return;
+      }
+
+      await db.ticket.update({
+        where: { id: ticketId! },
+        data: { categoryId: category.id },
+      });
+      res.json({ data: { category } });
+    } catch {
+      sendError(res, 500, "INTERNAL_ERROR", "Failed to set category");
+    }
+  }
+);
+
+function validateResolutionSummary(raw: unknown): {
+  summary: string;
+  error?: string;
+} {
+  const summary = typeof raw === "string" ? raw.trim() : "";
+  if (summary.length < 1 || summary.length > 2000) {
+    return {
+      summary,
+      error: "Resolution summary is required (1-2000 characters).",
+    };
+  }
+  return { summary };
+}
+
+app.put(
+  "/api/staff/tickets/:id/resolution-summary",
+  requireAuth,
+  requireRole("IT_STAFF", "ADMINISTRATOR"),
+  async (req: Request, res: Response) => {
+    const ticketId = parsePositiveInt(req.params.id);
+    const { summary, error } = validateResolutionSummary(
+      req.body?.resolutionSummary
+    );
+
+    const fields: Record<string, string> = {};
+    if (ticketId === null) {
+      fields.id = "Ticket id must be a positive integer.";
+    }
+    if (error) {
+      fields.resolutionSummary = error;
+    }
+    if (Object.keys(fields).length > 0) {
+      validationError(res, fields);
+      return;
+    }
+
+    try {
+      const ticket = await db.ticket.findUnique({
+        where: { id: ticketId! },
+        select: { id: true },
+      });
+      if (!ticket) {
+        sendError(res, 404, "NOT_FOUND", "Ticket not found");
+        return;
+      }
+
+      const updated = await db.ticket.update({
+        where: { id: ticketId! },
+        data: { resolutionSummary: summary },
+        select: { resolutionSummary: true },
+      });
+      res.json({ data: updated });
+    } catch {
+      sendError(res, 500, "INTERNAL_ERROR", "Failed to save resolution summary");
+    }
+  }
+);
+
+app.get(
+  "/api/staff/tickets/:id/comments",
+  requireAuth,
+  requireRole("IT_STAFF", "ADMINISTRATOR"),
+  async (req: Request, res: Response) => {
+    const ticketId = parsePositiveInt(req.params.id);
+    if (ticketId === null) {
+      validationError(res, { id: "Ticket id must be a positive integer." });
+      return;
+    }
+
+    try {
+      const ticket = await db.ticket.findUnique({
+        where: { id: ticketId },
+        select: { id: true },
+      });
+      if (!ticket) {
+        sendError(res, 404, "NOT_FOUND", "Ticket not found");
+        return;
+      }
+
+      const comments = await db.publicComment.findMany({
+        where: { ticketId },
+        orderBy: { createdAt: "desc" },
+        select: commentSelect,
+      });
+      res.json({ data: comments });
+    } catch {
+      sendError(res, 500, "INTERNAL_ERROR", "Failed to fetch comments");
+    }
+  }
+);
+
+app.post(
+  "/api/staff/tickets/:id/comments",
+  requireAuth,
+  requireRole("IT_STAFF", "ADMINISTRATOR"),
+  async (req: Request, res: Response) => {
+    const ticketId = parsePositiveInt(req.params.id);
+    if (ticketId === null) {
+      validationError(res, { id: "Ticket id must be a positive integer." });
+      return;
+    }
+
+    const { content, error } = validateCommentContent(req.body?.content);
+    if (error) {
+      validationError(res, { content: error });
+      return;
+    }
+
+    try {
+      const ticket = await db.ticket.findUnique({
+        where: { id: ticketId },
+        select: { id: true },
+      });
+      if (!ticket) {
+        sendError(res, 404, "NOT_FOUND", "Ticket not found");
+        return;
+      }
+
+      const comment = await db.publicComment.create({
+        data: { ticketId, authorId: req.user!.id, content },
+        select: commentSelect,
+      });
+      res.status(201).json({ data: comment });
+    } catch {
+      sendError(res, 500, "INTERNAL_ERROR", "Failed to post comment");
+    }
+  }
+);
+
+const noteSelect = {
+  id: true,
+  ticketId: true,
+  authorId: true,
+  content: true,
+  createdAt: true,
+  author: { select: { id: true, name: true, role: true } },
+} as const;
+
+app.post(
+  "/api/staff/tickets/:id/notes",
+  requireAuth,
+  requireRole("IT_STAFF", "ADMINISTRATOR"),
+  async (req: Request, res: Response) => {
+    const ticketId = parsePositiveInt(req.params.id);
+    if (ticketId === null) {
+      validationError(res, { id: "Ticket id must be a positive integer." });
+      return;
+    }
+
+    const { content, error } = validateCommentContent(req.body?.content);
+    if (error) {
+      validationError(res, { content: error });
+      return;
+    }
+
+    try {
+      const ticket = await db.ticket.findUnique({
+        where: { id: ticketId },
+        select: { id: true },
+      });
+      if (!ticket) {
+        sendError(res, 404, "NOT_FOUND", "Ticket not found");
+        return;
+      }
+
+      const note = await db.internalNote.create({
+        data: { ticketId, authorId: req.user!.id, content },
+        select: noteSelect,
+      });
+      res.status(201).json({ data: note });
+    } catch {
+      sendError(res, 500, "INTERNAL_ERROR", "Failed to create note");
+    }
+  }
+);
+
+app.get(
+  "/api/staff/tickets/:id/notes",
+  requireAuth,
+  requireRole("IT_STAFF", "ADMINISTRATOR"),
+  async (req: Request, res: Response) => {
+    const ticketId = parsePositiveInt(req.params.id);
+    if (ticketId === null) {
+      validationError(res, { id: "Ticket id must be a positive integer." });
+      return;
+    }
+
+    try {
+      const ticket = await db.ticket.findUnique({
+        where: { id: ticketId },
+        select: { id: true },
+      });
+      if (!ticket) {
+        sendError(res, 404, "NOT_FOUND", "Ticket not found");
+        return;
+      }
+
+      const notes = await db.internalNote.findMany({
+        where: { ticketId },
+        orderBy: { createdAt: "desc" },
+        select: noteSelect,
+      });
+      res.json({ data: notes });
+    } catch {
+      sendError(res, 500, "INTERNAL_ERROR", "Failed to fetch notes");
+    }
+  }
+);
+
+app.get(
+  "/api/staff/users",
+  requireAuth,
+  requireRole("IT_STAFF", "ADMINISTRATOR"),
+  async (_req: Request, res: Response) => {
+    try {
+      const users = await db.user.findMany({
+        where: {
+          isActive: true,
+          OR: [{ role: "IT_STAFF" }, { role: "ADMINISTRATOR" }],
+        },
+        orderBy: { name: "asc" },
+        select: { id: true, name: true, role: true },
+      });
+      res.json({ data: users });
+    } catch {
+      sendError(res, 500, "INTERNAL_ERROR", "Failed to fetch staff users");
+    }
+  }
+);
+
+// ── Staff append-only enforcement (api-spec 5.13, BR-14, FR-34) ──────────────
+app.put("/api/staff/tickets/:id/comments", (_req: Request, res: Response) => {
+  sendError(res, 405, "METHOD_NOT_ALLOWED", "Public comments are append-only.");
+});
+app.put("/api/staff/tickets/:id/comments/:commentId", (_req: Request, res: Response) => {
+  sendError(res, 405, "METHOD_NOT_ALLOWED", "Public comments are append-only.");
+});
+app.delete("/api/staff/tickets/:id/comments", (_req: Request, res: Response) => {
+  sendError(res, 405, "METHOD_NOT_ALLOWED", "Public comments are append-only.");
+});
+app.delete("/api/staff/tickets/:id/comments/:commentId", (_req: Request, res: Response) => {
+  sendError(res, 405, "METHOD_NOT_ALLOWED", "Public comments are append-only.");
+});
+app.put("/api/staff/tickets/:id/notes", (_req: Request, res: Response) => {
+  sendError(res, 405, "METHOD_NOT_ALLOWED", "Internal notes are append-only.");
+});
+app.put("/api/staff/tickets/:id/notes/:noteId", (_req: Request, res: Response) => {
+  sendError(res, 405, "METHOD_NOT_ALLOWED", "Internal notes are append-only.");
+});
+app.delete("/api/staff/tickets/:id/notes", (_req: Request, res: Response) => {
+  sendError(res, 405, "METHOD_NOT_ALLOWED", "Internal notes are append-only.");
+});
+app.delete("/api/staff/tickets/:id/notes/:noteId", (_req: Request, res: Response) => {
+  sendError(res, 405, "METHOD_NOT_ALLOWED", "Internal notes are append-only.");
 });
 
 // ── Requester: "Problem Appears Resolved" (FR-19, BR-05, BR-20) ─────────────

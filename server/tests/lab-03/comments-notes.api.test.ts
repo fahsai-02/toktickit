@@ -16,6 +16,9 @@ const createdTicketIds: number[] = [];
 let ownedTicketId: number;
 
 async function cleanup(): Promise<void> {
+  await db.internalNote.deleteMany({
+    where: { ticketId: { in: createdTicketIds } },
+  });
   await db.publicComment.deleteMany({
     where: { ticketId: { in: createdTicketIds } },
   });
@@ -270,5 +273,152 @@ describe("Requester resolution-summary reservation (api-spec 4.10)", () => {
       .send({ resolutionSummary: "Cannot set from requester API." });
     expect(res.status).toBe(403);
     expect(res.body.error.code).toBe("FORBIDDEN");
+  });
+});
+
+describe("API-47..51, 54/55 — staff comments + internal notes (FR-32/33/34/35, BR-04/14/15/16)", () => {
+  let staff: ReturnType<typeof request.agent>;
+  let staffUserId: number;
+
+  beforeAll(async () => {
+    staff = await authedAgent("IT_STAFF", 0);
+    staffUserId = (await db.user.findUnique({
+      where: { email: seedUserFor("IT_STAFF", 0)!.email },
+      select: { id: true },
+    }))!.id;
+  }, 40000);
+
+  it("staff posts a public comment with author + timestamp (API-47)", async () => {
+    const res = await staff
+      .post(`/api/staff/tickets/${ownedTicketId}/comments`)
+      .send({ content: "We are investigating on our end." });
+    expect(res.status).toBe(201);
+    expect(res.body.data).toMatchObject({
+      ticketId: ownedTicketId,
+      authorId: staffUserId,
+      content: "We are investigating on our end.",
+      author: { id: staffUserId, role: "IT_STAFF" },
+    });
+    expect(res.body.data.createdAt).toBeTruthy();
+  });
+
+  it("staff lists public comments newest-first, including requester + staff (API-48, BR-04)", async () => {
+    const res = await staff.get(`/api/staff/tickets/${ownedTicketId}/comments`);
+    expect(res.status).toBe(200);
+    const rows = res.body.data as Array<{ createdAt: string }>;
+    const dates = rows.map((c) => new Date(c.createdAt).getTime());
+    for (let i = 1; i < dates.length; i += 1) {
+      expect(dates[i - 1]).toBeGreaterThanOrEqual(dates[i]);
+    }
+    expect(res.body.data.some((c: { author: { role: string } }) => c.author.role === "REQUESTER")).toBe(true);
+    expect(res.body.data.some((c: { author: { role: string } }) => c.author.role === "IT_STAFF")).toBe(true);
+  });
+
+  it("staff creates an internal note with author + timestamp (API-49)", async () => {
+    const res = await staff
+      .post(`/api/staff/tickets/${ownedTicketId}/notes`)
+      .send({ content: "Checked event logs — issue started after Windows update." });
+    expect(res.status).toBe(201);
+    expect(res.body.data).toMatchObject({
+      ticketId: ownedTicketId,
+      authorId: staffUserId,
+      content: "Checked event logs — issue started after Windows update.",
+      author: { id: staffUserId, role: "IT_STAFF" },
+    });
+    expect(res.body.data.createdAt).toBeTruthy();
+  });
+
+  it("staff lists internal notes newest-first (API-50)", async () => {
+    const res = await staff.get(`/api/staff/tickets/${ownedTicketId}/notes`);
+    expect(res.status).toBe(200);
+    const dates = res.body.data.map((n: { createdAt: string }) => new Date(n.createdAt).getTime());
+    for (let i = 1; i < dates.length; i += 1) {
+      expect(dates[i - 1]).toBeGreaterThanOrEqual(dates[i]);
+    }
+  });
+
+  it("requesters are forbidden from internal notes (API-51, AC-04, FR-35)", async () => {
+    const list = await agentA.get(`/api/staff/tickets/${ownedTicketId}/notes`);
+    expect(list.status).toBe(403);
+    expect(list.body.error.code).toBe("FORBIDDEN");
+
+    const post = await agentA
+      .post(`/api/staff/tickets/${ownedTicketId}/notes`)
+      .send({ content: "requester should not be able to post a note" });
+    expect(post.status).toBe(403);
+    expect(post.body.error.code).toBe("FORBIDDEN");
+  });
+
+  it("public comments must NOT be returned as internal notes (BR-04 barrier)", async () => {
+    await staff
+      .post(`/api/staff/tickets/${ownedTicketId}/comments`)
+      .send({ content: "public-only marker" });
+    const res = await staff.get(`/api/staff/tickets/${ownedTicketId}/notes`);
+    expect(res.status).toBe(200);
+    const contents = res.body.data.map((n: { content: string }) => n.content);
+    expect(contents).not.toContain("public-only marker");
+  });
+
+  it("staff notes are append-only: PUT returns 405 (API-54)", async () => {
+    const empty = await staff
+      .put(`/api/staff/tickets/${ownedTicketId}/notes`)
+      .send({ content: "edited" });
+    expect(empty.status).toBe(405);
+    expect(empty.body.error.code).toBe("METHOD_NOT_ALLOWED");
+
+    const created = await staff
+      .post(`/api/staff/tickets/${ownedTicketId}/notes`)
+      .send({ content: "immutable note" });
+    expect(created.status).toBe(201);
+    const item = await staff
+      .put(`/api/staff/tickets/${ownedTicketId}/notes/${created.body.data.id}`)
+      .send({ content: "edited" });
+    expect(item.status).toBe(405);
+  });
+
+  it("staff notes are append-only: DELETE returns 405 (API-55)", async () => {
+    const empty = await staff.delete(`/api/staff/tickets/${ownedTicketId}/notes`);
+    expect(empty.status).toBe(405);
+    expect(empty.body.error.code).toBe("METHOD_NOT_ALLOWED");
+
+    const created = await staff
+      .post(`/api/staff/tickets/${ownedTicketId}/notes`)
+      .send({ content: "deletable-looking note" });
+    expect(created.status).toBe(201);
+    const item = await staff.delete(
+      `/api/staff/tickets/${ownedTicketId}/notes/${created.body.data.id}`
+    );
+    expect(item.status).toBe(405);
+  });
+
+  it("staff comments are append-only too (api-spec 5.13)", async () => {
+    const empty = await staff.put(`/api/staff/tickets/${ownedTicketId}/comments`);
+    expect(empty.status).toBe(405);
+    const created = await staff
+      .post(`/api/staff/tickets/${ownedTicketId}/comments`)
+      .send({ content: "staff immutable comment" });
+    expect(created.status).toBe(201);
+    const item = await staff.delete(
+      `/api/staff/tickets/${ownedTicketId}/comments/${created.body.data.id}`
+    );
+    expect(item.status).toBe(405);
+  });
+
+  it("staff comment content follows the same 1-2000 char rule (BR-15)", async () => {
+    const bad = await staff
+      .post(`/api/staff/tickets/${ownedTicketId}/comments`)
+      .send({ content: "   " });
+    expect(bad.status).toBe(400);
+    const good = await staff
+      .post(`/api/staff/tickets/${ownedTicketId}/comments`)
+      .send({ content: "x".repeat(2000) });
+    expect(good.status).toBe(201);
+  });
+
+  it("404 for unknown tickets on both staff channels", async () => {
+    const comments = await staff.get("/api/staff/tickets/999999/comments");
+    expect(comments.status).toBe(404);
+    const notes = await staff.post("/api/staff/tickets/999999/notes").send({ content: "x" });
+    expect(notes.status).toBe(404);
   });
 });

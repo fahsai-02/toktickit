@@ -34,7 +34,7 @@ Status legend: `Planned` → written before implementation · updated to `Pass`/
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | UNIT-01 | Unit | BR-08 | Password hash verification | Stored hashes start with `$2`; bcrypt.compare succeeds for every seeded account | `migration-regression.api.test.ts` (covered by MIG-01) | Pass |
 | UNIT-02 | Unit | FR-07, AC-02 | New-password validation rules | Rejects <8 chars, missing uppercase, missing lowercase, missing digit, missing special char; accepts valid password | `server/tests/lab-03/password-validation.unit.test.ts` | Pass |
-| UNIT-03 | Unit | BR-12 | Status-transition matrix validation | Given a current status and target status, correctly determines if the transition is permitted | `server/tests/lab-03/status-transitions.unit.test.ts` | Planned |
+| UNIT-03 | Unit | BR-12 | Status-transition matrix validation | Given a current status and target status, correctly determines if the transition is permitted | `server/tests/lab-03/status-transitions.unit.test.ts` | Pass |
 
 ### API (server/tests/lab-03)
 
@@ -56,7 +56,7 @@ Status legend: `Planned` → written before implementation · updated to `Pass`/
 | API-14 | API | AC-03, FR-13 | Create ticket ignores client-supplied requesterId | Authenticated as user A; send `requesterId: B` in body; ticket is owned by A | `authorization.api.test.ts` | Pass |
 | API-15 | API | AC-03, FR-15 | Requester ownership on list | User A sees only A's tickets; 403/empty for B's tickets | `authorization.api.test.ts` | Pass |
 | API-16 | API | AC-03, FR-15 | Requester ownership on detail | User A requests B's ticket → 403 | `authorization.api.test.ts` | Pass |
-| API-17 | API | AC-04, FR-35 | Requester forbidden from internal notes | Requester calls POST /api/staff/tickets/:id/notes → 403 | `authorization.api.test.ts` | Planned |
+| API-17 | API | AC-04, FR-35 | Requester forbidden from internal notes | Requester calls GET/POST /api/staff/tickets/:id/notes → 403 | `comments-notes.api.test.ts` | Pass |
 | API-18 | API | AC-13, FR-47 | Non-admin forbidden from admin endpoints | Requester calls GET /api/admin/users → 403 | `authorization.api.test.ts` | Planned |
 | API-19 | API | AC-13, FR-47 | Non-staff forbidden from staff endpoints | Requester calls GET /api/staff/tickets → 403 | `staff-queue.api.test.ts` | Pass |
 | API-20 | API | FR-14 | Ticket creation initializes itPriority | Created ticket has `itPriority` = `requestedPriority` | `authorization.api.test.ts` | Pass |
@@ -73,29 +73,31 @@ Status legend: `Planned` → written before implementation · updated to `Pass`/
 | API-31 | API | AC-08, FR-22 | Staff queue — sort by itPriority | Sorting by IT Priority works asc/desc | `staff-queue.api.test.ts` | Pass |
 | API-32 | API | AC-08, FR-24 | Staff queue — invalid params | Unknown sortBy, non-numeric page, pageSize out of range → 400 | `staff-queue.api.test.ts` | Pass |
 | API-33 | API | AC-08 | Staff queue — empty results | Filters matching nothing → empty data array with total=0 | `staff-queue.api.test.ts` | Pass |
-| API-34 | API | FR-26 | Staff ticket detail — full payload | 200 with all fields including owner, resolutionSummary, requesterIndicatedResolved, counts | `staff-ticket-detail.api.test.ts` | Planned |
-| API-35 | API | FR-27 | Claim ticket | 200; owner set to current user | `staff-ticket-detail.api.test.ts` | Planned |
-| API-36 | API | FR-27 | Claim already-claimed ticket | 409 if already claimed by self | `staff-ticket-detail.api.test.ts` | Planned |
-| API-37 | API | FR-28 | Assign ticket | 200; owner changed to specified user | `staff-ticket-detail.api.test.ts` | Planned |
-| API-38 | API | FR-28 | Assign to non-existent user | 404 | `staff-ticket-detail.api.test.ts` | Planned |
-| API-39 | API | FR-29 | Set IT Priority | 200; itPriority updated | `staff-ticket-detail.api.test.ts` | Planned |
-| API-40 | API | FR-29 | Set invalid IT Priority | 400 | `staff-ticket-detail.api.test.ts` | Planned |
-| API-41 | API | AC-09, FR-30 | Valid status transition (NEW→OPEN) | 200; currentStatus updated | `staff-ticket-detail.api.test.ts` | Planned |
-| API-42 | API | AC-09, FR-30 | Invalid status transition (OPEN→RESOLVED) | 400 with BUSINESS_RULE_VIOLATION | `staff-ticket-detail.api.test.ts` | Planned |
-| API-43 | API | AC-09, FR-30 | Invalid status transition (NEW→CANCELLED) | 400 (not permitted from NEW) | `staff-ticket-detail.api.test.ts` | Planned |
-| API-73 | API | AC-09, FR-30, BR-12 | Valid status transition (CLOSED→REOPENED) | 200; currentStatus updated to REOPENED | `staff-ticket-detail.api.test.ts` | Planned |
-| API-44 | API | FR-31 | Save resolution summary — valid | 200; resolutionSummary stored | `staff-ticket-detail.api.test.ts` | Planned |
-| API-45 | API | FR-31, BR-19 | Save resolution summary — empty/whitespace | 400 | `staff-ticket-detail.api.test.ts` | Planned |
-| API-46 | API | FR-31, BR-19 | Save resolution summary — over length | 400 | `staff-ticket-detail.api.test.ts` | Planned |
-| API-47 | API | FR-32 | Post Public Comment (staff) | 201 with author and timestamp | `comments-notes.api.test.ts` | Planned |
-| API-48 | API | FR-32 | List Public Comments (staff) | 200, newest-first | `comments-notes.api.test.ts` | Planned |
-| API-49 | API | FR-33 | Create Internal Note (staff) | 201 with author and timestamp | `comments-notes.api.test.ts` | Planned |
-| API-50 | API | FR-33 | List Internal Notes (staff) | 200, newest-first | `comments-notes.api.test.ts` | Planned |
-| API-51 | API | AC-04, FR-35 | Internal Notes — Requester forbidden | 403 | `comments-notes.api.test.ts` | Planned |
+| API-34 | API | FR-26 | Staff ticket detail — full payload | 200 with all fields including owner, resolutionSummary, requesterIndicatedResolved, counts | `staff-ticket-detail.api.test.ts` | Pass |
+| API-35 | API | FR-27 | Claim ticket | 200; owner set to current user | `staff-ticket-detail.api.test.ts` | Pass |
+| API-36 | API | FR-27 | Claim already-claimed ticket | 409 if already claimed by self | `staff-ticket-detail.api.test.ts` | Pass |
+| API-37 | API | FR-28 | Assign ticket | 200; owner changed to specified user | `staff-ticket-detail.api.test.ts` | Pass |
+| API-38 | API | FR-28 | Assign to non-existent user | 404 | `staff-ticket-detail.api.test.ts` | Pass |
+| API-39 | API | FR-29 | Set IT Priority | 200; itPriority updated | `staff-ticket-detail.api.test.ts` | Pass |
+| API-40 | API | FR-29 | Set invalid IT Priority | 400 | `staff-ticket-detail.api.test.ts` | Pass |
+| API-41 | API | AC-09, FR-30 | Valid status transition (NEW→OPEN) | 200; currentStatus updated | `staff-ticket-detail.api.test.ts` | Pass |
+| API-42 | API | AC-09, FR-30 | Invalid status transition (OPEN→RESOLVED) | 400 with BUSINESS_RULE_VIOLATION | `staff-ticket-detail.api.test.ts` | Pass |
+| API-43 | API | AC-09, FR-30 | Invalid status transition (NEW→CANCELLED) | 400 (not permitted from NEW) | `staff-ticket-detail.api.test.ts` | Pass |
+| API-73 | API | AC-09, FR-30, BR-12 | Valid status transition (CLOSED→REOPENED) | 200; currentStatus updated to REOPENED | `staff-ticket-detail.api.test.ts` | Pass |
+| API-44 | API | FR-31 | Save resolution summary — valid | 200; resolutionSummary stored | `staff-ticket-detail.api.test.ts` | Pass |
+| API-45 | API | FR-31, BR-19 | Save resolution summary — empty/whitespace | 400 | `staff-ticket-detail.api.test.ts` | Pass |
+| API-46 | API | FR-31, BR-19 | Save resolution summary — over length | 400 | `staff-ticket-detail.api.test.ts` | Pass |
+| API-74 | API | FR-37 | Change ticket category | 200; category updated to another active category; 400/404 for invalid/unknown id | `staff-ticket-detail.api.test.ts` | Pass |
+| API-75 | API | FR-39 | Staff user list for owner dropdown | 200 with active IT_STAFF + ADMINISTRATOR (name-asc); Requester forbidden | `staff-ticket-detail.api.test.ts` | Pass |
+| API-47 | API | FR-32 | Post Public Comment (staff) | 201 with author and timestamp | `comments-notes.api.test.ts` | Pass |
+| API-48 | API | FR-32 | List Public Comments (staff) | 200, newest-first | `comments-notes.api.test.ts` | Pass |
+| API-49 | API | FR-33 | Create Internal Note (staff) | 201 with author and timestamp | `comments-notes.api.test.ts` | Pass |
+| API-50 | API | FR-33 | List Internal Notes (staff) | 200, newest-first | `comments-notes.api.test.ts` | Pass |
+| API-51 | API | AC-04, FR-35 | Internal Notes — Requester forbidden | 403 | `comments-notes.api.test.ts` | Pass |
 | API-52 | API | FR-18, FR-34 | Append-only: PUT on comments | 405 METHOD_NOT_ALLOWED | `comments-notes.api.test.ts` | Pass |
 | API-53 | API | FR-18, FR-34 | Append-only: DELETE on comments | 405 METHOD_NOT_ALLOWED | `comments-notes.api.test.ts` | Pass |
-| API-54 | API | FR-34 | Append-only: PUT on notes | 405 METHOD_NOT_ALLOWED | `comments-notes.api.test.ts` | Planned |
-| API-55 | API | FR-34 | Append-only: DELETE on notes | 405 METHOD_NOT_ALLOWED | `comments-notes.api.test.ts` | Planned |
+| API-54 | API | FR-34 | Append-only: PUT on notes | 405 METHOD_NOT_ALLOWED | `comments-notes.api.test.ts` | Pass |
+| API-55 | API | FR-34 | Append-only: DELETE on notes | 405 METHOD_NOT_ALLOWED | `comments-notes.api.test.ts` | Pass |
 | API-56 | API | FR-16, BR-15 | Comment content — empty/whitespace | 400 | `comments-notes.api.test.ts` | Pass |
 | API-57 | API | FR-16, BR-15 | Comment content — over 2000 chars | 400 | `comments-notes.api.test.ts` | Pass |
 | API-58 | API | AC-07, FR-19 | Indicate resolved — toggle set | Sets `requesterIndicatedResolved = true` with timestamp; `currentStatus` unchanged | `comments-notes.api.test.ts` | Pass |
@@ -128,9 +130,9 @@ Status legend: `Planned` → written before implementation · updated to `Pass`/
 | UI-08 | UI component | FR-22, AC-08 | Staff queue — search and filter | Search and filter controls work; results update | `StaffTicketQueue.test.tsx` | Pass |
 | UI-09 | UI component | FR-22 | Staff queue — pagination | Prev/next/page controls work | `StaffTicketQueue.test.tsx` | Pass |
 | UI-10 | UI component | FR-22 | Staff queue — empty/no-results states | Distinct messages for empty vs no-results | `StaffTicketQueue.test.tsx` | Pass |
-| UI-11 | UI component | FR-26, FR-37 | Staff detail — ticket info rendering | All meta fields shown with correct editability | `StaffTicketDetail.test.tsx` | Planned |
-| UI-12 | UI component | FR-30, FR-38 | Staff detail — status dropdown | Only permitted next states shown in dropdown | `StaffTicketDetail.test.tsx` | Planned |
-| UI-13 | UI component | FR-32, FR-33 | Staff detail — comments/notes tabs | Both tabs render; comment/note input present | `StaffTicketDetail.test.tsx` | Planned |
+| UI-11 | UI component | FR-26, FR-37 | Staff detail — ticket info rendering | All meta fields shown with correct editability | `StaffTicketDetail.test.tsx` | Pass |
+| UI-12 | UI component | FR-30, FR-38 | Staff detail — status dropdown | Only permitted next states shown in dropdown | `StaffTicketDetail.test.tsx` | Pass |
+| UI-13 | UI component | FR-32, FR-33 | Staff detail — comments/notes tabs | Both tabs render; comment/note input present | `StaffTicketDetail.test.tsx` | Pass |
 | UI-14 | UI component | FR-40, AC-13 | Admin — user list | Table shows Name, Email, Role, Status, Edit | `UserManagement.test.tsx` | Planned |
 | UI-15 | UI component | FR-41 | Admin — create user drawer | Drawer opens; form validates; submission works | `UserManagement.test.tsx` | Planned |
 | UI-16 | UI component | FR-43, FR-45, FR-46 | Admin — edit and safety | Edit loads data; self-deactivation blocked; last-admin blocked | `UserManagement.test.tsx` | Planned |
@@ -176,6 +178,10 @@ Status legend: `Planned` → written before implementation · updated to `Pass`/
 > **Verified Pass 2026-09-14 (12 files / 138 tests).**
 >
 > **Verified Pass 2026-09-19 — Issue 18 close-out:** server 16 files / 191 tests (server suite + `pnpm build` green after review fixes; includes API-14..16, API-20, API-52/53, API-56..59), client 13 files / 119 tests (incl. new UI-17 `RequesterTicketComments.test.tsx` + UI-18 `requester-ticket-api.test.tsx`), and E2E-05 requester regression (1 spec / 1 test) passed. Run order used: `pnpm exec prisma db seed` before the server suite, and the E2E spec self-reseeds before and after (its initial-password change is undone so MIG-01 bcrypt checks stay green). Details in `ai-use.md` Issue 18 section.
+>
+> **Verified Pass 2026-09-21 — Issue 20 close-out:** server 19 files / 259 tests + `pnpm build` green; client 15 files / 156 tests + `pnpm build` green. New this issue: UNIT-03 (`status-transitions.unit.test.ts`, 9 tests), API-34..46 + API-73 (`staff-ticket-detail.api.test.ts`, 29 tests incl. the new category + staff-user-list endpoints as API-74/API-75), API-47..51 + API-54/55 (`comments-notes.api.test.ts` staff block), UI-11..13 (`StaffTicketDetail.test.tsx`, 20 tests incl. a claim-visible-when-owned-by-another-staff case). `pnpm exec prisma db seed` was re-run before the server suite (reseed resets the 11 seed accounts to the documented state; dev DB now 364 tickets). Details in `ai-use.md` Issue 20 section.
+>
+> **Post-review fixes 2026-09-22 (feature/20-staff-ticket-detail):** (1) `PUT /api/staff/tickets/:id/category` now enforces api-spec 5.14 — only active categories are accepted (inactive → 404), locked by a new test in `staff-ticket-detail.api.test.ts`; (2) staff/admin attachment uploads tag `uploadedByRequesterId` with the ticket's own requester instead of fabricating a Requester row from the staff identity (decision confirmed with the student; requester uploads unchanged) — 2 new tests; (3) added `staff-ticket-api.test.tsx` covering all 12 staff `api.ts` wrappers (method/URL/headers/body). AI-17 row corrected: the requester-notes 403 assertion lives in `comments-notes.api.test.ts` (API-51). **Server: 19 files / 262 tests; Client: 16 files / 169 tests.**
 
 ## 3. Acceptance-Criterion Traceability
 
@@ -219,8 +225,8 @@ cd .. && npx playwright test e2e/lab-03   # responsive + E2E (needs both servers
 
 | Suite | Command | Result |
 |-------|---------|--------|
-| Server (unit + API) | `cd server && pnpm test` | **Pass** — 17 files / 210 tests (2026-09-20) *(API-01..20, API-21..33, API-52/53, API-56..59, MIG-01, UNIT-01..02; reseed before run)* |
-| Client (component + style) | `cd client && pnpm test` | **Pass** — 14 files / 137 tests (2026-09-20) *(incl. UI-07..10 `StaffTicketQueue` suite + UI-17/UI-18 Issue 18 suites)* |
+| Server (unit + API) | `cd server && pnpm test` | **Pass** — 19 files / 262 tests (2026-09-22) *(API-34..55, API-73..75, UNIT-03 from Issue 20 `feature/20-staff-ticket-detail`; reseed before run; +2 post-review tests for active-category 404 + staff uploader identity)* |
+| Client (component + style) | `cd client && pnpm test` | **Pass** — 16 files / 169 tests (2026-09-22) *(incl. UI-11..13 `StaffTicketDetail` suite 20 tests + `staff-ticket-api.test.tsx` 12 fetch-level wrapper tests from Issue 20)* |
 | E2E + Responsive (Playwright) | `npx playwright test` with a temporary local config pointing `testDir` at `e2e/lab-03` (repo wiring lands in Issue 22) | **Pass** — E2E-05 requester regression 1/1 (2026-09-19); RESP-01..24 + E2E-01..04 still *TBD at sprint close* |
 
 ## 7. Known Limitations / Deferred
