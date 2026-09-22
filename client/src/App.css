@@ -1322,6 +1322,15 @@
     color: var(--color-text-muted);
   }
 
+  .breadcrumb-link {
+    color: var(--color-secondary);
+    text-decoration: none;
+  }
+
+  .breadcrumb-link:hover {
+    text-decoration: underline;
+  }
+
   .staff-detail-layout {
     display: grid;
     grid-template-columns: 1.1fr 1fr;
@@ -1486,6 +1495,19 @@
     background: #1e40af;
   }
 
+  /* Staff Ticket Detail also stacks on tablet (768-991px) — ui-spec 5.5
+     "Tablet: stacked layout — info on top, tabs below" and section 6
+     "Tablet 768–991px … stacked layout for staff detail". */
+  @media (max-width: 991px) {
+    .staff-detail-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .staff-detail-comms {
+      position: static;
+    }
+  }
+
   /* ── My Tickets Responsive ─────────────────────────────────────────── */
 
   @media (max-width: 768px) {
@@ -1525,26 +1547,24 @@
       white-space: nowrap;
     }
 
-    /* Staff Ticket Detail stacks below 768px (ui-spec 5.5 "stacked layout"). */
+    /* Staff Ticket Detail stacks below 768px (ui-spec 5.5 "stacked layout");
+       the 991px breakpoint above already handles tablet stacking. */
     .staff-detail-topbar {
       flex-direction: column;
       align-items: flex-start;
     }
 
-    .staff-detail-layout {
-      grid-template-columns: 1fr;
-    }
-
-    .staff-detail-comms {
-      position: static;
-    }
-
+    /* Mobile: tabs stay one horizontal scrollable strip (ui-spec 5.5
+       "tabs as horizontal scrollable strip"); overflow stays contained so
+       the page itself never scrolls horizontally (section 6). */
     .detail-tabs {
-      justify-content: stretch;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
     }
 
     .detail-tab {
-      flex: 1 1 auto;
+      flex: 0 0 auto;
       text-align: center;
       padding: 10px 8px;
     }

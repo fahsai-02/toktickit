@@ -314,6 +314,23 @@ export default function StaffTicketDetail() {
   const statusOptions = transitionsFrom(ticket.currentStatus);
   const isOwner = ticket.owner?.id === user?.id;
 
+  // `_count` from the server is the authoritative total, so the tab counts do
+  // not flash "(0)" while the background comment/note fetches are in flight
+  // (ui-spec 5.5 "count"). After posting, the client list is as current or
+  // more, hence Math.max.
+  const commentCount = Math.max(ticket._count.comments, comments.length);
+  const noteCount = Math.max(ticket._count.notes, notes.length);
+  // Soft-removed attachments do not count (specification.md BR-18).
+  const attachmentCount = ticket.attachments.filter((a) => !a.isRemoved).length;
+
+  // The category dropdown comes from GET /api/categories, which only serves
+  // active categories; a historical ticket whose category is now inactive
+  // must still show its category (mirrors the deactivated-owner handling).
+  const categoryOptions = categories.map((c) => ({ value: c.id, label: c.name }));
+  if (!categories.some((c) => c.id === ticket.category.id)) {
+    categoryOptions.push({ value: ticket.category.id, label: ticket.category.name });
+  }
+
   const handleAttachmentsUpdate = (
     input: Attachment[] | ((prev: Attachment[]) => Attachment[])
   ) => {
@@ -506,7 +523,10 @@ export default function StaffTicketDetail() {
     <div className="container staff-ticket-detail" data-testid="staff-ticket-detail">
       <div className="staff-detail-topbar">
         <nav className="breadcrumb" aria-label="Breadcrumb">
-          My Queue &gt; Ticket Detail
+          <Link to="/staff/queue" className="breadcrumb-link">
+            My Queue
+          </Link>
+          {" > Ticket Detail"}
         </nav>
         <Link to="/staff/queue" className="back-link" data-testid="back-queue-link">
           <ArrowLeft size={16} />
@@ -535,7 +555,7 @@ export default function StaffTicketDetail() {
               <SelectField
                 id="category-select"
                 label="Category"
-                options={categories.map((c) => ({ value: c.id, label: c.name }))}
+                options={categoryOptions}
                 value={String(ticket.category.id)}
                 onChange={(e) => void handleCategoryChange(e)}
                 disabled={categorySaving}
@@ -568,7 +588,7 @@ export default function StaffTicketDetail() {
                 }))}
                 value=""
                 onChange={(e) => handleStatusChange(e)}
-                disabled={statusSaving}
+                disabled={statusSaving || statusOptions.length === 0}
                 error={statusError}
                 errorTestId="status-error"
                 data-testid="staff-status-select"
@@ -661,6 +681,7 @@ export default function StaffTicketDetail() {
                 onChange={(e) => {
                   setResolutionText(e.target.value);
                   setResolutionError("");
+                  setResolutionSaved(false);
                 }}
                 error={resolutionError}
                 errorTestId="resolution-error"
@@ -696,7 +717,7 @@ export default function StaffTicketDetail() {
               onClick={() => setTab("comments")}
               data-testid="tab-comments"
             >
-              Public Comments ({comments.length})
+              Public Comments ({commentCount})
             </button>
             <button
               role="tab"
@@ -705,7 +726,7 @@ export default function StaffTicketDetail() {
               onClick={() => setTab("notes")}
               data-testid="tab-notes"
             >
-              Internal Notes ({notes.length})
+              Internal Notes ({noteCount})
             </button>
             <button
               role="tab"
@@ -714,7 +735,7 @@ export default function StaffTicketDetail() {
               onClick={() => setTab("attachments")}
               data-testid="tab-attachments"
             >
-              Attachments ({ticket.attachments.length})
+              Attachments ({attachmentCount})
             </button>
           </div>
 

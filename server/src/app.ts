@@ -1227,9 +1227,6 @@ const staffDetailSelect = {
   itPriority: true,
   currentStatus: true,
   ticketDate: true,
-  requesterId: true,
-  requesterUserId: true,
-  ownerId: true,
   resolutionSummary: true,
   requesterIndicatedResolved: true,
   indicatedResolvedAt: true,
@@ -1278,13 +1275,10 @@ app.get(
         return;
       }
 
-      const {
-        requesterId: _,
-        requesterUserId: __,
-        ownerId: ___,
-        ...ticketData
-      } = ticket;
-      res.json({ data: ticketData });
+      // requesterId/requesterUserId/ownerId are internal FK columns and are
+      // deliberately not selected above; the response carries the requester
+      // and owner relations instead.
+      res.json({ data: ticket });
     } catch {
       sendError(res, 500, "INTERNAL_ERROR", "Failed to fetch ticket");
     }

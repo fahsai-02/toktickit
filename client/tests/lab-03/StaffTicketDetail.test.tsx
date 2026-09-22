@@ -253,6 +253,45 @@ describe("StaffTicketDetail — ticket info rendering and editability", () => {
     expect(screen.getByTestId("resolution-saved")).toBeInTheDocument();
   });
 
+  it("clears 'Saved.' once the resolution text is edited after saving", async () => {
+    vi.spyOn(api, "fetchStaffTicket").mockResolvedValue(baseTicket);
+    vi.spyOn(api, "saveResolutionSummary").mockResolvedValue({
+      resolutionSummary: "Battery replaced under warranty.",
+    });
+    renderDetail();
+
+    await screen.findByTestId("staff-ticket-detail");
+    fireEvent.change(screen.getByTestId("resolution-input"), {
+      target: { value: "Battery replaced under warranty." },
+    });
+    fireEvent.click(screen.getByTestId("save-resolution-btn"));
+    await waitFor(() => {
+      expect(screen.getByTestId("resolution-saved")).toBeInTheDocument();
+    });
+
+    fireEvent.change(screen.getByTestId("resolution-input"), {
+      target: { value: "Battery replaced under warranty; ticket closed." },
+    });
+    await waitFor(() => {
+      expect(
+        screen.queryByTestId("resolution-saved")
+      ).not.toBeInTheDocument();
+    });
+  });
+
+  it("still shows the ticket's category when it is inactive (absent from the active list)", async () => {
+    vi.spyOn(api, "fetchStaffTicket").mockResolvedValue(
+      makeTicket({ category: { id: 9, name: "Legacy Hardware" } })
+    );
+    renderDetail();
+
+    await screen.findByTestId("staff-ticket-detail");
+    const select = screen.getByTestId("staff-category-select") as HTMLSelectElement;
+    const labels = Array.from(select.options).map((o) => o.textContent);
+    expect(labels).toContain("Legacy Hardware");
+    expect(select.value).toBe("9");
+  });
+
   it("does NOT call the API when the resolution summary is blank", async () => {
     vi.spyOn(api, "fetchStaffTicket").mockResolvedValue(baseTicket);
     const saveSpy = vi.spyOn(api, "saveResolutionSummary");
@@ -313,6 +352,16 @@ describe("StaffTicketDetail — status dropdown shows only permitted next states
     const optionValues = Array.from(select.options).map((o) => o.value);
     expect(optionValues).not.toContain("CANCELLED");
     expect(optionValues).not.toContain("RESOLVED");
+  });
+
+  it("disables the status dropdown for the terminal CANCELLED state (BR-12)", async () => {
+    vi.spyOn(api, "fetchStaffTicket").mockResolvedValue(
+      makeTicket({ currentStatus: "CANCELLED" })
+    );
+    renderDetail();
+
+    await screen.findByTestId("staff-ticket-detail");
+    expect(screen.getByTestId("staff-status-select")).toBeDisabled();
   });
 
   it("OPEN → CANCELLED requires the confirmation dialog before the API call", async () => {
@@ -393,6 +442,57 @@ describe("StaffTicketDetail — comments/notes tabs", () => {
 
     expect(commentsTab).toHaveAttribute("aria-selected", "true");
     expect(screen.getByTestId("panel-comments")).toBeInTheDocument();
+  });
+
+  it("shows server _count totals on tabs even while comment/note fetches are still pending", async () => {
+    vi.spyOn(api, "fetchStaffComments").mockReturnValue(new Promise(() => {}));
+    vi.spyOn(api, "fetchInternalNotes").mockReturnValue(new Promise(() => {}));
+    renderDetail();
+
+    await screen.findByTestId("staff-ticket-detail");
+    expect(screen.getByTestId("tab-comments")).toHaveTextContent(
+      "Public Comments (1)"
+    );
+    expect(screen.getByTestId("tab-notes")).toHaveTextContent(
+      "Internal Notes (1)"
+    );
+  });
+
+  it("counts only active attachments on the Attachments tab (BR-18)", async () => {
+    vi.spyOn(api, "fetchStaffTicket").mockResolvedValue(
+      makeTicket({
+        attachments: [
+          {
+            id: 1,
+            originalFileName: "laptop.png",
+            fileSize: 2048,
+            mimeType: "image/png",
+            isRemoved: false,
+            removedAt: null,
+            removalReason: null,
+            uploadedByRequesterId: 1,
+            createdAt: "2026-09-01T10:00:00.000Z",
+          },
+          {
+            id: 2,
+            originalFileName: "receipt.pdf",
+            fileSize: 4096,
+            mimeType: "application/pdf",
+            isRemoved: true,
+            removedAt: "2026-09-02T09:00:00.000Z",
+            removalReason: "duplicate",
+            uploadedByRequesterId: 1,
+            createdAt: "2026-09-01T10:00:00.000Z",
+          },
+        ],
+      })
+    );
+    renderDetail();
+
+    await screen.findByTestId("staff-ticket-detail");
+    expect(screen.getByTestId("tab-attachments")).toHaveTextContent(
+      "Attachments (1)"
+    );
   });
 
   it("posts a public comment, prepends it, and clears the input", async () => {
