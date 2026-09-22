@@ -19,7 +19,16 @@ import {
   isTicketStatus,
 } from './lib/statusTransitions.js';
 import authRouter from './routes/auth.js';
-import type { TicketStatus } from './generated/prisma/client.js';
+import bcrypt from 'bcryptjs';
+import { validateNewPassword } from './lib/passwordValidation.js';
+import { BCRYPT_ROUNDS } from './lib/seedCredentials.js';
+import {
+  normalizeEmail,
+  nameError,
+  emailError,
+  isUserRole,
+} from './lib/userValidation.js';
+import type { TicketStatus, UserRole } from './generated/prisma/client.js';
 
 dotenv.config({ quiet: true });
 
@@ -1858,6 +1867,358 @@ app.put("/api/tickets/:id/resolution-summary", requireAuth, (_req: Request, res:
     "The resolution summary can only be set by IT Staff."
   );
 });
+
+// Internal error used to carry an API response out of a transactional route
+// callback (Prisma rolls the transaction back when the callback throws, so
+// throwing is the clean way to abort a guard violation with the right status).
+class HttpResponseError extends Error {
+  constructor(
+    public readonly status: number,
+    public readonly code: string,
+    message: string
+  ) {
+    super(message);
+    this.name = "HttpResponseError";
+  }
+}
+
+// ── Administrator: User Management (FR-40..FR-48, BR-07/17, api-spec 6) ─────
+// All endpoints below require the ADMINISTRATOR role. Every safety rule is
+// enforced here in the backend — the UI only ever hides controls as feedback,
+// never as the security control (specification.md section 4.3).
+
+app.get(
+  "/api/admin/users",
+  requireAuth,
+  requireRole("ADMINISTRATOR"),
+  async (req: Request, res: Response) => {
+    const fields: Record<string, string> = {};
+    let roleFilter: UserRole | undefined;
+    if (req.query.role !== undefined) {
+      if (!isUserRole(req.query.role)) {
+        fields.role = "Role must be REQUESTER, IT_STAFF, or ADMINISTRATOR.";
+      } else {
+        roleFilter = req.query.role;
+      }
+    }
+    const searchTerm =
+      req.query.search === undefined ? "" : typeof req.query.search === "string" ? req.query.search.trim() : "";
+    if (req.query.search !== undefined && typeof req.query.search !== "string") {
+      fields.search = "search must be a string.";
+    }
+    if (Object.keys(fields).length > 0) {
+      validationError(res, fields);
+      return;
+    }
+
+    try {
+      const users = await db.user.findMany({
+        where: {
+          ...(searchTerm !== ""
+            ? {
+                OR: [
+                  { name: { contains: searchTerm, mode: "insensitive" } },
+                  { email: { contains: searchTerm, mode: "insensitive" } },
+                ],
+              }
+            : {}),
+          ...(roleFilter !== undefined ? { role: roleFilter } : {}),
+        },
+        orderBy: { name: "asc" },
+        select: { id: true, name: true, email: true, role: true, isActive: true },
+      });
+      res.json({ data: users });
+    } catch {
+      sendError(res, 500, "INTERNAL_ERROR", "Failed to fetch users");
+    }
+  }
+);
+
+app.post(
+  "/api/admin/users",
+  requireAuth,
+  requireRole("ADMINISTRATOR"),
+  async (req: Request, res: Response) => {
+    const body = req.body ?? {};
+    const fields: Record<string, string> = {};
+
+    const nameErr = nameError(body.name);
+    if (nameErr) fields.name = nameErr;
+    const name = typeof body.name === "string" ? body.name.trim() : "";
+
+    const emailErr = emailError(body.email);
+    if (emailErr) fields.email = emailErr;
+    const email = typeof body.email === "string" ? normalizeEmail(body.email) : "";
+
+    if (body.role === undefined) {
+      fields.role = "Role is required.";
+    } else if (!isUserRole(body.role)) {
+      fields.role = "Role must be REQUESTER, IT_STAFF, or ADMINISTRATOR.";
+    }
+
+    const isActive = body.isActive === undefined ? true : body.isActive;
+    if (typeof isActive !== "boolean") {
+      fields.isActive = "isActive must be a boolean.";
+    }
+
+    // Initial password is mandatory at creation (AD-10); the user then must
+    // change it at first login (BR-02).
+    const initialPassword =
+      typeof body.initialPassword === "string" ? body.initialPassword : "";
+    if (initialPassword.length === 0) {
+      fields.initialPassword = "An initial password is required.";
+    } else {
+      const passwordResult = validateNewPassword(initialPassword);
+      if (!passwordResult.valid) fields.initialPassword = passwordResult.fieldMessage;
+    }
+
+    if (Object.keys(fields).length > 0) {
+      validationError(res, fields);
+      return;
+    }
+
+    try {
+      const existing = await db.user.findUnique({
+        where: { email },
+        select: { id: true },
+      });
+      if (existing) {
+        sendError(res, 409, "CONFLICT", "A user with this email already exists.");
+        return;
+      }
+
+      const passwordHash = await bcrypt.hash(initialPassword, BCRYPT_ROUNDS);
+      const user = await db.user.create({
+        data: {
+          name,
+          email,
+          role: body.role as UserRole,
+          isActive,
+          mustChangePassword: true,
+          passwordHash,
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          isActive: true,
+          mustChangePassword: true,
+          createdAt: true,
+        },
+      });
+      res.status(201).json({ data: user });
+    } catch (err) {
+      // Two concurrent creates for the same email race the pre-check above;
+      // the unique constraint is the final authority (FR-42 / BR-07).
+      if ((err as { code?: string }).code === "P2002") {
+        sendError(res, 409, "CONFLICT", "A user with this email already exists.");
+        return;
+      }
+      sendError(res, 500, "INTERNAL_ERROR", "Failed to create user");
+    }
+  }
+);
+
+app.put(
+  "/api/admin/users/:id",
+  requireAuth,
+  requireRole("ADMINISTRATOR"),
+  async (req: Request, res: Response) => {
+    const userId = parsePositiveInt(req.params.id);
+    if (userId === null) {
+      validationError(res, { id: "User id must be a positive integer." });
+      return;
+    }
+
+    const body = req.body ?? {};
+    const fields: Record<string, string> = {};
+
+    let nextName: string | undefined;
+    if (body.name !== undefined) {
+      const nameErr = nameError(body.name);
+      if (nameErr) fields.name = nameErr;
+      else nextName = String(body.name).trim();
+    }
+
+    let nextEmail: string | undefined;
+    if (body.email !== undefined) {
+      const emailErr = emailError(body.email);
+      if (emailErr) fields.email = emailErr;
+      else nextEmail = normalizeEmail(String(body.email));
+    }
+
+    let nextRole: UserRole | undefined;
+    if (body.role !== undefined) {
+      if (!isUserRole(body.role)) {
+        fields.role = "Role must be REQUESTER, IT_STAFF, or ADMINISTRATOR.";
+      } else {
+        nextRole = body.role;
+      }
+    }
+
+    let nextActive: boolean | undefined;
+    if (body.isActive !== undefined) {
+      if (typeof body.isActive !== "boolean") {
+        fields.isActive = "isActive must be a boolean.";
+      } else {
+        nextActive = body.isActive;
+      }
+    }
+
+    if (Object.keys(fields).length > 0) {
+      validationError(res, fields);
+      return;
+    }
+
+    try {
+      const user = await db.$transaction(async (tx) => {
+        // Lock the active-administrator set so two concurrent deactivation or
+        // demotion requests serialize — the FR-46 last-admin guard is
+        // otherwise a check-then-act (TOCTOU) race. The table is tiny, so
+        // locking the whole set is cheap.
+        await tx.$queryRaw`
+          SELECT "id" FROM "User"
+          WHERE "role" = 'ADMINISTRATOR' AND "isActive" = true
+          FOR UPDATE
+        `;
+
+        const target = await tx.user.findUnique({
+          where: { id: userId },
+          select: { id: true, email: true, role: true, isActive: true },
+        });
+        if (!target) {
+          throw new HttpResponseError(404, "NOT_FOUND", "User not found");
+        }
+
+        const effectiveActive = nextActive ?? target.isActive;
+        const effectiveRole = nextRole ?? target.role;
+        const removingAdmin =
+          target.role === "ADMINISTRATOR" &&
+          target.isActive &&
+          (effectiveActive === false || effectiveRole !== "ADMINISTRATOR");
+
+        // FR-46 / AC-12: the final active Administrator can never be removed.
+        // This is checked BEFORE the self-guard so the single-admin case
+        // returns 409 ("last active Administrator"), matching AC-12 exactly.
+        if (removingAdmin) {
+          const activeAdmins = await tx.user.count({
+            where: { role: "ADMINISTRATOR", isActive: true },
+          });
+          if (activeAdmins <= 1) {
+            throw new HttpResponseError(
+              409,
+              "CONFLICT",
+              "Cannot deactivate the last active Administrator."
+            );
+          }
+        }
+
+        // FR-45 / AC-11: an Administrator cannot deactivate (or demote) their
+        // own account. Only reachable while at least one other active
+        // Administrator exists (the last-admin guard above already returned
+        // 409 otherwise).
+        if (userId === req.user!.id && removingAdmin) {
+          throw new HttpResponseError(
+            403,
+            "FORBIDDEN",
+            "You cannot deactivate your own account."
+          );
+        }
+
+        // FR-42 / BR-07: email uniqueness is case-insensitive because both the
+        // stored value and this comparison are lowercase-normalized.
+        if (nextEmail !== undefined && nextEmail !== target.email) {
+          const duplicate = await tx.user.findUnique({
+            where: { email: nextEmail },
+            select: { id: true },
+          });
+          if (duplicate) {
+            throw new HttpResponseError(
+              409,
+              "CONFLICT",
+              "A user with this email already exists."
+            );
+          }
+        }
+
+        return tx.user.update({
+          where: { id: userId },
+          data: {
+            ...(nextName !== undefined ? { name: nextName } : {}),
+            ...(nextEmail !== undefined ? { email: nextEmail } : {}),
+            ...(nextRole !== undefined ? { role: nextRole } : {}),
+            ...(nextActive !== undefined ? { isActive: nextActive } : {}),
+          },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+            isActive: true,
+            mustChangePassword: true,
+            createdAt: true,
+          },
+        });
+      });
+      res.json({ data: user });
+    } catch (err) {
+      if (err instanceof HttpResponseError) {
+        sendError(res, err.status, err.code, err.message);
+        return;
+      }
+      sendError(res, 500, "INTERNAL_ERROR", "Failed to update user");
+    }
+  }
+);
+
+app.post(
+  "/api/admin/users/:id/reset-password",
+  requireAuth,
+  requireRole("ADMINISTRATOR"),
+  async (req: Request, res: Response) => {
+    const userId = parsePositiveInt(req.params.id);
+    if (userId === null) {
+      validationError(res, { id: "User id must be a positive integer." });
+      return;
+    }
+
+    const body = req.body ?? {};
+    const initialPassword =
+      typeof body.initialPassword === "string" ? body.initialPassword : "";
+    if (initialPassword.length === 0) {
+      validationError(res, { initialPassword: "An initial password is required." });
+      return;
+    }
+    const passwordResult = validateNewPassword(initialPassword);
+    if (!passwordResult.valid) {
+      validationError(res, { initialPassword: passwordResult.fieldMessage });
+      return;
+    }
+
+    try {
+      const target = await db.user.findUnique({
+        where: { id: userId },
+        select: { id: true },
+      });
+      if (!target) {
+        sendError(res, 404, "NOT_FOUND", "User not found");
+        return;
+      }
+
+      const passwordHash = await bcrypt.hash(initialPassword, BCRYPT_ROUNDS);
+      await db.user.update({
+        where: { id: userId },
+        data: { passwordHash, mustChangePassword: true },
+      });
+      res.json({
+        data: { message: "Password reset successfully. User must change password at next login." },
+      });
+    } catch {
+      sendError(res, 500, "INTERNAL_ERROR", "Failed to reset password");
+    }
+  }
+);
 
 app.use((_req: Request, res: Response) => {
   res.status(404).json({
