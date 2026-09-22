@@ -915,6 +915,36 @@ Only active users with role `IT_STAFF` or `ADMINISTRATOR` are returned.
 
 ---
 
+### 5.14 PUT `/api/staff/tickets/:id/category`
+
+Change the ticket's category (ui-spec 5.5, FR-37).
+
+**Headers:** `Cookie: connect.sid=...`
+
+**Body**
+```json
+{
+  "categoryId": 3
+}
+```
+
+| Field | Rules |
+| :--- | :--- |
+| `categoryId` | Required; must be a positive integer; must reference an active category (`400` if invalid/missing, `404` if not found) |
+
+**200 Response**
+```json
+{
+  "data": {
+    "category": { "id": 3, "name": "Software" }
+  }
+}
+```
+
+**Errors:** `400` (missing/invalid categoryId), `403`, `404` (ticket or category not found), `500`
+
+---
+
 ## 6. Administrator Endpoints (ADMINISTRATOR only)
 
 All endpoints in this section require a valid session with role `ADMINISTRATOR`.

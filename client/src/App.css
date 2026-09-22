@@ -1307,6 +1307,207 @@
     font-size: 13px;
   }
 
+  /* ── IT Staff Ticket Detail (Issue 20, ui-spec 5.5) ──────────────── */
+
+  .staff-detail-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .breadcrumb {
+    font-size: 13px;
+    color: var(--color-text-muted);
+  }
+
+  .breadcrumb-link {
+    color: var(--color-secondary);
+    text-decoration: none;
+  }
+
+  .breadcrumb-link:hover {
+    text-decoration: underline;
+  }
+
+  .staff-detail-layout {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 16px;
+    align-items: start;
+  }
+
+  .staff-detail-info .ticket-detail-card {
+    margin-bottom: 16px;
+  }
+
+  .staff-claim-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding-top: 4px;
+  }
+
+  .claim-owned {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--color-success);
+    font-weight: 600;
+  }
+
+  .field-success-msg {
+    color: var(--color-success);
+    font-size: 13px;
+  }
+
+  .resolved-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    padding: 10px 12px;
+    border-radius: var(--radius);
+    background: var(--color-pale);
+    color: var(--color-secondary);
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .resolution-card {
+    margin-top: 16px;
+    border-top: 1px solid var(--color-border);
+    padding-top: 16px;
+  }
+
+  .resolution-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
+  }
+
+  /* ── Detail tabs (Public Comments / Internal Notes / Attachments) ── */
+
+  .staff-detail-comms {
+    position: sticky;
+    top: calc(var(--header-height) + 16px);
+  }
+
+  .detail-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    border-bottom: 2px solid var(--color-border);
+    margin-bottom: 16px;
+  }
+
+  .detail-tab {
+    border: none;
+    background: transparent;
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    border-radius: var(--radius) var(--radius) 0 0;
+  }
+
+  .detail-tab:hover {
+    color: var(--color-secondary);
+  }
+
+  .detail-tab--active {
+    color: var(--color-primary);
+    border-bottom-color: var(--color-primary);
+    background: var(--color-pale);
+  }
+
+  /* ── Public Comments / Internal Notes distinction (ui-spec 5.5) ──── */
+
+  .visibility-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--color-pale);
+    color: var(--color-secondary);
+  }
+
+  .visibility-chip--internal {
+    background: var(--color-info-bg);
+    color: var(--color-info);
+  }
+
+  .notes-section {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    box-shadow: 0 1px 2px var(--color-shadow);
+    padding: 24px;
+  }
+
+  .notes-hint {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--color-info);
+    background: var(--color-info-bg);
+    padding: 10px 12px;
+    border-radius: var(--radius);
+    margin: 0 0 16px;
+  }
+
+  .note-timeline {
+    list-style: none;
+    margin: 0 0 16px;
+    padding: 0;
+  }
+
+  .note-item {
+    padding: 12px 14px;
+    margin-bottom: 12px;
+    border-radius: var(--radius);
+    background: var(--color-info-bg);
+    border-left: 3px solid var(--color-info);
+  }
+
+  .note-item:last-child {
+    margin-bottom: 0;
+  }
+
+  .btn-internal {
+    background: var(--color-info);
+    border-color: var(--color-info);
+  }
+
+  .btn-internal:hover:not(:disabled) {
+    background: #1e40af;
+  }
+
+  /* Staff Ticket Detail also stacks on tablet (768-991px) — ui-spec 5.5
+     "Tablet: stacked layout — info on top, tabs below" and section 6
+     "Tablet 768–991px … stacked layout for staff detail". */
+  @media (max-width: 991px) {
+    .staff-detail-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .staff-detail-comms {
+      position: static;
+    }
+  }
+
   /* ── My Tickets Responsive ─────────────────────────────────────────── */
 
   @media (max-width: 768px) {
@@ -1344,6 +1545,32 @@
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+    }
+
+    /* Staff Ticket Detail stacks below 768px (ui-spec 5.5 "stacked layout");
+       the 991px breakpoint above already handles tablet stacking. */
+    .staff-detail-topbar {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    /* Mobile: tabs stay one horizontal scrollable strip (ui-spec 5.5
+       "tabs as horizontal scrollable strip"); overflow stays contained so
+       the page itself never scrolls horizontally (section 6). */
+    .detail-tabs {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .detail-tab {
+      flex: 0 0 auto;
+      text-align: center;
+      padding: 10px 8px;
+    }
+
+    .notes-section {
+      padding: 16px;
     }
 
     .filter-card {
