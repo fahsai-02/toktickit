@@ -1,10 +1,12 @@
 import { type ReactNode, useEffect, useRef } from "react";
 import Button from "./Button.js";
+import { lockScroll, unlockScroll } from "../lib/scrollLock.js";
 
 // Reusable confirmation dialog (ui-spec.md section 8 "ConfirmDialog").
 // ui-spec section 7 rules: traps focus, closes on Escape, returns focus to the
 // trigger. Same pattern as AttachmentSection's remove dialog and
-// StaffTicketDetail's status-confirm dialog.
+// StaffTicketDetail's status-confirm dialog. The scroll lock is refcounted so
+// nesting inside an open Drawer never unlocks the page early.
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -42,7 +44,7 @@ export default function ConfirmDialog({
     const dialog = dialogRef.current;
     if (!dialog) return;
 
-    document.body.style.overflow = "hidden";
+    lockScroll();
 
     const focusableSelector =
       'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -75,7 +77,7 @@ export default function ConfirmDialog({
     document.addEventListener("keydown", handleKeyDown);
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = "";
+      unlockScroll();
       previousFocus?.focus();
     };
   }, [open]);

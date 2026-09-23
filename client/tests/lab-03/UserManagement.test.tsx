@@ -325,14 +325,18 @@ describe("UserManagement — create user drawer (UI-15)", () => {
     });
   });
 
-  it("surfaces server-side field errors (e.g. duplicate email 409) in the drawer", async () => {
+  it("surfaces the real duplicate-email 409 as an inline email error (create)", async () => {
+    // The server's duplicate-email response is `{ error: { code, message } }`
+    // with NO per-field body (api-spec 6.2 409 row). The page must map that
+    // real shape to the email field (ui-spec 5.6 "Duplicate email: inline
+    // field error"), so the mock mirrors the actual response, not a
+    // hand-added `fields` value.
     const mockCreate = vi
       .spyOn(api, "createAdminUser")
       .mockRejectedValueOnce(
         new api.ApiError(
           "A user with this email already exists.",
-          "CONFLICT",
-          { email: "A user with this email already exists." }
+          "CONFLICT"
         )
       );
     renderPage();
@@ -356,6 +360,8 @@ describe("UserManagement — create user drawer (UI-15)", () => {
     expect(await screen.findByTestId("email-error")).toHaveTextContent(
       "A user with this email already exists."
     );
+    // The conflict is a field error, not a generic banner.
+    expect(screen.queryByTestId("form-error")).not.toBeInTheDocument();
     // The drawer stays open so the admin can fix the field.
     expect(screen.getByTestId("user-drawer")).toBeInTheDocument();
     expect(mockCreate).toHaveBeenCalledTimes(1);
@@ -391,6 +397,9 @@ describe("UserManagement — edit drawer and safety (UI-16)", () => {
       "aria-checked",
       "true"
     );
+    // Edit-mode toggle is read-only — a status change must go through the
+    // confirmed Deactivate/Activate buttons (ui-spec 5.6), never via Save.
+    expect(screen.getByTestId("active-toggle")).toBeDisabled();
     // Password field is not on the edit form; reset lives in its own section.
     expect(screen.queryByTestId("initial-password")).not.toBeInTheDocument();
   });
@@ -421,9 +430,114 @@ describe("UserManagement — edit drawer and safety (UI-16)", () => {
         name: "Kevin Smith Jr.",
         email: "itstaff.kevin@toktickit.dev",
         role: "IT_STAFF",
-        isActive: true,
       });
     });
+  });
+
+  it("cannot deactivate an existing user through the Active toggle + Save (regression)", async () => {
+    const mockUpdate = vi.spyOn(api, "updateAdminUser").mockResolvedValueOnce({
+      id: 8,
+      name: "Kevin Smith",
+      email: "itstaff.kevin@toktickit.dev",
+      role: "IT_STAFF",
+      isActive: true,
+      mustChangePassword: false,
+    });
+    renderPage();
+
+    await screen.findByTestId("user-table-desktop");
+    fireEvent.click(screen.getByTestId("edit-user-8"));
+    await screen.findByTestId("user-drawer");
+
+    // The toggle is read-only in edit mode: flipping it is a no-op and no
+    // confirmation dialog is reachable from it (ui-spec 5.6 has exactly one
+    // deactivation flow — the confirmed Deactivate User button).
+    expect(screen.getByTestId("active-toggle")).toBeDisabled();
+    fireEvent.click(screen.getByTestId("active-toggle"));
+    expect(screen.getByTestId("active-toggle")).toHaveAttribute(
+      "aria-checked",
+      "true"
+    );
+    expect(
+      screen.queryByTestId("deactivate-confirm-dialog")
+    ).not.toBeInTheDocument();
+
+    // Save never sends `isActive` for existing users, so it cannot deactivate.
+    fireEvent.click(screen.getByTestId("save-user-btn"));
+    await waitFor(() => {
+      expect(mockUpdate).toHaveBeenCalledWith(8, {
+        name: "Kevin Smith",
+        email: "itstaff.kevin@toktickit.dev",
+        role: "IT_STAFF",
+      });
+    });
+    expect(
+      screen.queryByTestId("deactivate-confirm-dialog")
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows the duplicate-email 409 as an inline email error on edit (real response shape)", async () => {
+    const mockUpdate = vi
+      .spyOn(api, "updateAdminUser")
+      .mockRejectedValueOnce(
+        new api.ApiError("A user with this email already exists.", "CONFLICT")
+      );
+    renderPage();
+
+    await screen.findByTestId("user-table-desktop");
+    fireEvent.click(screen.getByTestId("edit-user-8"));
+    await screen.findByTestId("user-drawer");
+
+    fireEvent.change(screen.getByTestId("user-email"), {
+      target: { value: "taken@toktickit.dev" },
+    });
+    fireEvent.click(screen.getByTestId("save-user-btn"));
+
+    expect(await screen.findByTestId("email-error")).toHaveTextContent(
+      "A user with this email already exists."
+    );
+    expect(screen.queryByTestId("form-error")).not.toBeInTheDocument();
+    expect(screen.getByTestId("user-drawer")).toBeInTheDocument();
+    expect(mockUpdate).toHaveBeenCalledTimes(1);
+  });
+
+  it("Escape closes only the topmost dialog and scroll stays locked until the drawer closes (regression)", async () => {
+    const mockUpdate = vi.spyOn(api, "updateAdminUser").mockResolvedValueOnce({
+      id: 8,
+      name: "Kevin Smith",
+      email: "itstaff.kevin@toktickit.dev",
+      role: "IT_STAFF",
+      isActive: true,
+      mustChangePassword: false,
+    });
+    renderPage();
+
+    await screen.findByTestId("user-table-desktop");
+    fireEvent.click(screen.getByTestId("edit-user-8"));
+    await screen.findByTestId("user-drawer");
+    expect(document.body.style.overflow).toBe("hidden");
+
+    // Confirm dialog is open on top of the drawer.
+    fireEvent.click(screen.getByTestId("deactivate-user-btn"));
+    await screen.findByTestId("deactivate-confirm-dialog");
+
+    // First Escape closes only the confirmation dialog — the drawer beneath
+    // must survive and the page must stay scroll-locked.
+    fireEvent.keyDown(document, { key: "Escape" });
+    await waitFor(() => {
+      expect(
+        screen.queryByTestId("deactivate-confirm-dialog")
+      ).not.toBeInTheDocument();
+    });
+    expect(screen.getByTestId("user-drawer")).toBeInTheDocument();
+    expect(document.body.style.overflow).toBe("hidden");
+
+    // Second Escape closes the drawer and finally releases the scroll lock.
+    fireEvent.keyDown(document, { key: "Escape" });
+    await waitFor(() => {
+      expect(screen.queryByTestId("user-drawer")).not.toBeInTheDocument();
+    });
+    expect(document.body.style.overflow).toBe("");
   });
 
   it("confirms before deactivating and surfaces a 403 self-deactivation message", async () => {

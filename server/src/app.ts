@@ -2167,6 +2167,14 @@ app.put(
         sendError(res, err.status, err.code, err.message);
         return;
       }
+      // Two concurrent updates (or a create racing an update) can both pass
+      // the pre-check before one wins the UNIQUE constraint; the losing
+      // request surfaces as Prisma P2002. Translate it to the same documented
+      // 409 as the pre-check (FR-42 / BR-07, api-spec section 6.3).
+      if ((err as { code?: string }).code === "P2002") {
+        sendError(res, 409, "CONFLICT", "A user with this email already exists.");
+        return;
+      }
       sendError(res, 500, "INTERNAL_ERROR", "Failed to update user");
     }
   }

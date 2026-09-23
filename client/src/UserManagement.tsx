@@ -36,6 +36,12 @@ const ROLE_OPTIONS = [
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// Server duplicate-email 409s (create + update) carry only `code`+`message` —
+// the API contract (api-spec section 6) never sends a per-field error body for
+// CONFLICT. The page maps that exact message to the email field for the inline
+// error ui-spec 5.6 requires ("Duplicate email: inline field error").
+const DUPLICATE_EMAIL_MESSAGE = "A user with this email already exists.";
+
 interface FormState {
   name: string;
   email: string;
@@ -217,11 +223,14 @@ export default function UserManagement() {
         });
         setSuccessMessage("User created successfully.");
       } else {
+        // Activation changes never travel through Save: in edit mode the
+        // toggle is read-only and the confirmed Deactivate/Activate buttons
+        // own `isActive`. Sending name/email/role keeps existing users' status
+        // untouched on this path (ui-spec 5.6 deactivation confirmation).
         await updateAdminUser(drawer.user.id, {
           name,
           email,
           role: form.role,
-          isActive: form.isActive,
         });
         setSuccessMessage("User updated successfully.");
       }
@@ -229,8 +238,15 @@ export default function UserManagement() {
       void loadUsers();
     } catch (err) {
       if (err instanceof ApiError) {
-        if (err.fields) setFieldErrors(err.fields);
-        else setFormError(err.message);
+        if (err.fields) {
+          setFieldErrors(err.fields);
+        } else if (err.code === "CONFLICT" && err.message === DUPLICATE_EMAIL_MESSAGE) {
+          // Inline email error for the real duplicate-email 409 shape
+          // (api-spec 6.2/6.3, ui-spec 5.6 safety feedback).
+          setFieldErrors({ email: DUPLICATE_EMAIL_MESSAGE });
+        } else {
+          setFormError(err.message);
+        }
       } else {
         setFormError("An unexpected error occurred.");
       }
@@ -502,6 +518,7 @@ export default function UserManagement() {
         open={drawer !== null}
         title={drawer?.mode === "create" ? "Create New User" : "Edit User"}
         onClose={closeDrawer}
+        suspended={confirmTarget !== null}
         testId="user-drawer"
       >
         {drawer && (
@@ -550,9 +567,16 @@ export default function UserManagement() {
               id="user-active"
               label="Active"
               checked={form.isActive}
+              disabled={drawer.mode === "edit"}
               onChange={(checked) => setForm({ ...form, isActive: checked })}
               testId="active-toggle"
             />
+            {drawer.mode === "edit" && (
+              <p className="field-hint">
+                Use Deactivate User / Activate User to change this
+                account&apos;s status.
+              </p>
+            )}
 
             {drawer.mode === "create" ? (
               <>

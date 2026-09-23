@@ -1,14 +1,20 @@
 import { type ReactNode, useEffect, useRef } from "react";
+import { lockScroll, unlockScroll } from "../lib/scrollLock.js";
 
 // Right-side overlay drawer (ui-spec.md section 8: "Drawer (right-side
 // overlay, new for Lab 3)"). ui-spec section 7 rules: closes on Escape,
-// traps focus, and returns focus to the trigger when closed.
+// traps focus, and returns focus to the trigger when closed. While a child
+// modal (e.g. ConfirmDialog) is open on top, the drawer stands down
+// (`suspended`) so Escape closes only the topmost layer and the (refcounted)
+// scroll lock is not released early.
 
 interface DrawerProps {
   open: boolean;
   title: string;
   onClose: () => void;
   children: ReactNode;
+  /** When a modal on top owns Escape + scroll-lock, the drawer suspends. */
+  suspended?: boolean;
   testId?: string;
 }
 
@@ -17,6 +23,7 @@ export default function Drawer({
   title,
   onClose,
   children,
+  suspended = false,
   testId = "drawer",
 }: DrawerProps) {
   const drawerRef = useRef<HTMLDivElement>(null);
@@ -25,14 +32,21 @@ export default function Drawer({
   // would yank focus away from the field being typed in.
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
+  // Render-time ref lets the effect's cleanup distinguish a full close from a
+  // suspend, so a suspend never restores focus or drops the captured trigger.
+  const suspendedRef = useRef(suspended);
+  suspendedRef.current = suspended;
+  // Trigger focus is captured once per full open and kept across a
+  // suspend/resume cycle so the drawer returns focus to its trigger on close.
+  const previousFocusRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
-    if (!open) return;
-    const previousFocus = document.activeElement as HTMLElement;
+    if (!open || suspended) return;
     const drawer = drawerRef.current;
     if (!drawer) return;
 
-    document.body.style.overflow = "hidden";
+    lockScroll();
+    previousFocusRef.current ??= document.activeElement as HTMLElement;
 
     // ui-spec section 7: dialogs close on Escape and return focus to trigger.
     const focusableSelector =
@@ -68,10 +82,15 @@ export default function Drawer({
     document.addEventListener("keydown", handleKeyDown);
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = "";
-      previousFocus?.focus();
+      unlockScroll();
+      // A suspend keeps the captured trigger (open stays true, only the
+      // suspended flag flips); a full close restores and forgets it.
+      if (!suspendedRef.current) {
+        previousFocusRef.current?.focus();
+        previousFocusRef.current = null;
+      }
     };
-  }, [open]);
+  }, [open, suspended]);
 
   if (!open) return null;
 

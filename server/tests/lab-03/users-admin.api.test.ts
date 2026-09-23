@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, vi, beforeAll, afterAll } from "vitest";
 import request from "supertest";
 import bcrypt from "bcryptjs";
 import app from "../../src/app.js";
@@ -345,6 +345,35 @@ describe("API-72 — edit user, duplicate email (AC-14, FR-43)", () => {
       .put(`/api/admin/users/${userAId}`)
       .send({ email: emailA });
     expect(own.status).toBe(200);
+  });
+
+  it("translates the P2002 unique-constraint error into a 409 duplicate-email response", async () => {
+    const emailA = emailOf("adminu.editP2002A");
+    const emailB = emailOf("adminu.editP2002B");
+    const userAId = await createThrowawayUser(emailA);
+    const userBId = await createThrowawayUser(emailB);
+
+    // Two requests converging on the same email cannot both win the UNIQUE
+    // constraint: the loser surfaces as Prisma P2002, not a controlled 409.
+    // Racing two real requests would be timing-dependent (test-rule #3), so we
+    // force exactly that DB-level constraint error deterministically. The
+    // target was never mutated (emailA is still free), which mirrors the real
+    // losing-request outcome (FR-42/BR-07 — 409 regardless of which path wins).
+    const txSpy = vi.spyOn(db, "$transaction");
+    try {
+      txSpy.mockRejectedValueOnce({ code: "P2002" } as never);
+      const res = await adminAgent
+        .put(`/api/admin/users/${userAId}`)
+        .send({ email: emailB });
+      expect(res.status).toBe(409);
+      expect(res.body).toEqual({
+        error: { code: "CONFLICT", message: GENERIC_DUP_EMAIL },
+      });
+    } finally {
+      txSpy.mockRestore();
+    }
+    expect((await db.user.findUnique({ where: { id: userAId } }))!.email).toBe(emailA);
+    expect((await db.user.findUnique({ where: { id: userBId } }))!.email).toBe(emailB);
   });
 });
 
