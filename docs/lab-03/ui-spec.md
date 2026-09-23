@@ -259,7 +259,7 @@ Extends Lab 2 Ticket Detail (read-only) with:
   - **Edit mode:** "Set New Initial Password" button (secondary) — opens a sub-form to enter a new initial password.
   - Actions:
     - `Save User` (primary green button)
-    - `Deactivate User` (red outline button, edit mode only)
+    - `Deactivate User` (Destructive button — filled red, white text — edit mode only)
     - `Cancel` (grey ghost button)
   - **Deactivate confirmation dialog:** "Are you sure you want to deactivate [name]?" + "This user will no longer be able to log in." + Cancel / Deactivate (destructive) buttons.
 
