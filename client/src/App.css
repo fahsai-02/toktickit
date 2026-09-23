@@ -1963,6 +1963,24 @@
   overflow-wrap: anywhere;
 }
 
+@media (max-width: 991px) {
+  /* ui-spec 5.6: drawer becomes full-width on small tablets and up (not just
+     mobile) — "condensed table + drawer (full width on small tablets)". */
+  .drawer {
+    max-width: 100%;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 991px) {
+  /* ui-spec 5.6 tablet: condensed table — hide the Email column (keeps Name,
+     Role, Status, Edit) so the list fits without horizontal scrolling, the
+     same condensed pattern the staff queue uses on tablet. */
+  .user-table th:nth-child(2),
+  .user-table td:nth-child(2) {
+    display: none;
+  }
+}
+
 @media (max-width: 768px) {
   .user-table-desktop {
     display: none;
@@ -1971,16 +1989,12 @@
   .user-cards-mobile {
     display: flex;
   }
-
-  /* ui-spec 5.6: mobile drawer becomes a full-screen overlay. */
-  .drawer {
-    max-width: 100%;
-  }
 }
 
-/* ui-spec 5.6: the user table keeps all five columns on every viewport above
-   mobile (email included); the wrapper scrolls horizontally if a narrow
-   tablet needs it. Mobile full-width cards already show email too. */
+/* ui-spec 5.6: above mobile the user table shows a condensed set of columns on
+   tablet (email hidden, see the 769–991px rule above) and the full five on
+   desktop; mobile uses full-width cards (email included). The wrapper scrolls
+   horizontally only if a narrow viewport still needs to. */
 
 /* Filters dropdown floats so opening it never pushes the table down. */
 .filter-card--overlay {
