@@ -46,6 +46,11 @@ export default function Drawer({
     if (!drawer) return;
 
     lockScroll();
+    // A captured trigger means this render is a resume from suspension (an
+    // inner modal stood the drawer down), not the initial open. Only the
+    // initial open moves focus inside; a resume must leave focus where the
+    // closing dialog restored it (ui-spec section 7: focus returns to trigger).
+    const isInitialOpen = previousFocusRef.current === null;
     previousFocusRef.current ??= document.activeElement as HTMLElement;
 
     // ui-spec section 7: dialogs close on Escape and return focus to trigger.
@@ -54,8 +59,10 @@ export default function Drawer({
     const focusable = drawer.querySelectorAll<HTMLElement>(focusableSelector);
     const firstFocusable = focusable[0];
     const lastFocusable = focusable[focusable.length - 1];
-    // Move focus into the drawer so keyboard users land on the close button.
-    firstFocusable?.focus();
+    if (isInitialOpen) {
+      // Move focus into the drawer so keyboard users land on the close button.
+      firstFocusable?.focus();
+    }
 
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {

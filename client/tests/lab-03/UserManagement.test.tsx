@@ -501,7 +501,7 @@ describe("UserManagement — edit drawer and safety (UI-16)", () => {
     expect(mockUpdate).toHaveBeenCalledTimes(1);
   });
 
-  it("Escape closes only the topmost dialog and scroll stays locked until the drawer closes (regression)", async () => {
+  it("Escape closes only the topmost dialog, restores trigger focus, and keeps scroll locked until the drawer closes (regression)", async () => {
     const mockUpdate = vi.spyOn(api, "updateAdminUser").mockResolvedValueOnce({
       id: 8,
       name: "Kevin Smith",
@@ -517,8 +517,12 @@ describe("UserManagement — edit drawer and safety (UI-16)", () => {
     await screen.findByTestId("user-drawer");
     expect(document.body.style.overflow).toBe("hidden");
 
-    // Confirm dialog is open on top of the drawer.
-    fireEvent.click(screen.getByTestId("deactivate-user-btn"));
+    // Confirm dialog is open on top of the drawer. jsdom's fireEvent does not
+    // move focus on click (a real browser would), so focus the trigger
+    // explicitly — the dialog must capture THIS element as the one to restore.
+    const deactivateBtn = screen.getByTestId("deactivate-user-btn");
+    deactivateBtn.focus();
+    fireEvent.click(deactivateBtn);
     await screen.findByTestId("deactivate-confirm-dialog");
 
     // First Escape closes only the confirmation dialog — the drawer beneath
@@ -531,6 +535,11 @@ describe("UserManagement — edit drawer and safety (UI-16)", () => {
     });
     expect(screen.getByTestId("user-drawer")).toBeInTheDocument();
     expect(document.body.style.overflow).toBe("hidden");
+
+    // ui-spec section 7: a dialog returns focus to its trigger when closed.
+    // The drawer resumes from suspension here and must NOT steal focus back
+    // to its close button (PR review regression).
+    expect(document.activeElement).toBe(screen.getByTestId("deactivate-user-btn"));
 
     // Second Escape closes the drawer and finally releases the scroll lock.
     fireEvent.keyDown(document, { key: "Escape" });
