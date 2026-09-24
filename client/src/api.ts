@@ -9,6 +9,9 @@ export interface User {
   name: string;
   email: string;
   role: UserRole;
+  /** Present on /api/auth/me; marked optional so pre-admin-UI test fixtures
+   *  (which predate this field) keep type-checking without edits. */
+  isActive?: boolean;
   mustChangePassword: boolean;
 }
 
@@ -480,6 +483,109 @@ export async function fetchStaffUsers(): Promise<StaffUser[]> {
     await handleApiError(res, `Failed to fetch staff users: ${res.status}`);
   }
   const { data } = (await res.json()) as { data: StaffUser[] };
+  return data;
+}
+
+// ── Administrator User Management (Issue 21, api-spec section 6) ───────────
+// The ADMINISTRATOR guard lives on the server; these helpers just carry the
+// session cookie and surface `ApiError` (with `.fields`) for the page to show.
+
+export interface AdminUser {
+  id: number;
+  name: string;
+  email: string;
+  role: UserRole;
+  isActive: boolean;
+}
+
+/** The POST/PUT responses also include mustChangePassword (+ createdAt). */
+export interface AdminUserWithMeta extends AdminUser {
+  mustChangePassword: boolean;
+  createdAt?: string;
+}
+
+export interface AdminUserListParams {
+  search?: string;
+  role?: UserRole | "";
+}
+
+export interface CreateAdminUserInput {
+  name: string;
+  email: string;
+  role: UserRole;
+  isActive?: boolean;
+  initialPassword: string;
+}
+
+export interface UpdateAdminUserInput {
+  name?: string;
+  email?: string;
+  role?: UserRole;
+  isActive?: boolean;
+}
+
+export async function fetchAdminUsers(
+  params?: AdminUserListParams
+): Promise<AdminUser[]> {
+  const base = API_URL || window.location.origin;
+  const url = new URL("/api/admin/users", base);
+  if (params?.search) url.searchParams.set("search", params.search);
+  if (params?.role) url.searchParams.set("role", params.role);
+  const res = await fetch(url, { credentials: "include" });
+  if (!res.ok) {
+    await handleApiError(res, `Failed to fetch users: ${res.status}`);
+  }
+  const { data } = (await res.json()) as { data: AdminUser[] };
+  return data;
+}
+
+export async function createAdminUser(
+  input: CreateAdminUserInput
+): Promise<AdminUserWithMeta> {
+  const res = await fetch(`${API_URL}/api/admin/users`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    await handleApiError(res, "Failed to create user");
+  }
+  const { data } = (await res.json()) as { data: AdminUserWithMeta };
+  return data;
+}
+
+export async function updateAdminUser(
+  userId: number,
+  input: UpdateAdminUserInput
+): Promise<AdminUserWithMeta> {
+  const res = await fetch(`${API_URL}/api/admin/users/${userId}`, {
+    method: "PUT",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    await handleApiError(res, "Failed to update user");
+  }
+  const { data } = (await res.json()) as { data: AdminUserWithMeta };
+  return data;
+}
+
+export async function resetAdminPassword(
+  userId: number,
+  initialPassword: string
+): Promise<{ message: string }> {
+  const res = await fetch(`${API_URL}/api/admin/users/${userId}/reset-password`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ initialPassword }),
+  });
+  if (!res.ok) {
+    await handleApiError(res, "Failed to reset password");
+  }
+  const { data } = (await res.json()) as { data: { message: string } };
   return data;
 }
 

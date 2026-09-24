@@ -1134,10 +1134,10 @@ Sets `mustChangePassword = true` on the target user.
 | `201 Created` | Ticket created, attachment uploaded, comment/note created, user created |
 | `400 Bad Request` | Validation failures, malformed IDs/params, business-rule violations |
 | `401 Unauthorized` | Not authenticated (no valid session) |
-| `403 Forbidden` | Authenticated but not permitted (wrong role, wrong ownership) |
+| `403 Forbidden` | Authenticated but not permitted (wrong role, wrong ownership, self-deactivation) |
 | `404 Not Found` | Referenced resource does not exist |
 | `405 Method Not Allowed` | Append-only enforcement (PUT/DELETE on comments/notes) |
-| `409 Conflict` | Duplicate email, last-admin guard, self-deactivation, already claimed |
+| `409 Conflict` | Duplicate email, last-admin guard, already claimed |
 | `410 Gone` | Download attempted on soft-removed attachment |
 | `413 Payload Too Large` | Upload exceeds 5 MB |
 | `415 Unsupported Media Type` | Upload type outside allowed list |

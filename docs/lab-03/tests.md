@@ -57,7 +57,7 @@ Status legend: `Planned` → written before implementation · updated to `Pass`/
 | API-15 | API | AC-03, FR-15 | Requester ownership on list | User A sees only A's tickets; 403/empty for B's tickets | `authorization.api.test.ts` | Pass |
 | API-16 | API | AC-03, FR-15 | Requester ownership on detail | User A requests B's ticket → 403 | `authorization.api.test.ts` | Pass |
 | API-17 | API | AC-04, FR-35 | Requester forbidden from internal notes | Requester calls GET/POST /api/staff/tickets/:id/notes → 403 | `comments-notes.api.test.ts` | Pass |
-| API-18 | API | AC-13, FR-47 | Non-admin forbidden from admin endpoints | Requester calls GET /api/admin/users → 403 | `authorization.api.test.ts` | Planned |
+| API-18 | API | AC-13, FR-47 | Non-admin forbidden from admin endpoints | Requester calls GET /api/admin/users → 403 | `authorization.api.test.ts` | Pass |
 | API-19 | API | AC-13, FR-47 | Non-staff forbidden from staff endpoints | Requester calls GET /api/staff/tickets → 403 | `staff-queue.api.test.ts` | Pass |
 | API-20 | API | FR-14 | Ticket creation initializes itPriority | Created ticket has `itPriority` = `requestedPriority` | `authorization.api.test.ts` | Pass |
 | API-21 | API | AC-08, FR-22 | Staff queue — basic retrieval | 200 with paginated ticket list | `staff-queue.api.test.ts` | Pass |
@@ -102,19 +102,19 @@ Status legend: `Planned` → written before implementation · updated to `Pass`/
 | API-57 | API | FR-16, BR-15 | Comment content — over 2000 chars | 400 | `comments-notes.api.test.ts` | Pass |
 | API-58 | API | AC-07, FR-19 | Indicate resolved — toggle set | Sets `requesterIndicatedResolved = true` with timestamp; `currentStatus` unchanged | `comments-notes.api.test.ts` | Pass |
 | API-59 | API | AC-07, FR-19 | Indicate resolved — toggle clear | Clears `requesterIndicatedResolved` to false; `currentStatus` unchanged | `comments-notes.api.test.ts` | Pass |
-| API-60 | API | AC-10, FR-41 | Admin create user — valid | 201; password hashed; mustChangePassword=true | `users-admin.api.test.ts` | Planned |
-| API-61 | API | AC-14, FR-42 | Admin create user — duplicate email | 409 CONFLICT | `users-admin.api.test.ts` | Planned |
-| API-62 | API | FR-41 | Admin create user — invalid role | 400 | `users-admin.api.test.ts` | Planned |
-| API-72 | API | AC-14, FR-43 | Admin edit user — duplicate email | 409 CONFLICT | `users-admin.api.test.ts` | Planned |
-| API-63 | API | FR-41 | Admin create user — weak initial password | 400 with specific validation message | `users-admin.api.test.ts` | Planned |
-| API-64 | API | FR-43 | Admin edit user — valid | 200; fields updated | `users-admin.api.test.ts` | Planned |
-| API-65 | API | AC-11, FR-45 | Admin self-deactivation | 403 | `users-admin.api.test.ts` | Planned |
-| API-66 | API | AC-12, FR-46 | Last admin deactivation | 409 | `users-admin.api.test.ts` | Planned |
-| API-67 | API | FR-44, AC-10 | Admin reset password | 200; mustChangePassword set; new password works for login | `users-admin.api.test.ts` | Planned |
-| API-68 | API | FR-40 | Admin user list | 200 with all users | `users-admin.api.test.ts` | Planned |
-| API-69 | API | FR-40 | Admin user list — search | Search by name/email filters correctly | `users-admin.api.test.ts` | Planned |
-| API-70 | API | FR-40 | Admin user list — role filter | Optional role filter narrows results | `users-admin.api.test.ts` | Planned |
-| API-71 | API | AC-10 | Admin-created user login round-trip | Create user → login with initial password → mustChangePassword=true → change password → access normal app | `users-admin.api.test.ts` | Planned |
+| API-60 | API | AC-10, FR-41 | Admin create user — valid | 201; password hashed; mustChangePassword=true | `users-admin.api.test.ts` | Pass |
+| API-61 | API | AC-14, FR-42 | Admin create user — duplicate email | 409 CONFLICT | `users-admin.api.test.ts` | Pass |
+| API-62 | API | FR-41 | Admin create user — invalid role | 400 | `users-admin.api.test.ts` | Pass |
+| API-72 | API | AC-14, FR-43 | Admin edit user — duplicate email | 409 CONFLICT | `users-admin.api.test.ts` | Pass |
+| API-63 | API | FR-41 | Admin create user — weak initial password | 400 with specific validation message | `users-admin.api.test.ts` | Pass |
+| API-64 | API | FR-43 | Admin edit user — valid | 200; fields updated | `users-admin.api.test.ts` | Pass |
+| API-65 | API | AC-11, FR-45 | Admin self-deactivation | 403 | `users-admin.api.test.ts` | Pass |
+| API-66 | API | AC-12, FR-46 | Last admin deactivation | 409 | `users-admin.api.test.ts` | Pass |
+| API-67 | API | FR-44, AC-10 | Admin reset password | 200; mustChangePassword set; new password works for login | `users-admin.api.test.ts` | Pass |
+| API-68 | API | FR-40 | Admin user list | 200 with all users | `users-admin.api.test.ts` | Pass |
+| API-69 | API | FR-40 | Admin user list — search | Search by name/email filters correctly | `users-admin.api.test.ts` | Pass |
+| API-70 | API | FR-40 | Admin user list — role filter | Optional role filter narrows results | `users-admin.api.test.ts` | Pass |
+| API-71 | API | AC-10 | Admin-created user login round-trip | Create user → login with initial password → mustChangePassword=true → change password → access normal app | `users-admin.api.test.ts` | Pass |
 
 ### UI component (client/tests/lab-03)
 
@@ -133,9 +133,9 @@ Status legend: `Planned` → written before implementation · updated to `Pass`/
 | UI-11 | UI component | FR-26, FR-37 | Staff detail — ticket info rendering | All meta fields shown with correct editability | `StaffTicketDetail.test.tsx` | Pass |
 | UI-12 | UI component | FR-30, FR-38 | Staff detail — status dropdown | Only permitted next states shown in dropdown | `StaffTicketDetail.test.tsx` | Pass |
 | UI-13 | UI component | FR-32, FR-33 | Staff detail — comments/notes tabs | Both tabs render; comment/note input present | `StaffTicketDetail.test.tsx` | Pass |
-| UI-14 | UI component | FR-40, AC-13 | Admin — user list | Table shows Name, Email, Role, Status, Edit | `UserManagement.test.tsx` | Planned |
-| UI-15 | UI component | FR-41 | Admin — create user drawer | Drawer opens; form validates; submission works | `UserManagement.test.tsx` | Planned |
-| UI-16 | UI component | FR-43, FR-45, FR-46 | Admin — edit and safety | Edit loads data; self-deactivation blocked; last-admin blocked | `UserManagement.test.tsx` | Planned |
+| UI-14 | UI component | FR-40, AC-13 | Admin — user list | Table shows Name, Email, Role, Status, Edit | `UserManagement.test.tsx` | Pass |
+| UI-15 | UI component | FR-41 | Admin — create user drawer | Drawer opens; form validates; submission works | `UserManagement.test.tsx` | Pass |
+| UI-16 | UI component | FR-43, FR-45, FR-46 | Admin — edit and safety | Edit loads data; self-deactivation blocked; last-admin blocked | `UserManagement.test.tsx` | Pass |
 | UI-17 | UI component | AC-03, AC-07, FR-16/18/19 | Requester ticket detail — comments + resolution indicator | Public comments render newest-first with author name + role; empty state; post prepends and clears input; invalid input posts nothing; toggle set/clear calls PUT and updates UI; failure surfaces error | `RequesterTicketComments.test.tsx` | Pass |
 | UI-18 | UI component | AC-03, FR-13/18/19 | Client API — authenticated identity, no `requesterId` | Detail/list/comments/indicate-resolved/attachment calls send no `requesterId`; correct method, URL, headers, body | `requester-ticket-api.test.tsx` | Pass |
 
@@ -182,6 +182,10 @@ Status legend: `Planned` → written before implementation · updated to `Pass`/
 > **Verified Pass 2026-09-21 — Issue 20 close-out:** server 19 files / 259 tests + `pnpm build` green; client 15 files / 156 tests + `pnpm build` green. New this issue: UNIT-03 (`status-transitions.unit.test.ts`, 9 tests), API-34..46 + API-73 (`staff-ticket-detail.api.test.ts`, 29 tests incl. the new category + staff-user-list endpoints as API-74/API-75), API-47..51 + API-54/55 (`comments-notes.api.test.ts` staff block), UI-11..13 (`StaffTicketDetail.test.tsx`, 20 tests incl. a claim-visible-when-owned-by-another-staff case). `pnpm exec prisma db seed` was re-run before the server suite (reseed resets the 11 seed accounts to the documented state; dev DB now 364 tickets). Details in `ai-use.md` Issue 20 section.
 >
 > **Post-review fixes 2026-09-22 (feature/20-staff-ticket-detail):** (1) `PUT /api/staff/tickets/:id/category` now enforces api-spec 5.14 — only active categories are accepted (inactive → 404), locked by a new test in `staff-ticket-detail.api.test.ts`; (2) staff/admin attachment uploads tag `uploadedByRequesterId` with the ticket's own requester instead of fabricating a Requester row from the staff identity (decision confirmed with the student; requester uploads unchanged) — 2 new tests; (3) added `staff-ticket-api.test.tsx` covering all 12 staff `api.ts` wrappers (method/URL/headers/body). AI-17 row corrected: the requester-notes 403 assertion lives in `comments-notes.api.test.ts` (API-51). **Server: 19 files / 262 tests; Client: 16 files / 169 tests.**
+>
+> **Verified Pass 2026-09-22 — Issue 21 close-out:** admin user management. Server 20 files / 285 tests + `pnpm build` green. New: `users-admin.api.test.ts` (API-60..72 — create valid/duplicate/invalid-role/weak-password, edit valid/duplicate, self-deactivation 403, last-admin 409, reset-password, list/search/role-filter, login round-trip, seed-admin survivability) + API-18 non-admin 403 in `authorization.api.test.ts`. Client 17 files / 189 tests + `pnpm build` green. New: `client/tests/lab-03/UserManagement.test.tsx` (UI-14..16, 15 tests — list table + badges, debounced search, role filter, empty/forbidden states, create drawer with client-side validation (API never called on invalid) + duplicate-email 409 field error, edit loading + update payload, deactivate confirmation surfacing server 403/409 messages, reset-password sub-form) + new `Drawer`, `Toggle`, `ConfirmDialog` components and `/admin/users` route + "User Management" nav link (ui-spec 4.1). Details in `ai-use.md` Issue 21 section.
+>
+> **Post-review fixes 2026-09-23 (PR #72 peer review, reviewer requests 4 changes):** (1) edit-mode `Active` toggle is now read-only and edit `Save` never sends `isActive`, so existing users can no longer be deactivated through Save (ui-spec 5.6 requires the confirmation dialog) — regression test asserts the disabled toggle + `isActive`-free payload; (2) `PUT /api/admin/users/:id` now translates a race-condition Prisma `P2002` into the documented 409 ("A user with this email already exists.", api-spec 6.3 / FR-42 / BR-07) instead of 500 — regression test forces the constraint error deterministically; (3) the page maps the real duplicate-email 409 response (which carries only `code`+`message`, never `fields`) to the inline email field error required by ui-spec 5.6, and the create + edit UI tests now use that real response shape instead of a fabricated `fields` value; (4) `Drawer` + `ConfirmDialog` share a refcounted scroll lock and the drawer suspends its Escape/focus handling while the confirmation dialog sits on top — Escape closes only the topmost dialog and the page stays scroll-locked until the drawer fully closes (regression test covers both). New `client/src/lib/scrollLock.ts`. **Server: 20 files / 286 tests; Client: 17 files / 194 tests.** (Test suite run required seeding; two stray manual-login accounts were removed from the dev DB before the verified run.)
 
 ## 3. Acceptance-Criterion Traceability
 
@@ -225,8 +229,8 @@ cd .. && npx playwright test e2e/lab-03   # responsive + E2E (needs both servers
 
 | Suite | Command | Result |
 |-------|---------|--------|
-| Server (unit + API) | `cd server && pnpm test` | **Pass** — 19 files / 262 tests (2026-09-22) *(API-34..55, API-73..75, UNIT-03 from Issue 20 `feature/20-staff-ticket-detail`; reseed before run; +2 post-review tests for active-category 404 + staff uploader identity)* |
-| Client (component + style) | `cd client && pnpm test` | **Pass** — 16 files / 169 tests (2026-09-22) *(incl. UI-11..13 `StaffTicketDetail` suite 20 tests + `staff-ticket-api.test.tsx` 12 fetch-level wrapper tests from Issue 20)* |
+| Server (unit + API) | `cd server && pnpm test` | **Pass** — 20 files / 286 tests (2026-09-23, after PR #72 post-review fixes) *(API-34..55, API-73..75, UNIT-03 from Issue 20; API-60..72 + API-18 from Issue 21 `feature/21-admin-user-management` incl. the P2002 → 409 constraint-path regression; reseed + remove stray manual accounts before run)* |
+| Client (component + style) | `cd client && pnpm test` | **Pass** — 17 files / 194 tests (2026-09-23, after PR #72 post-review fixes) *(incl. UI-11..13 `StaffTicketDetail` and UI-14..16 `UserManagement` suites from Issues 20/21, now covering the disabled edit-mode toggle, real-shape duplicate-email inline errors, and topmost-only Escape + scroll lock)* |
 | E2E + Responsive (Playwright) | `npx playwright test` with a temporary local config pointing `testDir` at `e2e/lab-03` (repo wiring lands in Issue 22) | **Pass** — E2E-05 requester regression 1/1 (2026-09-19); RESP-01..24 + E2E-01..04 still *TBD at sprint close* |
 
 ## 7. Known Limitations / Deferred

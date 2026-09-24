@@ -283,3 +283,30 @@ expect(res.body.data._count).toMatchObject({
     expect(res.body.data.owner).toBeNull();
   });
 });
+
+// API-18 — docs/lab-03/tests.md row "API-18 | API | AC-13, FR-47 | Non-admin
+// forbidden from admin endpoints | Requester calls GET /api/admin/users → 403".
+// The admin endpoints themselves are implemented in the Issue 21 suite
+// (`users-admin.api.test.ts`); here we only prove the route is locked down so
+// the 403 is enforced by the backend, never by a hidden UI control.
+describe("API-18 — non-admin forbidden from admin endpoints (AC-13, FR-47)", () => {
+  it("rejects unauthenticated calls with 401", async () => {
+    const res = await request(app).get("/api/admin/users");
+    expect(res.status).toBe(401);
+    expect(res.body.error.code).toBe("UNAUTHORIZED");
+  });
+
+  it("rejects a Requester with 403 FORBIDDEN", async () => {
+    const res = await agentA.get("/api/admin/users");
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe("FORBIDDEN");
+    expect(res.body.error.message).toContain("permission");
+  });
+
+  it("rejects an IT Staff member with 403 FORBIDDEN", async () => {
+    const staffAgent = await authedAgent("IT_STAFF", 0);
+    const res = await staffAgent.get("/api/admin/users");
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe("FORBIDDEN");
+  });
+});

@@ -1,0 +1,52 @@
+# Lab 3 — AI Use and Reflection
+
+**LLM/agent used:** opencode coding agent local CLI, opencode/big-pickle as the LLM.
+
+## Selected key prompts
+| # | Source | Prompt (summarised) | AI Answer | What I did with the result |
+|---|--------|---------------------|-----------|----------------------------|
+| 1 | Issue 16, Decision #1 | โครงสร้างไฟล์ auth — แยก `routes/` `middleware/` `lib/` เป็นไฟล์ใหม่ หรือเขียนรวมใน `app.ts` ตามสไตล์เดิมของโปรเจกต์? | เสนอ 2 ทางเลือกพร้อมข้อดีข้อเสีย แนะนำว่า **แยกไฟล์** เพราะ Issue 18–21 จะได้เรียก `requireAuth` / `validateNewPassword` ซ้ำได้โดยไม่ต้อง import จาก `app.ts` ตัวใหญ่ | เลือกแยกไฟล์ → สร้าง `src/routes/auth.ts`, `src/middleware/auth.ts`, `src/lib/passwordValidation.ts`, `src/types/express.d.ts` |
+| 2 | Issue 16, Decision #2 | เทส `change-password` ต้องเปลี่ยนรหัสจริง — ใช้บัญชี seed แล้วคืนค่าให้เหมือนเดิม หรือสร้างบัญชีชั่วคราวใช้ในเทสแล้วลบ? | แนะนำ **สร้าง throwaway user ใน test แล้วลบใน `afterAll`** เพราะ MIG-01 assert ทั่วทั้งตาราง + ตรวจ bcrypt hash ของทุกบัญชี seed ถ้าเราไปแก้รหัส seed ระหว่างเทสจะทำให้ suite ล้ม | เลือก throwaway user + cleanup → เทส 163 ผ่าน โดย MIG-01 ไม่ถูกกระทบ |
+| 3 | Issue 16, Spec→Code #4 | ต้องทำยังไงให้ error ของ login ไม่รั่วว่าอีเมลนี้ "มีอยู่จริงในระบบ" แล้วกัน timing attack ด้วย? | อธิบาย 2 อย่างต้องทำคู่กัน: (a) ข้อความ 401 เดียวกันทุกกรณี (wrong password / email ไม่เจอ / inactive) (b) ใช้ **dummy bcrypt hash** เปรียบเทียบเมื่อ email ไม่เจอ เพื่อให้เวลาตอบกลับใกล้เคียงกัน | ใส่ generic message + `DUMMY_PASSWORD_HASH` ใน routes/auth.ts → เทส API-02/03 ยืนยัน body เหมือนกันเป๊ะทั้งสองกรณี |
+| 4 | Issue 16, Spec→Code #5 | `requireAuth` ควรเชื่อค่าจาก session ตรง ๆ หรือควรอ่านผู้ใช้จาก DB ใหม่ทุกครั้ง? | ควร **อ่าน DB ใหม่ทุก request** ตาม FR-11/AC-01 เพื่อให้บัญชีที่ถูกปิดใช้งาน/เปลี่ยน role มีผลทันที ไม่ต้องรอ session หมดอายุ | เขียน middleware แบบ re-read DB + เทสยืนยันว่า deactivate แล้ว 401 ทันที / ลบผู้ใช้แล้ว 401 |
+| 5 | Issue 17, impl #7 | ทำไม `pnpm test` มี warning "not wrapped in act(...)" ทั้งที่ test ผ่าน? | อธิบาย: `AuthProvider` ทำ async `fetchMe` ใน `useEffect` → `setState` เกิดหลัง test assert แบบ sync จบไปแล้ว เลยหลุดนอก `act()`; เตือนแต่ไม่พัง | ให้ AI แก้: เติม `await findByText(...)` ใน 2 test ที่ assert sync → warning 0 อัน, 90/90 ยังผ่าน, ไม่แตะ production code |
+| 6 | Issue 17, verify #9 | Manual test ข้อ 2.1 แล้ว `login` ขึ้น CORS error (มี `login 204 preflight` + `CORS error`) | สืบจนเจอ: `client/.env` ตั้ง `VITE_API_URL="http://localhost:5000"` → เบราว์เซอร์เรียกข้าม origin (5173→5000) แต่ server ใช้ `cors()` default (`server/src/app.ts:52`) ไม่รองรับ credentialed request ในขณะที่ทุก `fetch` ส่ง `credentials:"include"` ตั้งแต่ Issue 17 → browser block | แก้ตามแนวทางที่ repo กำหนดไว้ใน AGENTS.md: กลับไป same-origin `/api` ผ่าน Vite proxy (comment ค่าใน `client/.env` ซึ่ง gitignored + `.env.example` ซึ่ง commit ได้) → login ทำงาน ไม่แตะรหัส seed |
+| 7 | Issue 17, verify #10 | Manual test เปลี่ยนรหัสจริงแล้วรัน `pnpm test` server → MIG-01 fail 2 ตัว (`bcrypt.compare` + `mustChangePassword` ของ Jennifer) | อธิบายว่าเป็น behavior by design: MIG-01 (`migration-regression.api.test.ts:178/207`) assert ทั่วทั้งตารางว่าสภาพเท่ากับ seed เป๊ะ; user เปลี่ยนรหัสผ่าน UI = ดริฟต์ออกจาก seed จนกว่าจะ re-seed | เลือกเก็บ **workflow เดิม**: manual UI test → `cd server && pnpm exec prisma db seed` → `pnpm test` → **14 files / 173 Pass**; บันทึกลง seed-credentials.md + issues.md section 6 ข้อ 3 เพื่อให้คนตรวจไม่ตกใจ |
+| 8 | Issue 18, Review #1 | (self-review) ตรวจงาน Issue 18 ทั้งหมด ทั้ง server/client/docs เปรียบเทียบกับ issues.md + transcription + api-spec ทุก AC 15 ข้อ — ไล่โค้ดจริง ห้ามอ่านจากความจำ; จับ dead code, fake test, บั๊ก, ปัญหา performance | ไล่ review ครบ + รันทั้ง seed/server test (16/191), client test (13/119), build ทั้ง 2 ฝั่ง, probe 405 จริง; เจอ 6 จุด: ① append-only ลง route ไม่สมมาตร (`PUT /comments/:id` และ `DELETE /comments` → 404 แทน 405, ไม่ตรง api-spec 4.11), ② message stub resolution-summary พูด "Requesters cannot set..." ทั้งที่ 403 ทุก role, ③ `userId` parameter ไม่ได้ใช้ใน `resolveLegacyRequesterIdForUser`, ④ null check ซ้ำ unreachable ใน `POST /api/tickets`, ⑤ `req.file.size > MAX_FILE_SIZE` ไม่มีทางเข้า (multer บังคับแล้ว), ⑥ ตัวอย่าง `_count` ใน api-spec ใช้ key เก่า (`publicComments`/`internalNotes` แต่ schema เป็น `comments`/`notes`) | รายงานเป็นจุดที่ควรแก้ให้คนตรวจก่อนปิด PR → คนเลือก "แก้ทั้งหมด + เพิ่ม/ปรับ test" |
+| 9 | Issue 18, Review #3 | (self-review) แก้ทั้ง 4 ข้อ + เพิ่ม test ลงใน comments-notes แล้ว verify ให้ครบ | ลง route ครบทั้ง 4 (PUT/DELETE × `/comments`\|`/:commentId`) → 405, ตัด `userId` param + `file.size` check, เปลี่ยน message เป็นกลาง ๆ, อัปเดต api-spec `_count` + ตาราง 4.11/5.13, เพิ่ม test 2 อัน; เจอตรงกลาง: บล็อกที่เรียก "null check ซ้ำ dead" จริง ๆ เป็น **type-narrowing guard** ที่ TypeScript ต้องใช้ — ตัดทิ้งแล้ว build พัง | แก้ด้วย non-null assertion (`categoryIdNum`) + comment อธิบายไว้แทน; reseed + `pnpm test` → **16 files / 193 tests Pass**; `pnpm build` ผ่าน clean |
+| 10 | Issue 21, Decision #1 | เทส 409 last-admin จะเขียนยังไงโดยไม่ทำให้ suite นี้ขึ้นกับจำนวน admin ใน seed | เสนอ **Option A**: สร้าง admin ชั่วคราวในเทส แล้ว deactivate ตัวหลัก → 409 | เลือก **Option A** — ตอน implement ปรับให้ server เช็ค last-admin **ก่อน** self-guard ทำให้ seed admin ตัวเดียว self-deactivate ได้ 409 (ตรง AC-12 ไม่ต้องแก้ DB) ส่วน 403 self-deactivation (AC-11) ใช้ admin ชั่วคราวตัวที่ 2 |
+| 11 | Issue 21, Review #2 | เพื่อนรีวิว PR #72 แล้วขอแก้ 4 จุด — ตรวจทีละข้อว่าจริงไหม + แก้ + เพิ่ม regression test ตามที่ reviewer แนะนำ | ลองตรวจกับ spec แล้วยืนยันว่าทุกข้อเป็นเรื่องจริง: ① ใช้ toggle ปลดผู้ใช้โดยไม่ผ่าน confirm dialog (ui-spec 5.6 ต้องมี dialog), ② 409 duplicate email ที่ server ส่งจริงไม่มี `fields` แต่ UI/เทส mock ค่า `fields` ทำให้เทสผ่านทั้งที่ production แสดงเป็น banner ไม่ใช่ inline field error, ③ `PUT /users/:id` ยังไม่จับ Prisma `P2002` ตอน update ชน unique email → 500 แทน 409, ④ Drawer กับ ConfirmDialog ต่างทำ `body.overflow` + Escape ซ้อนกัน | แก้ครบ: ① ปิด toggle ในโหมด edit + edit `Save` ไม่ส่ง `isActive` อีก, ② map CONFLICT ไปเป็น field error ของ email + เทสใช้ error shape จริง (ไม่มี `fields`), ③ จับ `P2002` → 409 + เทสบังคับ constraint error แบบ deterministic, ④ สร้าง `scrollLock.ts` (refcount) + Drawer มี `suspended` ให้ Escape ปิดเฉพาะ modal บนสุดและ scroll ล็อกจนกว่า drawer ปิด — เพิ่มเทส regression ครบ → **server 20 files / 286 tests, client 17 files / 194 tests, build ผ่านทั้ง 2 ฝั่ง** |
+
+## Reflection
+
+### สิ่งที่ได้เรียนรู้จากการใช้ AI ใน Lab 3
+
+งาน Lab 3 ทั้งหมด ใช้ opencode เป็นผู้ช่วยออกแบบ เขียนโค้ด เขียนเทส และตรวจงาน แต่บทบาทผมคือคนที่ **ตั้งคำถาม ตัดสินใจ และยืนยันผลทุกขั้นตอน** — AI ไม่เคยได้สิทธิ์ตัดสินใจเอง จากการทำงานครั้งนี้มีบทเรียนหลัก 6 ข้อ:
+
+**1. เทสที่ดีต้องไม่ผูกกับข้อมูล seed แบบตายตัว — และเทสคือหลักฐานของ "ความตั้งใจ" ของระบบ**
+- เทส `change-password` ถ้าไปแก้รหัสบัญชี seed จริง ๆ จะทำให้ MIG-01 (เทสที่ assert สภาพทั้งตาราง) ล้มทั้งชุด → วิธีที่ถูกคือสร้าง **throwaway user** แล้วลบใน `afterAll` (Decision #2)
+- เช่นเดียวกัน เทส 409 last-admin ต้องออกแบบให้ไม่ขึ้นกับจำนวน admin ใน seed โดยสร้าง admin ชั่วคราวแทน (Decision #10)
+- เทส MIG-01 ตั้งใจ assert สภาพ seed เป๊ะ พอ manual test เปลี่ยนรหัสผ่านจริงผ่าน UI ก็ทำให้เทสตก — บทเรียนคือ **อย่าทำให้เทสอ่อนลง** เพื่อกลบ workflow แต่ให้บันทึกขั้นตอนที่ถูกต้อง (re-seed ก่อนรันเทส) ให้คนตรวจทำตามได้ (verify #10)
+
+**2. การหาสาเหตุของบั๊ก ต้องไม่ด่วนสรุปจากอาการ**
+- ตอนเจอ "CORS error" ตอน login ผมเกือบสรุปว่า server ตั้ง CORS ผิด แต่สืบไปจนเจอว่าจริง ๆ คือการตั้งค่า `VITE_API_URL` เก่าจาก Lab 2 ที่ยังชี้ข้าม origin ขณะเดียวกันโฟกัสโค้ดทุกจุดก็เพิ่ม `credentials:"include"` เข้าไปด้วยกัน (verify #9)
+- การเขียน prompt ให้ AI "สืบ root cause" แทน "แก้ error นี้ให้หน่อย" ได้ผลดีกว่ามาก เพราะ AI ต้องไล่เงื่อนไขจริง ไม่ใช่เดาไปก่อน
+
+**3. การตัดสินใจด้าน design ต้องถามคน ไม่ปล่อยให้ AI เดา**
+- ประเด็นเรื่องโครงสร้างไฟล์ auth (แยก `routes/`/`middleware/`/`lib/` หรือรวมใน `app.ts`) และเรื่อง read DB ใหม่ทุก request เทียบกับเชื่อ session — ทั้งสองข้อมี trade-off ที่ AI เลือกให้ไม่ได้ ผมต้องถามแล้วตัดสินใจเอง (Decision #1, Spec→Code #5)
+- วิธีเขียน prompt แบบมี options ให้ AI มองเห็นทางเลือก + ให้ AI แสดงข้อดีข้อเสีย ทำให้ผมนึกถึงประเด็นที่ตัวเองคิดไม่ถึง เช่น ความตั้งใจให้ `requireAuth` อ่าน DB ใหม่ทุก request เพื่อให้ deactivate/เปลี่ยน role มีผลทันทีไม่ต้องรอ session หมดอายุ
+
+**4. AI ช่วยเจอ blind spot แต่สุดท้ายผมต้อง verify เอง**
+- prompt self-review (Review #1) เจอจุดที่ผมมองข้ามถึง 6 จุด เช่น append-only ที่ลง route ไม่ครบจน response ผิด status, ตัวอย่าง `_count` ใน api-spec ไม่ตรงกับ schema จริง
+- แต่ก็เจอ lesson กลับทาง: ตอนผมสรุปว่าบล็อก "null check ซ้ำ" เป็น dead code ให้ AI ลบ กลับเจอว่าแท้จริงเป็น **type-narrowing guard** ที่ TypeScript ต้องใช้ ถ้าลบแล้ว build พัง (Review #3) — สิ่งที่ AI คิดว่าใช่ และที่ผมคิดว่าใช่ ต้องพิสูจน์ด้วยการรัน build/test จริงเสมอ
+
+**5. ด้านความปลอดภัย ต้องคิดในสิ่งที่ users ไม่ได้มองเห็น**
+- การทำ login ต้องแน่ใจว่า error message เหมือนกันทุกกรณี (password ผิด / email ไม่มี / inactive) เพื่อไม่รั่วว่าอีเมลนั้นมีอยู่จริงในระบบ และยังต้องกัน timing attack ด้วยการเปรียบเทียบกับ **dummy bcrypt hash** เมื่อ email ไม่เจอ เพื่อให้เวลาตอบไม่ต่างกัน (Spec→Code #4) — นี่ไม่ใช่สิ่งที่ tester ปกติจะสังเกต แต่เป็นพื้นฐานของระบบ auth ที่ปลอดภัย
+
+**6. เรียนรู้การทำงานกับ async/React testing ที่ละเอียดกว่าที่เรียนในคอร์ส**
+- warning "not wrapped in act(...)" ทั้งที่ test ผ่านเกิดจาก async `fetchMe` ใน `useEffect` อัปเดต state หลัง test จบ — แก้โดยรอ async ให้จบด้วย `findByText` แทนการ `getBy` แบบเงียบ ๆ (impl #7)
+- ต้องแยกให้ออกระหว่าง "แมลงในโค้ด" กับ "รูปแบบการเขียนเทสที่ผิด" — ทั้งสองทำให้ test ผ่านหรือแดงผิด ๆ ได้คนละแบบ
+
+### สรุปภาพรวม
+
+AI ช่วยเพิ่มความเร็วในการ implement และเป็นเหมือน "co-reviewer" ที่ตรวจงานให้ละเอียดกว่าที่ผมทำคนเดียวได้ แต่คุณค่าที่ผมเพิ่มเองคือ **การถามคำถามเชิงตัดสินใจกับ AI ก่อนเริ่มงาน, การตั้งเกณฑ์เทสที่กำหนดพฤติกรรมของระบบ และการไล่ตรวจผลของ AI ทุกครั้งก่อนปิด** — lab นี้ทำให้ผมเห็นชัดว่าการใช้ AI ให้ดีไม่ใช่การ "สั่งแล้วรอรับ" แต่คือการทำงานร่วมกันแบบที่คนควบคุมทิศทางและความถูกต้อง AI รับช่วงความเร็ว

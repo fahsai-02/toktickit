@@ -17,6 +17,8 @@ type BadgeVariant =
   | "role-requester"
   | "role-it-staff"
   | "role-administrator"
+  | "active"
+  | "inactive"
   | "neutral";
 
 interface BadgeProps {
@@ -42,6 +44,8 @@ const variantClass: Record<BadgeVariant, string> = {
   "role-requester": "badge-role-requester",
   "role-it-staff": "badge-role-it-staff",
   "role-administrator": "badge-role-administrator",
+  active: "badge-active",
+  inactive: "badge-inactive",
   neutral: "badge-neutral",
 };
 
@@ -113,6 +117,11 @@ export function roleBadgeVariant(role: string | undefined): BadgeVariant {
     default:
       return "neutral";
   }
+}
+
+/** Active/Inactive badge mapping (ui-spec.md section 5.6). */
+export function activeBadgeVariant(isActive: boolean): BadgeVariant {
+  return isActive ? "active" : "inactive";
 }
 
 export default function Badge({
