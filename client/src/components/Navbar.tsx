@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../AuthContext.js";
 import Badge, { roleBadgeVariant } from "./Badge.js";
-import { Clock3, FileText, CirclePlus, ListTodo, Users, ChevronDown } from "lucide-react";
+import { Clock3, FileText, CirclePlus, ListTodo, ChevronDown } from "lucide-react";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -49,11 +49,11 @@ export default function Navbar() {
 
   // Role-aware navigation (ui-spec.md section 4.1). My Queue is available to
   // IT Staff and Administrators (api-spec 5.1 grants the staff queue to both);
-  // "User Management" is visible only to Administrators (ui-spec 4.1).
+  // the User Management admin screen stays hidden until Issue 21 lands — never
+  // render a dead link.
   const showMyTickets = user?.role === "REQUESTER";
   const showMyQueue =
     user?.role === "IT_STAFF" || user?.role === "ADMINISTRATOR";
-  const showUserManagement = user?.role === "ADMINISTRATOR";
 
   return (
     <header className="app-header">
@@ -101,18 +101,6 @@ export default function Navbar() {
               <CirclePlus size={16} />
               Create Ticket
             </NavLink>
-            {showUserManagement && (
-              <NavLink
-                to="/admin/users"
-                className={({ isActive }) =>
-                  `nav-link ${isActive ? "nav-link--active" : ""}`
-                }
-                onClick={closeMobile}
-              >
-                <Users size={16} />
-                User Management
-              </NavLink>
-            )}
           </nav>
         </div>
 

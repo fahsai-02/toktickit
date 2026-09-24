@@ -432,29 +432,19 @@ Reviewer approved comment:
 
 ### feature/21-admin-user-management
 
-**Pull Requests URL:** <https://github.com/fahsai-02/toktickit/pull/72>
+**Pull Requests URL:**
 
-Reviewer comment (Round 1 — CHANGES_REQUESTED, 2026-09-23, reviewer @Ohmmykung09):
+Reviewer comment:
 
-> The implementation covers most of the requested administrator user-management functionality, and the client test suite and production build pass successfully. However, I found several issues that should be addressed before merging:
->
-> - Existing users can be deactivated through the Active toggle and Save action without the required confirmation dialog.
-> - The production duplicate-email response is not displayed as an inline email error because the client and server error shapes do not match.
-> - Concurrent duplicate-email updates can return 500 instead of the documented 409 Conflict.
-> - The nested confirmation dialog and drawer conflict over Escape handling and page scroll locking.
+> *(paste comment text here)*
 
 How I responded:
 
-> Fixed all four in one wave (commit …):
-> 1. Edit-mode `Active` toggle is now disabled (read-only) and edit `Save` no longer sends `isActive`, so deactivation can only happen through the confirmed Deactivate User flow (ui-spec 5.6). Regression test added.
-> 2. `PUT /api/admin/users/:id` translate race-condition Prisma `P2002` into the documented 409 instead of 500; regression test forces the constraint error deterministically (api-spec 6.3, FR-42/BR-07).
-> 3. The page maps the real duplicate-email 409 shape (only `code`+`message`) to the inline email field error; create + edit UI tests now mock the real shape instead of a fabricated `fields` value (ui-spec 5.6).
-> 4. New refcounted scroll lock (`client/src/lib/scrollLock.ts`) shared by `Drawer` and `ConfirmDialog`; the drawer suspends its Escape/focus handling while the confirmation dialog is open, so Escape closes only the topmost dialog and scrolling stays locked until the drawer closes. Regression test added.
-> Verifier: server 20 files / 286 tests + client 17 files / 194 tests, both `pnpm build` green.
+> *(paste response text here)*
 
 Reviewer approved comment:
 
-> *(paste approved text here — awaiting re-review)*
+> *(paste approved text here)*
 
 ---
 

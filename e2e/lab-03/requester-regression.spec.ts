@@ -78,16 +78,8 @@ test.describe("E2E-05 Requester regression (AC-03, AC-07)", () => {
     // ── Locate the new ticket in My Tickets and open it ───────────────
     await page.click('[data-testid="search-input"]');
     await page.fill('[data-testid="search-input"]', summary);
-    // My Tickets renders the desktop table AND the mobile cards in the DOM;
-    // on small screens the table is hidden via CSS. Scope matches to the
-    // VISIBLE occurrence (card on mobile, table row cell on desktop/tablet)
-    // so the same locator works in all three projects.
-    const ticketHit = page
-      .getByText(summary)
-      .and(page.locator(":visible"))
-      .first();
-    await expect(ticketHit).toBeVisible();
-    await ticketHit.click();
+    await expect(page.locator(`text=${summary}`).first()).toBeVisible();
+    await page.locator(`text=${summary}`).first().click();
     await expect(page).toHaveURL(/\/tickets\/\d+/);
 
     // ── Public Comment (AC-03, ui-spec 5.3) ───────────────────────────

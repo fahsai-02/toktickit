@@ -10,7 +10,6 @@ import CreateTicket from "./CreateTicket.js";
 import TicketDetail from "./TicketDetail.js";
 import StaffTicketQueue from "./StaffTicketQueue.js";
 import StaffTicketDetail from "./StaffTicketDetail.js";
-import UserManagement from "./UserManagement.js";
 import Spinner from "./components/Spinner.js";
 
 /** Landing page: sends each user to the default screen for their state. */
@@ -191,11 +190,7 @@ export default function App() {
             </RequireRole>
           }
         />
-        {/* Administrator User Management (Issue 21): api-spec.md section 6
-            grants user management to ADMINS only. The page self-guards so a
-            non-admin who types the URL sees the ui-spec 5.6 "forbidden"
-            screen instead of being bounced to their home. */}
-        <Route path="/admin/users" element={<UserManagement />} />
+        {/* TODO(Issue 21): /admin/users — Administrator User Management. */}
       </Route>
       <Route path="/" element={<HomeRedirect />} />
       {/* /select-requester was removed in Lab 3 (Issue 17) — anything
