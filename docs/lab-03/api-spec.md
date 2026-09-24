@@ -83,6 +83,7 @@ Authenticate with email and password (FR-01, FR-02, FR-03, AC-01, AC-05, AC-06).
     "name": "Jennifer Anderson",
     "email": "jennifer.anderson@toktickit.dev",
     "role": "REQUESTER",
+    "isActive": true,
     "mustChangePassword": false
   }
 }
@@ -93,7 +94,7 @@ Sets `connect.sid` session cookie.
 **Errors:**
 | Status | Code | Message |
 | :--- | :--- | :--- |
-| 400 | VALIDATION_ERROR | Missing or malformed fields |
+| 400 | VALIDATION_ERROR | Validation failed — `fields.email` / `fields.password` messages emitted for each invalid input |
 | 401 | UNAUTHORIZED | "Invalid email or password. Please try again." (generic — never reveals email existence) |
 
 **Note on inactive accounts (AC-06):** When the email matches an inactive account, the response is still 401 with the same generic message. The server does not distinguish between "email not found" and "inactive account" in the error response.
@@ -133,6 +134,7 @@ Return the current authenticated user (FR-05, AC-01).
     "name": "Jennifer Anderson",
     "email": "jennifer.anderson@toktickit.dev",
     "role": "REQUESTER",
+    "isActive": true,
     "mustChangePassword": false
   }
 }
@@ -280,6 +282,8 @@ Server generates `ticketNumber` (BR-10), sets `currentStatus = NEW` (BR-11), `it
   }
 }
 ```
+
+> **Note (2026-09-24):** the 201 response is the full persisted Ticket row, so it also carries the scalar FK/workflow columns `requesterId`, `requesterUserId`, `ownerId`, `categoryId`, `relatedSystemId`, `resolutionSummary`, `requesterIndicatedResolved`, and `indicatedResolvedAt`. `requesterUserId` is present on purpose — it records the authenticated identity that owns the ticket (BR-03) and is asserted by tests.
 
 **Errors:** `400`, `404`, `500`
 
@@ -521,6 +525,7 @@ Toggle the "Problem Appears Resolved" indicator (FR-19, AC-07, BR-05, BR-20).
 ```json
 {
   "data": {
+    "id": 12,
     "requesterIndicatedResolved": true,
     "indicatedResolvedAt": "2026-09-13T12:00:00.000Z"
   }
@@ -1069,6 +1074,7 @@ Edit a user's name, email, role, and activation state (FR-43, AC-14).
 **Safety rules:**
 - An Administrator cannot deactivate their own account → `403 FORBIDDEN` with message "You cannot deactivate your own account."
 - Deactivating the last active Administrator → `409 CONFLICT` with message "Cannot deactivate the last active Administrator."
+- The same guards also apply to role **demotion**: changing an active Administrator's role away from `ADMINISTRATOR`, or changing `isActive` on their own account, triggers the identical self-change (`403`) and last-active-Administrator (`409`) checks (FR-45, FR-46, AC-11, AC-12).
 
 **200 Response**
 ```json

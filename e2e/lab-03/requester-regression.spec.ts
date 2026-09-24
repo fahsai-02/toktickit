@@ -26,6 +26,12 @@ import {
 const serverDir = fileURLToPath(new URL("../../server/", import.meta.url));
 
 test.beforeAll(() => {
+  // Drop residue from earlier runs, then restore the documented seed.
+  execSync("pnpm exec tsx prisma/cleanup-e2e.ts", {
+    cwd: serverDir,
+    stdio: "pipe",
+    timeout: 120_000,
+  });
   execSync("pnpm exec prisma db seed", {
     cwd: serverDir,
     stdio: "pipe",
@@ -34,9 +40,15 @@ test.beforeAll(() => {
 });
 
 // Restore seed state (incl. the requester password the mandatory-change step
-// rotated) so the server suite's MIG-01 credential checks pass right after E2E.
+// rotated) so the server suite's MIG-01 credential checks pass right after E2E,
+// then drop this run's ticket + comment residue.
 test.afterAll(() => {
   execSync("pnpm exec prisma db seed", {
+    cwd: serverDir,
+    stdio: "pipe",
+    timeout: 120_000,
+  });
+  execSync("pnpm exec tsx prisma/cleanup-e2e.ts", {
     cwd: serverDir,
     stdio: "pipe",
     timeout: 120_000,
@@ -46,7 +58,13 @@ test.afterAll(() => {
 // In CI this suite is expected to be quick; 60s covers bcrypt login + first
 // file download on a cold browser.
 test.describe("E2E-05 Requester regression (AC-03, AC-07)", () => {
-  test("create → view → comment → indicate resolved", async ({ page }) => {
+  // Functional E2E flows run on the desktop project only. Running the same
+  // flow on tablet/mobile in parallel makes all instances log in as the same
+  // seed account (david.lee) and race on his mandatory first-login password
+  // change (BR-02), producing non-deterministic failures. Responsive layout is
+  // covered separately by RESP-01..24 (Issue 23).
+  test("create → view → comment → indicate resolved", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop", "desktop only");
     test.setTimeout(120_000);
 
     // ── Sign in (mandatory first-login password change, BR-02) ──────────

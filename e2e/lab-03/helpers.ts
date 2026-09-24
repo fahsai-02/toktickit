@@ -13,6 +13,21 @@ export const REQ_EMAIL = "david.lee@toktickit.dev";
 export const REQ_INITIAL_PASSWORD = "TempPass123!";
 export const REQ_PASSWORD = "E2ERequester1!";
 
+// Sarah Johnson — the second seeded Requester with mustChangePassword=true.
+// E2E-01/02 use her so the login spec never races E2E-05 (which rotates
+// david.lee's password). Same initial password as the other Requesters.
+export const SARAH_EMAIL = "sarah.johnson@toktickit.dev";
+export const SARAH_INITIAL_PASSWORD = "TempPass123!";
+export const SARAH_NEW_PASSWORD = "E2ESarah1!";
+
+// Seed IT Staff (mustChangePassword=false, real password).
+export const STAFF_EMAIL = "itstaff.sara@toktickit.dev";
+export const STAFF_PASSWORD = "StaffPass1!";
+
+// Seed Administrator (mustChangePassword=false, real password).
+export const ADMIN_EMAIL = "admin@toktickit.dev";
+export const ADMIN_PASSWORD = "AdminPass1!";
+
 export async function loginViaUi(page: Page, email: string, password: string) {
   await page.goto("/login");
   await page.fill("#login-email", email);
