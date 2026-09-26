@@ -1,12 +1,11 @@
 import { expect, test } from "@playwright/test";
-import { execSync } from "node:child_process";
-import { fileURLToPath } from "node:url";
 import {
   REQ_EMAIL,
   REQ_INITIAL_PASSWORD,
   REQ_PASSWORD,
   loginViaUi,
   changePasswordViaUi,
+  useLab3DbHooks,
 } from "./helpers.js";
 
 /**
@@ -18,45 +17,14 @@ import {
  *
  * Requires: Postgres up, server on :5000, client on :5173, DB migrated.
  *
- * Determinism: the seed is idempotent (seed-credentials.md), so a beforeAll
+ * Determinism: the seed is idempotent (seed-credentials.md), so beforeAll
  * re-seeds — this resets any password a previous run changed and restores the
- * documented initial credentials for MIG-01.
+ * documented initial credentials for MIG-01 — and afterAll restores them again
+ * even when a test fails mid-way.
  */
 
-const serverDir = fileURLToPath(new URL("../../server/", import.meta.url));
+useLab3DbHooks();
 
-test.beforeAll(() => {
-  // Drop residue from earlier runs, then restore the documented seed.
-  execSync("pnpm exec tsx prisma/cleanup-e2e.ts", {
-    cwd: serverDir,
-    stdio: "pipe",
-    timeout: 120_000,
-  });
-  execSync("pnpm exec prisma db seed", {
-    cwd: serverDir,
-    stdio: "pipe",
-    timeout: 120_000,
-  });
-});
-
-// Restore seed state (incl. the requester password the mandatory-change step
-// rotated) so the server suite's MIG-01 credential checks pass right after E2E,
-// then drop this run's ticket + comment residue.
-test.afterAll(() => {
-  execSync("pnpm exec prisma db seed", {
-    cwd: serverDir,
-    stdio: "pipe",
-    timeout: 120_000,
-  });
-  execSync("pnpm exec tsx prisma/cleanup-e2e.ts", {
-    cwd: serverDir,
-    stdio: "pipe",
-    timeout: 120_000,
-  });
-});
-
-// In CI this suite is expected to be quick; 60s covers bcrypt login + first
-// file download on a cold browser.
 test.describe("E2E-05 Requester regression (AC-03, AC-07)", () => {
   // Functional E2E flows run on the desktop project only. Running the same
   // flow on tablet/mobile in parallel makes all instances log in as the same

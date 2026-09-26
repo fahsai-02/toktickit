@@ -1,9 +1,7 @@
 import { expect, test } from "@playwright/test";
-import { execSync } from "node:child_process";
-import { fileURLToPath } from "node:url";
-import { STAFF_EMAIL, STAFF_PASSWORD } from "./helpers.js";
+import { STAFF_EMAIL, STAFF_PASSWORD, loginViaUi, useLab3DbHooks } from "./helpers.js";
 
-const serverDir = fileURLToPath(new URL("../../server/", import.meta.url));
+useLab3DbHooks();
 
 test.describe("E2E-03 staff ticket flow (AC-08, AC-09)", () => {
   // Desktop-only per plan decision: functional flows avoid racing the shared
@@ -12,23 +10,8 @@ test.describe("E2E-03 staff ticket flow (AC-08, AC-09)", () => {
     test.skip(testInfo.project.name !== "desktop", "desktop only");
     test.setTimeout(150_000);
 
-    // Remove residue from earlier runs, then restore the documented seed.
-    execSync("pnpm exec tsx prisma/cleanup-e2e.ts", {
-      cwd: serverDir,
-      stdio: "pipe",
-      timeout: 120_000,
-    });
-    execSync("pnpm exec prisma db seed", {
-      cwd: serverDir,
-      stdio: "pipe",
-      timeout: 120_000,
-    });
-
     // IT Staff has a real password (mustChangePassword=false) -> straight in.
-    await page.goto("/login");
-    await page.fill("#login-email", STAFF_EMAIL);
-    await page.fill("#login-password", STAFF_PASSWORD);
-    await page.click('[data-testid="login-submit"]');
+    await loginViaUi(page, STAFF_EMAIL, STAFF_PASSWORD);
     await expect(page).toHaveURL(/\/staff\/queue/);
 
     // Focus the queue on a NEW, unassigned ticket.
@@ -60,6 +43,20 @@ test.describe("E2E-03 staff ticket flow (AC-08, AC-09)", () => {
     await statusSelect.selectOption("OPEN");
     await expect(page.locator(".ticket-detail-header .badge")).toHaveText("OPEN", { timeout: 15_000 });
 
+    // AC-09 (specification.md line 333), second half: from OPEN the status
+    // dropdown offers ONLY the BR-12 permitted next states, so the "rejected
+    // with 400" half of AC-09 surfaces in the UI as an ABSENT option —
+    // RESOLVED is not selectable straight from OPEN. (The dropdown is built
+    // from transitionsFrom(), the same table the status endpoint enforces, so
+    // it can never offer a transition the server would reject; ui-spec 5.5
+    // "only permitted next states per BR-12". The 400 itself is API-42's job.)
+    const statusOptions = page.locator('[data-testid="staff-status-select"] option');
+    await expect(statusOptions.filter({ hasText: /^RESOLVED$/ })).toHaveCount(0);
+
+    // AC-09, first half: OPEN -> IN_PROGRESS succeeds.
+    await statusSelect.selectOption("IN_PROGRESS");
+    await expect(page.locator(".ticket-detail-header .badge")).toHaveText("IN_PROGRESS", { timeout: 15_000 });
+
     // Post a Public Comment (default tab is Comments).
     await page.fill('[data-testid="comment-input"]', "E2E staff public comment");
     await page.click('[data-testid="post-comment-btn"]');
@@ -76,17 +73,5 @@ test.describe("E2E-03 staff ticket flow (AC-08, AC-09)", () => {
     await page.fill('[data-testid="resolution-input"]', "E2E resolution summary");
     await page.click('[data-testid="save-resolution-btn"]');
     await expect(page.locator('[data-testid="resolution-saved"]')).toBeVisible({ timeout: 15_000 });
-
-    // Restore the documented seed and drop this run's residue (comments/notes).
-    execSync("pnpm exec prisma db seed", {
-      cwd: serverDir,
-      stdio: "pipe",
-      timeout: 120_000,
-    });
-    execSync("pnpm exec tsx prisma/cleanup-e2e.ts", {
-      cwd: serverDir,
-      stdio: "pipe",
-      timeout: 120_000,
-    });
   });
 });

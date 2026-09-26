@@ -23,21 +23,27 @@ const e2eTickets = await prisma.ticket.findMany({
 });
 const ticketIds = e2eTickets.map((t) => t.id);
 
-const [attachments, comments, notes, tickets, users] = await Promise.all([
-  ticketIds.length
-    ? prisma.attachment.deleteMany({ where: { ticketId: { in: ticketIds } } })
-    : Promise.resolve({ count: 0 }),
-  ticketIds.length
-    ? prisma.publicComment.deleteMany({ where: { ticketId: { in: ticketIds } } })
-    : Promise.resolve({ count: 0 }),
-  ticketIds.length
-    ? prisma.internalNote.deleteMany({ where: { ticketId: { in: ticketIds } } })
-    : Promise.resolve({ count: 0 }),
-  ticketIds.length
-    ? prisma.ticket.deleteMany({ where: { id: { in: ticketIds } } })
-    : Promise.resolve({ count: 0 }),
-  prisma.user.deleteMany({ where: { email: { startsWith: "e2e." } } }),
-]);
+// Sequential, children before parents. These deletes MUST NOT run in parallel:
+// Postgres has no ON DELETE CASCADE on these relations, so a ticket delete that
+// commits before its Public Comments are gone fails with
+// `P2003 … PublicComment_ticketId_fkey`. The interleaving depends on pool
+// timing, which is what made the E2E suite fail intermittently.
+const attachments = await prisma.attachment.deleteMany({
+  where: { ticketId: { in: ticketIds } },
+});
+const comments = await prisma.publicComment.deleteMany({
+  where: { ticketId: { in: ticketIds } },
+});
+const notes = await prisma.internalNote.deleteMany({
+  where: { ticketId: { in: ticketIds } },
+});
+const tickets = await prisma.ticket.deleteMany({
+  where: { id: { in: ticketIds } },
+});
+// E2E-created accounts own nothing once their tickets are gone.
+const users = await prisma.user.deleteMany({
+  where: { email: { startsWith: "e2e." } },
+});
 
 // E2E-03 posts a Public Comment and an Internal Note on a SEED ticket, and
 // E2E-05 attaches one to its own ticket (deleted above); the seed recreates its
