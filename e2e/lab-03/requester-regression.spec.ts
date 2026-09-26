@@ -1,12 +1,11 @@
 import { expect, test } from "@playwright/test";
-import { execSync } from "node:child_process";
-import { fileURLToPath } from "node:url";
 import {
   REQ_EMAIL,
   REQ_INITIAL_PASSWORD,
   REQ_PASSWORD,
   loginViaUi,
   changePasswordViaUi,
+  useLab3DbHooks,
 } from "./helpers.js";
 
 /**
@@ -18,35 +17,22 @@ import {
  *
  * Requires: Postgres up, server on :5000, client on :5173, DB migrated.
  *
- * Determinism: the seed is idempotent (seed-credentials.md), so a beforeAll
+ * Determinism: the seed is idempotent (seed-credentials.md), so beforeAll
  * re-seeds — this resets any password a previous run changed and restores the
- * documented initial credentials for MIG-01.
+ * documented initial credentials for MIG-01 — and afterAll restores them again
+ * even when a test fails mid-way.
  */
 
-const serverDir = fileURLToPath(new URL("../../server/", import.meta.url));
+useLab3DbHooks();
 
-test.beforeAll(() => {
-  execSync("pnpm exec prisma db seed", {
-    cwd: serverDir,
-    stdio: "pipe",
-    timeout: 120_000,
-  });
-});
-
-// Restore seed state (incl. the requester password the mandatory-change step
-// rotated) so the server suite's MIG-01 credential checks pass right after E2E.
-test.afterAll(() => {
-  execSync("pnpm exec prisma db seed", {
-    cwd: serverDir,
-    stdio: "pipe",
-    timeout: 120_000,
-  });
-});
-
-// In CI this suite is expected to be quick; 60s covers bcrypt login + first
-// file download on a cold browser.
 test.describe("E2E-05 Requester regression (AC-03, AC-07)", () => {
-  test("create → view → comment → indicate resolved", async ({ page }) => {
+  // Functional E2E flows run on the desktop project only. Running the same
+  // flow on tablet/mobile in parallel makes all instances log in as the same
+  // seed account (david.lee) and race on his mandatory first-login password
+  // change (BR-02), producing non-deterministic failures. Responsive layout is
+  // covered separately by RESP-01..24 (Issue 23).
+  test("create → view → comment → indicate resolved", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop", "desktop only");
     test.setTimeout(120_000);
 
     // ── Sign in (mandatory first-login password change, BR-02) ──────────

@@ -4,8 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test:e2e": "playwright test e2e/lab-02",
-    "test:e2e:headed": "playwright test e2e/lab-02 --headed"
+    "test:e2e": "playwright test e2e/lab-02 e2e/lab-03 --workers=1",
+    "test:e2e:headed": "playwright test e2e/lab-02 e2e/lab-03 --headed --workers=1",
+    "test:e2e:lab3": "playwright test e2e/lab-03 --workers=1"
   },
   "devDependencies": {
     "@playwright/test": "^1.55.0",
