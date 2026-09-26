@@ -14,7 +14,7 @@
 |  | feature/19-staff-ticket-queue |  |
 |  | feature/20-staff-ticket-detail |  |
 |  | feature/21-admin-user-management |  |
-|  | feature/22-comprehensive-testing |  |
+| #73 | feature/22-comprehensive-testing | changes requested — fixes applied 2026-09-26, awaiting re-review |
 |  | feature/23-release-polish |  |
 
 ---
@@ -460,19 +460,39 @@ Reviewer approved comment:
 
 ### feature/22-comprehensive-testing
 
-**Pull Requests URL:**
+**Pull Requests URL:** <https://github.com/fahsai-02/toktickit/pull/73>
 
-Reviewer comment:
+Reviewer comment (Round 1 — CHANGES_REQUESTED, 2026-09-26):
 
-> *(paste comment text here)*
+> The Lab 3 E2E runner, the three new Playwright specs, the Zen Green style suite and the DB cleanup helper are all in place and the suite passes. Before merging I would like these addressed:
+>
+> 1. Move the DB cleanup out of the test body into `test.afterAll()` (`staff-ticket-flow.spec.ts`, `user-administration.spec.ts`) — a failed assertion mid-test currently skips cleanup and leaves the shared database dirty.
+> 2. Set `fullyParallel: false` and `workers: 1` in `playwright.config.ts`, not only as a CLI flag in the npm scripts, so a bare `npx playwright test` cannot race the shared database.
+> 3. E2E-04 should test AC-11 (403 self-deactivation). Deactivating the sole admin hits the 409 last-active-admin guard instead, so create a second administrator to exercise the 403 path rather than demoting E2E-04 in the test plan.
+> 4. E2E-04 should test AC-10's first login: log in with the newly created user's initial credentials and verify the redirect to `/change-password` before deactivating them.
+> 5. De-duplicate seed data in the E2E helpers — import the passwords from the server's seed credential module instead of inlining string literals, and stop hard-coding the inactive account's email address.
+>
+> Minor: exercise `OPEN -> IN_PROGRESS` and reject `OPEN -> RESOLVED` in E2E-03 to fully cover AC-09; extract the repeated seed/cleanup `execSync` calls into shared helper functions; and the pagination select arrow, breadcrumb styling and `INVENTORY.md` rewrite were not requested by this issue.
 
 How I responded:
 
-> *(paste response text here)*
+> All five key points and the nits are addressed on `feature/22-comprehensive-testing`:
+>
+> 1. **Cleanup guaranteed.** All four lab-03 specs now reset the DB from `test.beforeAll` / `test.afterAll`, and the eight repeated `execSync` blocks became one `resetLab3Db()` helper in `e2e/lab-03/helpers.ts`. The inactive-login spec (E2E-02) had the same in-body cleanup and was fixed too. Each hook starts with `test.setTimeout(180_000)` because hooks get the *project* timeout (60s) rather than the test's own — without it the seed (11 bcrypt hashes at cost 12) can time the hook out and silently skip the very cleanup this fixes. Verified by injecting a deliberate failure into E2E-04 after both throwaway accounts existed: the run failed, and `afterAll` still left 0 `e2e.%` users, 0 stray `E2E %` comments/notes, and the seeded admin still active.
+> 2. **Serial by config.** `playwright.config.ts` now sets `fullyParallel: false` and `workers: 1`. Confirmed by running `playwright test e2e/lab-03 --project=desktop` with no CLI flags -> "Running 1 test using 1 worker".
+> 3. **AC-11 covered.** `server/src/app.ts` checks the last-active-admin guard before the self-guard, so the 403 is only reachable while a second active Administrator exists. E2E-04 now creates a throwaway admin (`e2e.admin.<ts>@…`, so `cleanup-e2e.ts` deletes it), signs in **as that account**, and asserts "You cannot deactivate your own account." The seeded admin is never modified, so API-66's single-active-admin precondition still holds; the 409 case is kept as the AC-12 assertion. `tests.md` now maps AC-11 -> `API-65, E2E-04`.
+> 4. **AC-10 first login.** E2E-04 logs in with the created account's initial password, asserts the forced `/change-password` redirect, completes the change, and confirms the Requester reaches `/my-tickets`.
+> 5. **Seed data de-duplicated.** `helpers.ts` reads each account's password from the `server/src/lib/seedData.ts` row (which `prisma/seed.ts` populates from `server/src/lib/seedCredentials.ts`) and resolves the inactive account with `SEED_USERS.find(u => !u.isActive && u.role === "REQUESTER")`, so no seed value is hard-coded. A `seedUser()` guard throws a readable error if a named seed account ever disappears.
+>
+> One extra finding while re-running: the suite still failed intermittently, and it was **not** a timing problem. `server/prisma/cleanup-e2e.ts` deleted the E2E tickets with a `Promise.all` that ran `ticket.deleteMany` in parallel with the `publicComment` / `internalNote` / `attachment` deletes for the same ids — with no `ON DELETE CASCADE` on those relations, a ticket delete that commits first throws `P2003 … PublicComment_ticketId_fkey`, and pool timing decides which one wins. The deletes are now sequential, children before parents, and the failure has not recurred. I also folded the four specs' duplicated hook pairs into one `useLab3DbHooks()` helper in `helpers.ts` that only resets on the desktop project, since the tablet/mobile projects were re-seeding twice per file for tests that skip themselves: the suite went from 2.9m to 1.1m.
+> 
+> On the nits: E2E-03 now performs `OPEN -> IN_PROGRESS` and asserts `RESOLVED` is **absent** from the status dropdown. One clarification — the dropdown is built from `transitionsFrom()`, the same BR-12 table the endpoint enforces, and ui-spec section 5.5 says "only permitted next states", so a browser cannot *attempt* `OPEN -> RESOLVED`; the rejected half of AC-09 is observable in the UI only as the missing option, and the 400 stays API-42's job server-side. The `execSync` duplication is gone (item 1). On scope: the breadcrumb and Back-to-Queue button styling is not unrequested — `ui-spec.md` section 5.5 specifies a `<- Back to Queue` button top-right, and the select caret keeps the rows-per-page control consistent with every other select; both sit in a separate commit and are called out in the PR body, so they are easy to drop if you prefer a test-only PR. `INVENTORY.md` was rewritten because it still listed Lab 1 planned components, and its companion `ui-spec.md` section 8 list is updated in the same commit.
+>
+> Verifier: `pnpm test:e2e:lab3` = 5 passed / 10 skipped (exit 0) on three consecutive full runs, database clean after each; server 20 files / 286 tests + `pnpm build`; client 18 files / 201 tests + `pnpm build`.
 
 Reviewer approved comment:
 
-> *(paste approved text here)*
+> *(paste approved text here — awaiting re-review)*
 
 ---
 

@@ -526,7 +526,10 @@ export default function StaffTicketDetail() {
           <Link to="/staff/queue" className="breadcrumb-link">
             My Queue
           </Link>
-          {" > Ticket Detail"}
+          <span className="breadcrumb-separator" aria-hidden="true">
+            {" > "}
+          </span>
+          <span className="breadcrumb-current">Ticket Detail</span>
         </nav>
         <Link to="/staff/queue" className="back-link" data-testid="back-queue-link">
           <ArrowLeft size={16} />

@@ -30,7 +30,8 @@
 
 | Token | Hex | Usage |
 | :--- | :--- | :--- |
-| `--color-info` | `#2563EB` | Internal Notes visual distinction (blue-tinted background) |
+| `--color-info` | `#2563EB` | Internal Notes / info accent text, icon, and border |
+| `--color-info-bg` | `#EAF1FE` | Internal Notes background tint (blue-tinted surface) |
 | `--color-inactive` | `#DC2626` | Inactive status badge |
 | `--color-active` | `#047857` | Active status badge |
 
@@ -302,9 +303,9 @@ Extends Lab 2 Ticket Detail (read-only) with:
 
 ## 8. Reusable Component Inventory
 
-`Button` (all variants incl. busy) · `TextField` · `TextArea` (with counter) · `SelectField` · `ReadOnlyField` · `Badge` · `Callout` (error/success/info) · `EmptyState` · `Spinner` · `FileChip` · `ConfirmDialog` · `PaginationBar` · `TicketTable` / `TicketCard` · `AppShell` (header/nav/user profile) · `Drawer` (right-side overlay, new for Lab 3) · `Toggle` (new for Lab 3) · `Tabs` (new for Lab 3) · `CommentTimeline` (new for Lab 3) · `PasswordChecklist` (new for Lab 3).
+`Button` (all variants incl. busy) · `TextField` (with counter) · `TextArea` (with counter) · `SelectField` · `ReadOnlyField` · `PasswordChecklist` · `Toggle` · `Badge` (all status / priority / role / label variants) · `Callout` (error/success/info) · `Spinner` · `ListState` (loading / empty / no-results / error+retry) · `ConfirmDialog` · `Drawer` (right-side overlay) · `PaginationBar` · `TicketTable` / `TicketCard` · `MobileSortSelect` (mobile-only "Sort by") · `Navbar` (role-aware nav + profile menu) · `AttachmentSection` (attachment list + upload, reused from Lab 2). `AppShell` (app shell with `<Outlet />`, header/nav/user profile) lives at `src/AppShell.tsx` beside `App.tsx`, not under `components/`.
 
-All screens compose these; no screen invents its own field styling.
+All screens compose these; no screen invents its own field styling. Note: a few single-screen constructs stay inline inside their owning screen instead of being extracted — the staged-attachment chip (`.staged-chip`, inside `AttachmentSection`) and the comments/notes/attachments tabs + comment timeline (inside `StaffTicketDetail` / `TicketDetail`). `ListState` is the shared empty / no-results / error block (supersedes the earlier `EmptyState` plan).
 
 ## 9. Visual Inspection Checklist and Screenshot Paths
 

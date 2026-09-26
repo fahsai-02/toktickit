@@ -41,7 +41,6 @@ server/src/generated/prisma
 server/uploads/
 
 # Playwright runtime artifacts (traces, reports) — screenshots/ is a committed deliverable
-artifacts/lab-02/test-results/
 playwright-report/
 test-results/
 

@@ -8,6 +8,12 @@ import {
   capture,
 } from "./helpers.js";
 
+// SKIPPED: lab-02 legacy — relies on /select-requester and localStorage requester
+// seeding, removed in Lab 3 (client/src/App.tsx:201). Deferred to Issue 23; the
+// functional requester flow is now covered by e2e/lab-03/requester-regression.spec.ts
+// (E2E-05, desktop). See docs/lab-03/tests.md Known Limitations.
+test.skip();
+
 // ── Configuration ────────────────────────────────────────────────────────────
 // RESP-01..09: 3 screens (create-ticket, my-tickets, ticket-detail) × 3
 // viewport projects (desktop 1440×900, tablet 820×1180, mobile 390×844) per
