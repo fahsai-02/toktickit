@@ -226,31 +226,49 @@ Current Lab 2 models: `Requester`, `Category`, `RelatedSystem`, `Ticket`, `Attac
 
 ### Lab 3 Test Structure
 
-**Server tests** in `server/tests/lab-03/`:
+**Server tests** in `server/tests/lab-03/` (9 files):
 ```
-auth.api.test.ts              — login/logout/current-user/change-password
-authorization.api.test.ts     — role-based access, ownership checks
-staff-queue.api.test.ts       — queue search/filter/sort/pagination
-staff-ticket-detail.api.test.ts — claim/reassign/priority/status
-comments-notes.api.test.ts    — Public Comments + Internal Notes
-users-admin.api.test.ts       — Admin user CRUD, safety rules
+auth.api.test.ts                 — login/logout/current-user/change-password
+authorization.api.test.ts        — role-based access, ownership checks
+migration-regression.api.test.ts — MIG-01: Lab 2 data survived the Lab 3 migration
+password-validation.unit.test.ts — password policy (length/uppercase/digit/special)
+status-transitions.unit.test.ts   — the BR-12 transition matrix
+staff-queue.api.test.ts          — queue search/filter/sort/pagination
+staff-ticket-detail.api.test.ts  — claim/reassign/priority/status
+comments-notes.api.test.ts       — Public Comments + Internal Notes
+users-admin.api.test.ts          — Admin user CRUD, safety rules
 ```
 
-**Client tests** in `client/tests/lab-03/`:
+**Client tests** in `client/tests/lab-03/` (9 files):
 ```
 Login.test.tsx
 ChangePassword.test.tsx
+RequesterTicketComments.test.tsx  — requester Public Comments
+staff-ticket-api.test.tsx         — staff ticket API client
+requester-ticket-api.test.tsx     — requester ticket API client
 StaffTicketQueue.test.tsx
 StaffTicketDetail.test.tsx
 UserManagement.test.tsx
+zen-green-lab3-style.test.tsx     — STYLE-01..04 token/badge palettes
 ```
 
-**E2E tests** in `e2e/lab-03/`:
+**E2E tests** in `e2e/lab-03/` (7 specs):
 ```
-authentication.spec.ts
-staff-ticket-flow.spec.ts
-user-administration.spec.ts
+authentication.spec.ts        — E2E-01..04 auth + admin first-login flow
+requester-regression.spec.ts  — E2E-05 Lab 2 requester regression
+staff-ticket-flow.spec.ts     — staff claim → status → comment flow
+user-administration.spec.ts   — admin create/guard flows
+responsive.visual.spec.ts     — RESP-01..30, 10 screens × 3 viewports
+states.visual.spec.ts         — STATE-01..42, 14 states × 3 viewports
+visual-audit.spec.ts          — STYLE-05..10 measured design rules
 ```
+
+Viewports are desktop 1440×900, tablet 820×1180, mobile **375×844** (375 to match
+AC-15; tablet is 820 rather than 768 because `App.css` switches to the mobile
+layout at `max-width: 768px`). The three `*.visual.spec.ts` files plus
+`visual-audit.spec.ts` produce `artifacts/lab-03/screenshots/` (72 PNGs) — that
+path is a committed deliverable and is negated in `.gitignore`; do not add a
+bare `*.png` rule above that negation.
 
 ### Lab 3 Branch Flow
 
@@ -332,12 +350,20 @@ These were agreed with the student and MUST be respected in every future chat:
 
 7. **Docs/evidence to touch in this issue:** `docs/lab-03/seed-credentials.md` (create), `docs/lab-03/tests.md` (MIG-01 status + run results), spec §7 only if reality diverges from what's written. PR branch `feature/15-data-foundation` → `lab3-staging`, title `feat(schema): lab3 user models, migration & seed (#56)`.
 
-### Lab 3 — Pending stash: Lab 2 client test hardening (MUST NOT be lost)
+### Stash on hand (re-check before acting — this note was once wrong)
 
-A stash holds client-side test hardening that was deliberately **excluded from Issue 15 (#56)** because that issue is server-only (schema/migration/seed). The stash must be applied to the FIRST Lab 3 branch that touches client code.
+**As of 2026-09-28 there is no Lab 2 client test hardening stash pending.** An earlier
+version of this file described a `stash@{0}` named
+`"lab2 client test hardening (deferred from #56)"` with 10 files and a client suite of
+11 files / 83 tests. That never matched the repository:
 
-- **Where:** `stash@{0}`, message `"lab2 client test hardening (deferred from #56)"`, created 2026-09-15 on `feature/15-data-foundation`.
-- **Contents (10 files):** the 9 modified `client/tests/lab-02/*.test.tsx` (`App.test.tsx` + 8 others: `AppShell`, `CreateTicket`, `MyTickets`, `RequesterContext`, `RequesterSelection`, `RequesterTicketDetail`, `api`, `zen-green-style`) and `client/vite.config.ts` (`reporter: "basic"` + `onConsoleLog` CSS-noise suppression).
-- **What it does:** makes Lab 2 client tests seed-independent and behavior-exact — active-nav `aria-current` instead of a CSS class, single-call debounce, corrupt-JSON fallback, retry/store tests, loading-state test, POST body/method/header assertions, badge assertions against the spec tokens (`--color-warning`/`--color-error`), `window.confirm` stub. Adds 6 tests → client suite goes 77 → 83 tests.
-- **Rule (mandatory):** when Lab 3 client work begins (auth UI, App Shell, requester regression, or ANY client branch/PR targeting `lab3-staging`), ON THAT BRANCH run `git stash pop`, commit the changes (suggested message: `chore(client): apply lab-02 test hardening`), and continue. Never leave the stash behind when a client branch exists, and never `git stash drop` it first.
-- **Verify before/after:** `git stash list` shows the entry; after popping, `cd client && pnpm test` → **11 files / 83 tests Pass**.
+- `git stash list` now shows only `stash@{0}: On lab3-staging: lab3 leftover docs/scratch (kept out of feature/21)`, which contains **one** file: `.gitignore`.
+- The client suite is **18 files / 201 tests** (`cd client && pnpm test`), because Lab 3
+  added `client/tests/lab-03/`.
+
+**Rule (mandatory): run `git stash list` and read the actual message before popping
+anything.** Do not trust any stash description in this file — the description above was
+wrong and following it would have popped an unrelated `.gitignore` change and lost
+whatever the message actually names. If a real pending-work stash ever exists, record it
+here with the output of `git stash show --name-only stash@{0}` pasted verbatim, and note
+the test-file count it should produce.

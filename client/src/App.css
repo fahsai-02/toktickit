@@ -413,6 +413,22 @@
       min-width: 0;
     }
 
+    /* ui-spec section 4.1 (line 93): on mobile the header keeps the brand and
+       the truncated user name only. Brand (117px) + full name + role badge +
+       44px hamburger no longer fit a mobile row, and the flex children refuse
+       to shrink, so the hamburger was pushed up to 19px past the viewport edge
+       (409px document width with the "Administrator" account). The role still
+       reads from the profile dropdown header, which repeats name + role badge
+       (section 4.1 line 91), so nothing is lost. */
+    .profile-menu,
+    .profile-button {
+      min-width: 0;
+    }
+
+    .profile-role {
+      display: none;
+    }
+
     .nav {
       display: none;
       position: absolute;
@@ -1562,7 +1578,11 @@
     margin-bottom: 0;
   }
 
+  /* Internal-note action: solid blue fill, so the text must go white to match
+     .btn-primary's convention. Without this the button keeps .btn-secondary's
+     green text on the blue fill — 1.05:1, effectively unreadable. */
   .btn-internal {
+    color: #fff;
     background: var(--color-info);
     border-color: var(--color-info);
   }
