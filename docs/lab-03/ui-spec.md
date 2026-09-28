@@ -346,7 +346,7 @@ instead of trusting the table. The `Manual pass` column is the student's own
 sign-off after looking at the screenshots: an automated check and a human look
 are different evidence, and only the student can provide the second one.
 
-> **How this column was filled (2026-09-28), and what is still open.** The
+> **How this column was filled (2026-09-28).** The
 > student reviewed the 72 screenshots in `artifacts/lab-03/screenshots/` and
 > confirmed the ones shown were correct, then tabbed through the running app by
 > keyboard. The 24 rows whose evidence is a picture are marked `Pass` on the
@@ -355,13 +355,15 @@ are different evidence, and only the student can provide the second one.
 > eyes** — no automated tool can look at a picture or drive a keyboard, and this
 > column claims a human did.
 >
-> **That review was done against 390px mobile captures. The mobile viewport was
-> then changed to 375px** to match the Issue 23 acceptance criteria verbatim, and
-> all 72 images were re-captured. The desktop and tablet images are unchanged;
-> the 24 mobile images are new and have not been looked at yet. Every `Pass` in
-> this column therefore stands on the 390px review, not on the images currently
-> in the repository. Re-review the 24 mobile images before this column is
-> treated as current.
+> **The mobile viewport was then changed from 390px to 375px** to match the
+> Issue 23 acceptance criteria verbatim, and all 72 images were re-captured. The
+> desktop and tablet images are unchanged; the 24 mobile images are new. The
+> student re-reviewed those 24 captures at 375px and found nothing to change, so
+> every `Pass` in this column stands on that second review — the same person
+> signing both passes is the point, since the question being answered ("does
+> this look right at the narrowest supported width") cannot be delegated to a
+> test. `STYLE-08` and `STYLE-09` cover the measurable part of the same rows
+> automatically at all three viewports.
 >
 > Two further rows carry an explicit note about the strength of their evidence:
 >
