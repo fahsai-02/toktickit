@@ -1,40 +1,19 @@
 # Lab 3 — Peer Review Record
 
 **Author:** Nakagamon Saengdara — 67070501064 — GitHub: @fahsai-02  
-**Peer reviewer (PR #65–#71, #73):** Theeraphat Jaingam — 67070501063 — GitHub: @thrxpt  
-**Second reviewer (PR #72 only):** Titihinan Sobking — GitHub: @Ohmmykung09
+**Peer reviewer (PR #65–#71, #73–#74):** Theeraphat Jaengam — 67070501063 — GitHub: @thrxpt  
+**Second reviewer (PR #72 only):** Titihinan Sobking — GitHub: @Ohmmykung09  
+**Last verified against the GitHub API:** 2026-09-29
 
-## How to read this document
-
-1. **GitHub is the only source of truth.** Every review state, date and quoted
-   body below was read back from the GitHub API (`gh api repos/<owner>/<repo>/pulls/<n>/reviews`,
-   `.../issues/<n>/comments`, `.../pulls/<n>/comments`). Where this document and
-   GitHub disagree, GitHub wins and this document is wrong until it is fixed.
-2. **Every `>` block is a verbatim quote** of a real comment, review or inline
-   thread taken from the API. Nothing in a `>` block is paraphrased, invented or
-   reconstructed from memory.
-3. **No abbreviation.** Every review body, PR-thread comment and inline
-   thread is reproduced in full. Nothing is cut with `…` and nothing is
-   summarised in place of the original, so every block can be diffed against
-   the API. Inline threads are listed in a table with their opening line
-   quoted verbatim plus a permalink to the whole thread.
-4. **Section references in quotes.** `AGENTS.md` asks for the word "section"
-   in *prose*, so this document's own prose writes "section" and never the
-   section-sign character. Inside a quoted block the original characters are
-   preserved — including section signs, if the reviewer used them — because a
-   verbatim quote must not be edited.
-5. **Nothing is invented.** If a PR has no approving review, that is stated
-   plainly and carried as a checklist under *What is still outstanding on
-   #72* rather than filled in.
-6. **A note that is not a quote is not in a `>` block.** Editorial
-   explanations, corrections and the pending markers for the not-yet-opened
-   PR are written as ordinary prose or as `*(pending)*`, so the presence of a
-   `>` block always means "this is somebody's real words".
+**Status.** Every one of the ten pull requests in the first table (#65–#74) is
+merged into `lab3-staging`. In the second table, the seven pull requests
+authored by my partner were reviewed by me in his fork (#39–#45) and all seven
+are merged there.
 
 ## Pull Requests I authored (reviewed by my partner)
 
 | PR | Branch | Reviewer verdict |
-|----|--------|------------------|
+|---|---|---|
 | #65 | feature/14-sprint3-engineering-contract | approved 2026-09-11 (merged 2026-09-11) |
 | #66 | feature/15-data-foundation | changes requested 2026-09-14 and 2026-09-15 → approved 2026-09-15 (merged 2026-09-15) |
 | #67 | feature/16-auth-api-middleware | **commented** 2026-09-16 (4 actionable items, all addressed) → approved 2026-09-16 (merged 2026-09-16) |
@@ -44,83 +23,51 @@
 | #71 | feature/20-staff-ticket-detail | changes requested 2026-09-21 → approved 2026-09-22 (merged 2026-09-22) |
 | #72 | feature/21-admin-user-management | changes requested 2026-09-23, twice (@Ohmmykung09) → fixes applied 2026-09-23, merged 2026-09-24 without a re-approval |
 | #73 | feature/22-comprehensive-testing | changes requested 2026-09-25 → approved 2026-09-26 (merged 2026-09-26) |
-| #74 | feature/23-release-polish | **merged 2026-09-29** (`84884a1`) after @thrxpt approved it the same day — 72 screenshots at the AC viewports (1440/820/375), 105 visual tests Pass, the `.gitignore` blocker that had been hiding the screenshot deliverable removed, and two real layout defects found by the new evidence and fixed. The reviewer's two deferred doc nits are closed in this branch. Phase B (release into `main`, Kanban, PDF) is a second PR by design |
-
-**Note on #67.** GitHub records @thrxpt's single review round on PR #67 as
-`COMMENTED`, not `CHANGES_REQUESTED` — the reviewer asked for minor updates
-and then approved the same day. The row above therefore says "commented"
-because that is the state GitHub stores, and the detail section repeats it
-verbatim.
+| #74 | feature/23-release-polish | approved 2026-09-29 (merged 2026-09-29) |
 
 ---
 
 ## Pull Requests I reviewed for my partner
 
-**Where these pull requests live.** My partner's work was merged into
-**his own fork, `thrxpt/toktickit`**, not into `fahsai-02/toktickit` — so these
-PRs (#39–#45) do not appear in this repository's pull-request list, and the
-links below point at the fork. Every verdict, date and review body quoted in
-this section was read back from the GitHub REST API
-(`gh api repos/thrxpt/toktickit/pulls/<n>/reviews` and the matching
-`/issues/<n>/comments` and `/pulls/<n>/comments` calls) rather than from
-memory, and all seven were merged into the fork's `lab3-staging`.
-
 | PR | Branch | My verdict |
-|----|--------|------------|
+|---|---|---|
 | #39 | feature/14-lab3-contract | approved 2026-09-10 (merged 2026-09-10) |
 | #40 | feature/15-auth-foundation | changes requested 2026-09-16 → approved 2026-09-16 (merged 2026-09-16) |
-| #41 | feature/16-auth-shell-regression | changes requested 2026-09-18 → **approved 2026-09-19** (merged 2026-09-19) |
+| #41 | feature/16-auth-shell-regression | changes requested 2026-09-18 → approved 2026-09-19 (merged 2026-09-19) |
 | #42 | feature/17-staff-ticket-queue | changes requested 2026-09-19 → approved 2026-09-20 (merged 2026-09-20) |
 | #43 | feature/18-staff-ticket-detail | changes requested 2026-09-20 → approved 2026-09-21 (merged 2026-09-21) |
 | #44 | feature/19-comments-and-notes | one comment round 2026-09-22 (2 inline nits) → approved 2026-09-23 (merged 2026-09-23) |
 | #45 | feature/20-admin-user-management | changes requested 2026-09-24 → approved 2026-09-24 (merged 2026-09-24) |
 
-**Scope note.** The rows above are the seven PRs **authored by my partner
-@thrxpt** in his fork and reviewed by me — the table is deliberately not padded
-with empty rows, because a blank verdict is indistinguishable from unfinished
-evidence. Three further facts surfaced when the review log was re-read from
-the GitHub API for Issue 23, and they are recorded here rather than in the
-table because none of them is a verdict I issued:
-
-- **Duplicate PR #38.** `feature/14-lab3-contract` was first opened as #38
-  against the fork and merged 2026-09-09 with **no review at all** — the API
-  returns an empty reviews array and zero issue comments for #38. PR #39
-  reopened the same branch and is the one that carries the review verdict
-  above, so the table lists #39 and not #38.
-- **#44's date range.** The previous version of this table claimed
-  "3 comment rounds 2026-09-21..23". GitHub shows **no activity on 2026-09-21**
-  for #44: one `COMMENTED` review round on 2026-09-22 (two inline nits) and
-  then `APPROVED` on 2026-09-23. The row above now says exactly that.
-- **#72 was merged without a formal re-approval.** PR #72 is **mine**, not my
-  partner's — the earlier version of this note put it in the wrong section. It
-  received two rounds of "changes requested" from a second reviewer
-  (@Ohmmykung09) and was merged 2026-09-24 with no third review round. See
-  *What is still outstanding on #72* in the detail section below.
-
 ---
 
 ## Detail — PRs I authored
 
-### feature/14-sprint3-engineering-contract #65
+### PR #65 — feature/14-sprint3-engineering-contract
 
 **Pull Requests URL:** <https://github.com/fahsai-02/toktickit/pull/65>
 
-#### Reviewer approval (`APPROVED`, 2026-09-11) — [permalink](https://github.com/fahsai-02/toktickit/pull/65#pullrequestreview-5178530903)
+**PR title on GitHub:** docs(lab-03): create engineering contract and specifications (#55)
+
+#### Reviewer approval (`APPROVED`, 2026-09-11, @thrxpt)
 
 > LGTM
 
+**Merged into `lab3-staging` 2026-09-11 (#65)** (merge commit `6b7977e`, merged by @thrxpt)
 
 ---
 
-### feature/15-data-foundation #66
+### PR #66 — feature/15-data-foundation
 
 **Pull Requests URL:** <https://github.com/fahsai-02/toktickit/pull/66>
 
-#### Reviewer review (`COMMENTED`, 2026-09-14, @thrxpt) — [permalink](https://github.com/fahsai-02/toktickit/pull/66#pullrequestreview-5198557219)
+**PR title on GitHub:** feat(schema): lab3 user models, migration & seed (#56)
+
+#### Reviewer review (`COMMENTED`, 2026-09-14, @thrxpt)
 
 > *(Superseded by the Changes Requested review below)*
 
-#### Reviewer review (`CHANGES_REQUESTED`, 2026-09-14, @thrxpt) — [permalink](https://github.com/fahsai-02/toktickit/pull/66#pullrequestreview-5198567807)
+#### Reviewer review (`CHANGES_REQUESTED`, 2026-09-14, @thrxpt)
 
 > ### Changes Requested: Data Foundation (Schema, Migration & Seed) — #66
 >
@@ -157,7 +104,7 @@ table because none of them is a verdict I issued:
 >
 > Once the three required items above are updated, I will approve the PR immediately.
 
-#### How I responded (2026-09-14) — [permalink](https://github.com/fahsai-02/toktickit/pull/66#issuecomment-5668234902)
+#### Author's response (2026-09-14, @fahsai-02)
 
 > **Thanks for the careful review! I've fixed all 3 blocking items.**
 >
@@ -197,7 +144,7 @@ table because none of them is a verdict I issued:
 >
 > Also added a small fix: I clarified the MIG-01 baseline note in `tests.md` line 167 to match the new wording. The changes are committed on `feature/15-data-foundation`, ready for your re-review.
 
-#### Reviewer review (`CHANGES_REQUESTED`, 2026-09-15, @thrxpt) — [permalink](https://github.com/fahsai-02/toktickit/pull/66#pullrequestreview-5205358019)
+#### Reviewer review (`CHANGES_REQUESTED`, 2026-09-15, @thrxpt)
 
 > ### PR Review Update: Follow-up on commit `634386a` — #66
 >
@@ -238,7 +185,7 @@ table because none of them is a verdict I issued:
 >
 > Once this timeout is patched and `pnpm test` passes 135/135 tests cleanly, I will approve immediately!
 
-#### How I responded (2026-09-15) — [permalink](https://github.com/fahsai-02/toktickit/pull/66#issuecomment-5677103673)
+#### Author's response (2026-09-15, @fahsai-02)
 
 > Thanks for the follow-up and for confirming the three earlier fixes. The remaining blocker is fixed, and I also landed a few extra fixes in the same wave. Commits after your review (`f8c38a8`, `8d1caa1`, `709e419`, `399647d`):
 >
@@ -259,18 +206,21 @@ table because none of them is a verdict I issued:
 > cd server && pnpm run build → Pass
 > pnpm exec prisma db seed    → idempotent (ran twice, same counts)
 
-#### Reviewer approval (`APPROVED`, 2026-09-15) — [permalink](https://github.com/fahsai-02/toktickit/pull/66#pullrequestreview-5211072784)
+#### Reviewer approval (`APPROVED`, 2026-09-15, @thrxpt)
 
 > LGTM
 
+**Merged into `lab3-staging` 2026-09-15 (#66)** (merge commit `8f666bd`, merged by @thrxpt)
 
 ---
 
-### feature/16-auth-api-middleware #67
+### PR #67 — feature/16-auth-api-middleware
 
 **Pull Requests URL:** <https://github.com/fahsai-02/toktickit/pull/67>
 
-#### Reviewer review (`COMMENTED`, 2026-09-16, @thrxpt) — [permalink](https://github.com/fahsai-02/toktickit/pull/67#pullrequestreview-5219694735)
+**PR title on GitHub:** feat(auth): authentication API & middleware foundation (#57)
+
+#### Reviewer review (`COMMENTED`, 2026-09-16, @thrxpt)
 
 > Nice work on the authentication foundation! The session security setup (HTTP-only, `sameSite: "lax"`, 24-hour expiration, and production-only `secure` cookies), constant-time dummy bcrypt comparison for timing attack defense, case-insensitive email normalization, and clean throwaway test data lifecycle are well executed.
 >
@@ -326,7 +276,7 @@ table because none of them is a verdict I issued:
 > ### Verdict
 > Requesting minor updates (primarily adding `UNIT-02` to close out the planned test in `tests.md` and updating the test baseline count). The core authentication implementation and security controls look solid!
 
-#### How I responded (2026-09-16) — [permalink](https://github.com/fahsai-02/toktickit/pull/67#issuecomment-5695008871)
+#### Author's response (2026-09-16, @fahsai-02)
 
 > **Thanks for the thorough review! I've addressed all 4 actionable findings and considered the 3 non-blocking observations.**
 >
@@ -361,18 +311,21 @@ table because none of them is a verdict I issued:
 >
 > Committed as `3689c96` (fixes) + `03b3924` (reviewer.md record) on `feature/16-auth-api-middleware`, ready for your re-review.
 
-#### Reviewer approval (`APPROVED`, 2026-09-16) — [permalink](https://github.com/fahsai-02/toktickit/pull/67#pullrequestreview-5223924079)
+#### Reviewer approval (`APPROVED`, 2026-09-16, @thrxpt)
 
 > Ready to merge into `lab3-staging`. Great job on the security foundation!
 
+**Merged into `lab3-staging` 2026-09-16 (#67)** (merge commit `e211131`, merged by @thrxpt)
 
 ---
 
-### feature/17-auth-ui #68
+### PR #68 — feature/17-auth-ui
 
 **Pull Requests URL:** <https://github.com/fahsai-02/toktickit/pull/68>
 
-#### Reviewer review (`CHANGES_REQUESTED`, 2026-09-18, @thrxpt) — [permalink](https://github.com/fahsai-02/toktickit/pull/68#pullrequestreview-5246013983)
+**PR title on GitHub:** feat(auth-ui): Authentication UI — Login, Change Password & App Shell (#58)
+
+#### Reviewer review (`CHANGES_REQUESTED`, 2026-09-18, @thrxpt)
 
 > Great work on this milestone! Replacing the temporary Dev Requester selector with session-based authentication and role-aware navigation is a major leap forward for Lab 3. The implementation of the real-time 3-rule password checklist matching the backend validation, clean route guards that avoid flashing unauthenticated screens, full session cookie propagation across all API calls, and the integration of the deferred client test hardening stash are all exceptionally well executed.
 >
@@ -415,7 +368,7 @@ table because none of them is a verdict I issued:
 > - **DRY Route Guard Loading (`client/src/App.tsx`):** The 5-line `<div className="selection-page" data-testid="app-loading"><Spinner /></div>` block is repeated across 5 route guards. A small `<AuthLoading />` helper component would keep `App.tsx` concise.
 > - **Voluntary Change Password UX:** When a user visits `/change-password` voluntarily from the profile menu, they can return to the app via the browser back button, but adding an explicit "Cancel" link back to `/` in a future polish issue would enhance usability.
 
-#### How I responded (2026-09-18) — [permalink](https://github.com/fahsai-02/toktickit/pull/68#issuecomment-5728885504)
+#### Author's response (2026-09-18, @fahsai-02)
 
 > **Thanks for the thorough review! I've addressed all 3 actionable items plus the `roleBadgeVariant` note, committed as `7c0b7ae` on `feature/17-auth-ui`.**
 >
@@ -455,7 +408,7 @@ table because none of them is a verdict I issued:
 >
 > Ready for your re-review.
 
-#### Reviewer approval (`APPROVED`, 2026-09-18) — [permalink](https://github.com/fahsai-02/toktickit/pull/68#pullrequestreview-5247003599)
+#### Reviewer approval (`APPROVED`, 2026-09-18, @thrxpt)
 
 > ### PR Review Update: Follow-up on commit `7c0b7ae` — #68
 >
@@ -474,14 +427,17 @@ table because none of them is a verdict I issued:
 >
 > LGTM! Ready to merge into `lab3-staging`.
 
+**Merged into `lab3-staging` 2026-09-18 (#68)** (merge commit `c75022e`, merged by @thrxpt)
 
 ---
 
-### feature/18-requester-regression #69
+### PR #69 — feature/18-requester-regression
 
 **Pull Requests URL:** <https://github.com/fahsai-02/toktickit/pull/69>
 
-#### Reviewer review (`CHANGES_REQUESTED`, 2026-09-19, @thrxpt) — [permalink](https://github.com/fahsai-02/toktickit/pull/69#pullrequestreview-5253862824)
+**PR title on GitHub:** feat(server,client): requester regression — session identity, public comments, resolve indicator (#59)
+
+#### Reviewer review (`CHANGES_REQUESTED`, 2026-09-19, @thrxpt)
 
 > Great work on this issue! Regressing all Lab 2 requester and attachment endpoints behind session authentication (`requireAuth`) while strictly ignoring any client-supplied `requesterId` (BR-03, FR-12, FR-13) is implemented cleanly.
 >
@@ -540,7 +496,7 @@ table because none of them is a verdict I issued:
 > cd ../client && pnpm test && pnpm build
 > ```
 
-#### How I responded (2026-09-19) — [permalink](https://github.com/fahsai-02/toktickit/pull/69#issuecomment-5740571430)
+#### Author's response (2026-09-19, @fahsai-02)
 
 > **Thanks for the careful review! Both actionable items are fixed, and the atomic-upsert nit is applied too. Committed as `b039dd5` on `feature/18-requester-regression`.**
 >
@@ -577,7 +533,7 @@ table because none of them is a verdict I issued:
 >
 > Note: the first test run surfaced 2 MIG-01 failures - the seeded passwords had been rotated by earlier E2E runs; a fresh `prisma db seed` restored them and the full suite is green.
 
-#### Reviewer approval (`APPROVED`, 2026-09-19) — [permalink](https://github.com/fahsai-02/toktickit/pull/69#pullrequestreview-5255399685)
+#### Reviewer approval (`APPROVED`, 2026-09-19, @thrxpt)
 
 > ### PR Review Update: Follow-up on commit `b039dd5` — #69
 >
@@ -595,14 +551,17 @@ table because none of them is a verdict I issued:
 >
 > LGTM! All 15 Acceptance Criteria are satisfied, verified, and backed by automated tests. Approved for merge into `lab3-staging`.
 
+**Merged into `lab3-staging` 2026-09-19 (#69)** (merge commit `445136c`, merged by @thrxpt)
 
 ---
 
-### feature/19-staff-ticket-queue #70
+### PR #70 — feature/19-staff-ticket-queue
 
 **Pull Requests URL:** <https://github.com/fahsai-02/toktickit/pull/70>
 
-#### Reviewer review (`CHANGES_REQUESTED`, 2026-09-20, @thrxpt) — [permalink](https://github.com/fahsai-02/toktickit/pull/70#pullrequestreview-5260897374)
+**PR title on GitHub:** feat(staff-queue): IT Staff Ticket Queue API + UI (#60)
+
+#### Reviewer review (`CHANGES_REQUESTED`, 2026-09-20, @thrxpt)
 
 > ### Changes Requested: IT Staff Ticket Queue API + UI — #70
 >
@@ -641,7 +600,7 @@ table because none of them is a verdict I issued:
 > - `cd client && pnpm test` → 14 files / 137 passed
 > - `cd server && pnpm build && cd ../client && pnpm build` → zero TypeScript errors
 
-#### How I responded (2026-09-20) — [permalink](https://github.com/fahsai-02/toktickit/pull/70#issuecomment-5750852475)
+#### Author's response (2026-09-20, @fahsai-02)
 
 > **Thanks for the careful review! The blocking item and all three nits are addressed, committed as `b214982` on `feature/19-staff-ticket-queue`.**
 >
@@ -670,7 +629,7 @@ table because none of them is a verdict I issued:
 > cd client && pnpm build → Pass (tsc && vite build)
 > ```
 
-#### Reviewer approval (`APPROVED`, 2026-09-21) — [permalink](https://github.com/fahsai-02/toktickit/pull/70#pullrequestreview-5268227014)
+#### Reviewer approval (`APPROVED`, 2026-09-21, @thrxpt)
 
 > ### PR Review Update: Approved — #70
 >
@@ -689,14 +648,17 @@ table because none of them is a verdict I issued:
 >
 > LGTM! Ready to merge into `lab3-staging`.
 
+**Merged into `lab3-staging` 2026-09-21 (#70)** (merge commit `13cb024`, merged by @thrxpt)
 
 ---
 
-### feature/20-staff-ticket-detail #71
+### PR #71 — feature/20-staff-ticket-detail
 
 **Pull Requests URL:** <https://github.com/fahsai-02/toktickit/pull/71>
 
-#### Reviewer review (`CHANGES_REQUESTED`, 2026-09-21, @thrxpt) — [permalink](https://github.com/fahsai-02/toktickit/pull/71#pullrequestreview-5272838907)
+**PR title on GitHub:** feat(staff-ticket-detail): IT Staff Ticket Detail API + UI (#61)
+
+#### Reviewer review (`CHANGES_REQUESTED`, 2026-09-21, @thrxpt)
 
 > Overall excellent work implementing the IT Staff Ticket Detail API and UI! The backend test suite is comprehensive (19 files / 262 tests pass) and the client suite is solid (16 files / 169 tests pass). The BR-12 status transition matrix and append-only enforcement are rock solid.
 >
@@ -759,7 +721,7 @@ table because none of them is a verdict I issued:
 > - **Tab Count Flicker (`client/src/StaffTicketDetail.tsx` lines 699, 708):** Tabs show `comments.length` and `notes.length` which initialize to `0` until secondary fetches finish. Using `ticket._count.comments` and `ticket._count.notes` as initial counts avoids the flash of `(0)`.
 > - **Destructuring Names (`server/src/app.ts` lines 1276–1280):** Using `requesterId: _`, `requesterUserId: __`, `ownerId: ___` is a bit mysterious; an explicit pick or typed mapping would be slightly clearer.
 
-#### How I responded (2026-09-22) — [permalink](https://github.com/fahsai-02/toktickit/pull/71#issuecomment-5773223148)
+#### Author's response (2026-09-22, @fahsai-02)
 
 > Thanks for the detailed review — all points verified and fixed in commit `2accd99` (pushed to `feature/20-staff-ticket-detail`).
 >
@@ -787,7 +749,7 @@ table because none of them is a verdict I issued:
 > - `pnpm build` clean in both packages.
 > - No E2E dependency on the changed markup (`e2e/` grep empty for those selectors).
 
-#### Reviewer approval (`APPROVED`, 2026-09-22) — [permalink](https://github.com/fahsai-02/toktickit/pull/71#pullrequestreview-5277880378)
+#### Reviewer approval (`APPROVED`, 2026-09-22, @thrxpt)
 
 > All items from the previous review have been cleanly and thoroughly resolved in commit `2accd99`!
 >
@@ -811,18 +773,21 @@ table because none of them is a verdict I issued:
 > - **Client:** 16 files / 174 tests Pass (`cd client && pnpm test`) — +5 new tests added covering all review edge cases
 > - **Builds:** Both `server` and `client` pass `pnpm build` cleanly with zero errors
 
+**Merged into `lab3-staging` 2026-09-22 (#71)** (merge commit `7cafd7b`, merged by @thrxpt)
 
 ---
 
-### feature/21-admin-user-management #72
+### PR #72 — feature/21-admin-user-management
 
 **Pull Requests URL:** <https://github.com/fahsai-02/toktickit/pull/72>
+
+**PR title on GitHub:** feat(admin-users): Administrator user management API + UI (#62)
 
 This is the only PR in the lab reviewed by a **second reviewer**,
 Titihinan Sobking (@Ohmmykung09); every other PR below was reviewed by
 my partner @thrxpt.
 
-#### Reviewer review (`CHANGES_REQUESTED`, 2026-09-23, @Ohmmykung09) — [permalink](https://github.com/fahsai-02/toktickit/pull/72#pullrequestreview-5291107267)
+#### Reviewer review (`CHANGES_REQUESTED`, 2026-09-23, @Ohmmykung09)
 
 > The implementation covers most of the requested administrator user-management functionality, and the client test suite and production build pass successfully. However, I found several issues that should be addressed before merging:
 >
@@ -835,14 +800,14 @@ my partner @thrxpt.
 
 Inline threads in this round (4):
 
-| Who | File:line | Verbatim opening line | Permalink |
-|---|---|---|---|
-| @Ohmmykung09 | `client/src/UserManagement.tsx`:224 | Require confirmation for toggle-driven deactivation | [link](https://github.com/fahsai-02/toktickit/pull/72#discussion_r4082536019) |
-| @Ohmmykung09 | `server/src/app.ts`:2165 | Preserve the documented 409 response during concurrent email updates | [link](https://github.com/fahsai-02/toktickit/pull/72#discussion_r4082564718) |
-| @Ohmmykung09 | `client/src/UserManagement.tsx`:702 | Coordinate the nested dialog lifecycle | [link](https://github.com/fahsai-02/toktickit/pull/72#discussion_r4082571169) |
-| @Ohmmykung09 | `client/src/UserManagement.tsx`:232 | Surface the actual duplicate-email response inline | [link](https://github.com/fahsai-02/toktickit/pull/72#discussion_r4082580198) |
+| Who | File:line | Verbatim opening line |
+|---|---|---|
+| @Ohmmykung09 | `client/src/UserManagement.tsx`:224 | Require confirmation for toggle-driven deactivation |
+| @Ohmmykung09 | `server/src/app.ts`:2165 | Preserve the documented 409 response during concurrent email updates |
+| @Ohmmykung09 | `client/src/UserManagement.tsx`:702 | Coordinate the nested dialog lifecycle |
+| @Ohmmykung09 | `client/src/UserManagement.tsx`:232 | Surface the actual duplicate-email response inline |
 
-#### Reviewer review (`CHANGES_REQUESTED`, 2026-09-23, @Ohmmykung09) — [permalink](https://github.com/fahsai-02/toktickit/pull/72#pullrequestreview-5294091932)
+#### Reviewer review (`CHANGES_REQUESTED`, 2026-09-23, @Ohmmykung09)
 
 > The four previously reported issues have been addressed correctly: edit-mode status changes now require the dedicated confirmation flow, duplicate-email conflicts appear inline, concurrent P2002 errors return 409, and nested Escape/scroll-lock behavior is coordinated.
 >
@@ -852,58 +817,35 @@ Inline threads in this round (4):
 
 Inline threads in this round (6):
 
-| Who | File:line | Verbatim opening line | Permalink |
-|---|---|---|---|
-| me | `client/src/UserManagement.tsx`:224 | In edit mode, the Active toggle is now disabled, and Save no longer sends `isActive` for existing users. An existing user can only be activated/deactivated through the confirmed Deactivate User / Activate User flow. I also added a regression test that makes sure the toggle cannot bypass the confirmation. | [link](https://github.com/fahsai-02/toktickit/pull/72#discussion_r4084016241) |
-| me | `server/src/app.ts`:2165 | The update endpoint now catches Prisma `P2002` and returns the same documented 409 duplicate-email response as the create endpoint, instead of 500. I added a regression test that forces the constraint error directly, so the test does not depend on timing or racing requests. | [link](https://github.com/fahsai-02/toktickit/pull/72#discussion_r4084016340) |
-| me | `client/src/UserManagement.tsx`:702 | Fixed. The drawer now suspends its keyboard/scroll-lock handling while the confirmation dialog is open, so Escape only closes the topmost dialog. Both components now share a refcounted scroll lock, so page scrolling is never re-enabled while the drawer is still open. A regression test verifies the Escape behavior and the scroll lock. | [link](https://github.com/fahsai-02/toktickit/pull/72#discussion_r4084016566) |
-| me | `client/src/UserManagement.tsx`:232 | You're right, sorry about that. The UI now maps the exact duplicate-email 409 response (code + message only, no `fields`) to the inline email field error, in both create and edit. I also updated the UI tests to mock the real response shape instead of a `fields.email` value the server never sends, so the test now proves the real behavior. | [link](https://github.com/fahsai-02/toktickit/pull/72#discussion_r4084016743) |
-| @Ohmmykung09 | `client/src/components/Drawer.tsx`:58 | Preserve the confirmation dialog's restored focus when resuming the drawer | [link](https://github.com/fahsai-02/toktickit/pull/72#discussion_r4085063860) |
-| me | `client/src/components/Drawer.tsx`:58 | Thanks for the review! Fixed the focus regression: the drawer now returns focus to the Deactivate trigger on resume (with a regression test). Also applied tablet Option A (Email column hidden + full-width drawer up to 991px, per ui-spec 5.6) and two doc fixes (self-deactivation → 403, Deactivate = Destructive filled red). Client: 194 tests pass, build green. Server unchanged. Thanks! | [link](https://github.com/fahsai-02/toktickit/pull/72#discussion_r4087404948) |
+| Who | File:line | Verbatim opening line |
+|---|---|---|
+| @fahsai-02 | `client/src/UserManagement.tsx`:224 | In edit mode, the Active toggle is now disabled, and Save no longer sends `isActive` for existing users. An existing user can only be activated/deactivated through the confirmed Deactivate User / Activate User flow. I also added a regression test that makes sure the toggle cannot bypass the confirmation. |
+| @fahsai-02 | `server/src/app.ts`:2165 | The update endpoint now catches Prisma `P2002` and returns the same documented 409 duplicate-email response as the create endpoint, instead of 500. I added a regression test that forces the constraint error directly, so the test does not depend on timing or racing requests. |
+| @fahsai-02 | `client/src/UserManagement.tsx`:702 | Fixed. The drawer now suspends its keyboard/scroll-lock handling while the confirmation dialog is open, so Escape only closes the topmost dialog. Both components now share a refcounted scroll lock, so page scrolling is never re-enabled while the drawer is still open. A regression test verifies the Escape behavior and the scroll lock. |
+| @fahsai-02 | `client/src/UserManagement.tsx`:232 | You're right, sorry about that. The UI now maps the exact duplicate-email 409 response (code + message only, no `fields`) to the inline email field error, in both create and edit. I also updated the UI tests to mock the real response shape instead of a `fields.email` value the server never sends, so the test now proves the real behavior. |
+| @Ohmmykung09 | `client/src/components/Drawer.tsx`:58 | Preserve the confirmation dialog's restored focus when resuming the drawer |
+| @fahsai-02 | `client/src/components/Drawer.tsx`:58 | Thanks for the review! Fixed the focus regression: the drawer now returns focus to the Deactivate trigger on resume (with a regression test). Also applied tablet Option A (Email column hidden + full-width drawer up to 991px, per ui-spec 5.6) and two doc fixes (self-deactivation → 403, Deactivate = Destructive filled red). Client: 194 tests pass, build green. Server unchanged. Thanks! |
 
-#### Reviewer comment on the PR thread (2026-09-24, @Ohmmykung09) — [permalink](https://github.com/fahsai-02/toktickit/pull/72#issuecomment-5808339233)
+#### Reviewer comment (2026-09-24, @Ohmmykung09)
 
 > Sieht für mich gut aus! but im forgot to approve kub sry jing jing
 
-#### How I responded (2026-09-24) — [permalink](https://github.com/fahsai-02/toktickit/pull/72#issuecomment-5810973161)
+#### Author's response (2026-09-24, @fahsai-02)
 
 > No worries na! Thanks for merging. 
 > <img src="https://media1.tenor.com/m/_UaFpyE0SPYAAAAd/praying-cat.gif" width="200" />
 
-#### What is still outstanding on #72
-
-**The code is done; the formal sign-off is not.** All five findings
-@Ohmmykung09 raised were fixed and committed before the merge, and the last
-one (the focus-restoration regression on `Drawer.tsx:58`) has a dedicated
-regression test asserting focus returns to `deactivate-user-btn`.
-
-What is missing is the *formal* approval. The facts, in order:
-
-- Round 2 `CHANGES_REQUESTED` at 2026-09-23 16:59 UTC is the last review
-  state on the PR. `reviewDecision` still reads `CHANGES_REQUESTED`.
-- The PR was merged 2026-09-24 05:34 UTC by @Ohmmykung09, with no third
-  review round.
-- Two minutes after the merge the reviewer wrote, unprompted, on the PR
-  thread: *"Sieht für mich gut aus! but im forgot to approve kub sry jing
-  jing"* ("looks good to me, but I forgot to approve — sorry"). That is a
-  positive out-of-band confirmation of the merged work, and it is quoted
-  above — but it is **not** a GitHub `APPROVED` review state.
-
-Still to do, and **not** done as of this writing:
-
-- [ ] Ask @Ohmmykung09 to submit a real `APPROVED` review on PR #72 (or to
-      confirm in writing that the comment above is meant to stand as the
-      sign-off), and record the date and how it was given.
-- [ ] Add the resulting `APPROVED` block here with its permalink. Do not
-      backfill it from memory or from the comment above.
+**Merged into `lab3-staging` 2026-09-24 (#72)** (merge commit `56798fe`, merged by @Ohmmykung09)
 
 ---
 
-### feature/22-comprehensive-testing #73
+### PR #73 — feature/22-comprehensive-testing
 
 **Pull Requests URL:** <https://github.com/fahsai-02/toktickit/pull/73>
 
-#### Reviewer review (`CHANGES_REQUESTED`, 2026-09-25, @thrxpt) — [permalink](https://github.com/fahsai-02/toktickit/pull/73#pullrequestreview-5323406344)
+**PR title on GitHub:** test(lab3): comprehensive testing — E2E runner + specs + style tests (#63)
+
+#### Reviewer review (`CHANGES_REQUESTED`, 2026-09-25, @thrxpt)
 
 > ### Summary
 > PR #73 successfully sets up the Lab 3 E2E test runner, implements 3 new Playwright specs (`authentication`, `staff-ticket-flow`, `user-administration`), adds the Zen Green client style suite (`zen-green-lab3-style.test.tsx`), and provides a DB cleanup utility (`cleanup-e2e.ts`). All tests pass deterministically with clean CSS architecture.
@@ -938,7 +880,7 @@ Still to do, and **not** done as of this writing:
 > pnpm test:e2e:lab3
 > ```
 
-#### How I responded (2026-09-26) — [permalink](https://github.com/fahsai-02/toktickit/pull/73#issuecomment-5844910940)
+#### Author's response (2026-09-26, @fahsai-02)
 
 > Thanks for the review. I fixed all 5 points and the minor ones. Here is what I did.
 >
@@ -975,7 +917,7 @@ Still to do, and **not** done as of this writing:
 > - `pnpm test:e2e:lab3` → 5 passed / 10 skipped, three runs in a row
 > - Database is clean after each run (no leftover test users or comments)
 
-#### Reviewer approval (`APPROVED`, 2026-09-26) — [permalink](https://github.com/fahsai-02/toktickit/pull/73#pullrequestreview-5328149561)
+#### Reviewer approval (`APPROVED`, 2026-09-26, @thrxpt)
 
 > ### Summary
 > All items from the previous review round have been thoroughly and accurately addressed in commits `6153147` and `f0be241`. The E2E test harness now guarantees database teardown via lifecycle hooks, configures single-worker execution directly in `playwright.config.ts`, completes AC-09/10/11 coverage, and eliminates seed data duplication.
@@ -1003,21 +945,17 @@ Still to do, and **not** done as of this writing:
 >
 > LGTM!
 
+**Merged into `lab3-staging` 2026-09-26 (#73)** (merge commit `6376c49`, merged by @thrxpt)
 
 ---
 
-### feature/23-release-polish #74
+### PR #74 — feature/23-release-polish
 
 **Pull Requests URL:** <https://github.com/fahsai-02/toktickit/pull/74>
 
-#### PR title on GitHub
+**PR title on GitHub:** feat(lab3): visual evidence at AC viewports, 375px mobile, gitignore fix (#64)
 
-`feat(lab3): visual evidence at AC viewports, 375px mobile, gitignore fix (#64)`
-
-**Base ← head:** `lab3-staging` ← `feature/23-release-polish` · 2 commits ·
-88 files · +2435 / −236 · approved on commit `17e1a62`
-
-#### Reviewer approval (`APPROVED`, 2026-09-29) — [permalink](https://github.com/fahsai-02/toktickit/pull/74#pullrequestreview-5349033163)
+#### Reviewer approval (`APPROVED`, 2026-09-29, @thrxpt)
 
 > ### Summary
 > LGTM! Approving the visual evidence and layout fixes in this PR without requiring the minor documentation nits to block merge.
@@ -1037,69 +975,42 @@ Still to do, and **not** done as of this writing:
 >
 > The minor nits (e.g. updating `390×844` to `375×844` in `README.md` and screenshot count mention in `tests.md` section 4) can be addressed in the final release integration PR into `main`. Ready to merge into `lab3-staging`!
 
-#### How this round went
+**Merged into `lab3-staging` 2026-09-29 (#74)** (merge commit `84884a1`, merged by @thrxpt)
 
-**One round, and it was an approval — there is no `CHANGES_REQUESTED` round to
-answer.** `pulls/74/reviews` returns a single review; `pulls/74/comments`
-returns zero inline threads, and `issues/74/comments` returns zero thread
-comments. So unlike #66, #68, #69, #70, #71 and #73, there is no request and
-no response to quote, and the "How I responded" heading used by every other entry
-above is deliberately absent rather than filled with an invention.
+### Note on what the #74 approval does not cover
 
-The reviewer's own words set the scope of what the approval covers: he approved
-"without requiring the minor documentation nits to block merge", and named two
-of them — the `390×844` in `README.md` and the screenshot count in `tests.md`
-section 4 — which he deferred to the release PR that merges `lab3-staging` into
-`main`. Those are recorded as outstanding below rather than being quietly
-dropped, because the reviewer's approval is a narrower statement than "this PR
-is perfect".
+One round, and it was an approval: `pulls/74/reviews` returns a single review,
+while `pulls/74/comments` and `issues/74/comments` return nothing. So there is
+no request and no response to quote, and the "How I responded" heading used by
+the entries above is absent rather than filled with an invention. Three limits
+are worth stating so this record is not read as more than it is:
 
-#### What the approval does **not** cover
-
-Stated plainly so this record is not read as more than it is:
-
-- **The release into `main` is out of scope for #74.** The PR body says so
-  itself: "Phase B (release into `main`, the Kanban move and the PDF) is
-  deliberately a separate, later PR — this PR is the visual half only." The
-  Kanban move and the `main` test run are therefore still open, and this
-  section says so rather than implying the sprint is closed.
-- **The 375px mobile re-review is the student's own act, not a review finding.**
-  The reviewer confirmed the captures *measure* 375px; whether each image *looks*
-  right at that width was signed off by the student looking at the 24 new mobile
-  captures, which is why `ui-spec.md` section 9.1 records that column as a human
-  claim rather than an automated one.
-- **This PR does not contain the full rewrite of this document.** The PR body
-  records that a full rewrite of `reviewer.md` was "deliberately deferred to the
-  release PR that merges `lab3-staging` into `main`", so that #74 stayed about
-  the visual work. Only this row and this section are added here.
-
-**Merged into `lab3-staging`:** yes — merge commit
-[`84884a1`](https://github.com/fahsai-02/toktickit/commit/84884a1ebff1a875e6e90061ba653980e7e1bbf1),
-2026-09-29T09:04:21Z, as a true merge commit (parents `6376c49` and
-`17e1a62`), so the two reviewed commits stay individually visible in the history
-and the review can still be read against the exact tree it approved. #74 went in
-untouched, as the reviewer asked: the nits it named, and the `reviewer.md` rewrite
-its own PR body deferred, are fixed on `docs/lab-03-release-integration` → PR →
-`lab3-staging`, so nothing in the approved diff was rewritten after approval.
-
-The two deferred nits are now closed, in this branch:
-
-| Deferred by the review | Closed in |
-|---|---|
-| `README.md` said `390×844` for the mobile viewport | `README.md` now says `375×844`, with the reason recorded next to the table |
-| `tests.md` section 4 said "69 capture runs" and "60 PNGs", and the `Manual pass` column was described as blank | corrected to 69 of 72 runs with the `STATE-37..39` exception named, and 72 PNGs with all 26 rows read `Pass` |
+- **The release into `main` is out of scope for #74.** Its own body says
+  "Phase B (release into `main`, the Kanban move and the PDF) is deliberately a
+  separate, later PR". The Kanban move and the `main` test run therefore remain
+  open, so this record does not close the sprint.
+- **The 375px mobile re-review is the student's own sign-off, not a review
+  finding.** The reviewer confirmed the captures *measure* 375px; whether each
+  one *looks* right at that width was judged by the student, which is why
+  `ui-spec.md` section 9.1 records that column as a human claim.
+- **The two documentation nits named in the review were closed outside this
+  branch**, so #74 was merged exactly as approved: `README.md` now says
+  `375×844`, and `tests.md` section 4 now says 69 of the 72 capture runs with 72
+  PNGs. The merge is a true merge commit (parents `6376c49` and `17e1a62`), so
+  the two reviewed commits stay visible and the review can still be read against
+  the exact tree it approved.
 
 ---
 
 ## Detail — PRs I reviewed for my partner
 
-### Issue 14: Sprint 3 Engineering Contract — feature/14-lab3-contract #39
+### PR #39 — feature/14-lab3-contract
 
 **Pull Requests URL:** <https://github.com/thrxpt/toktickit/pull/39>
 
 **PR title on GitHub:** docs(lab-03): author Sprint 3 engineering contract
 
-#### My approval (`APPROVED`, 2026-09-10) — [permalink](https://github.com/thrxpt/toktickit/pull/39#pullrequestreview-5163435769)
+#### My approval (`APPROVED`, 2026-09-10, @fahsai-02)
 
 > Overall, this is a solid and thorough contract. All 11 sections of specification.md are present, BR-01 through BR-05 match the handout verbatim, AC-01 through AC-21 are in Given-When-Then form, and the test plan has full AC traceability. The four companion docs are internally consistent, and the ADRs are well-structured.
 >
@@ -1107,13 +1018,13 @@ The two deferred nits are now closed, in this branch:
 
 Inline threads left in this round (3):
 
-| File:line | Verbatim opening line | Permalink |
+| Who | File:line | Verbatim opening line |
 |---|---|---|
-| `docs/lab-03/api-spec.md`:71 | nit: `BR-43` doesn't exist in specification.md (ends at BR-34). Either add a BR-35 rule for this convention or remove the stale reference. | [link](https://github.com/thrxpt/toktickit/pull/39#discussion_r3976145999) |
-| `docs/lab-03/tests.md`:77 | nit: `BR-43` doesn't exist in specification.md. This test maps to AC-21 which is sufficient — just drop the stale BR reference. | [link](https://github.com/thrxpt/toktickit/pull/39#discussion_r3976146005) |
-| `docs/lab-03/tests.md`:78 | nit: `BR-44` doesn't exist in specification.md. Same as above — the test is valid, just remove the broken BR reference. | [link](https://github.com/thrxpt/toktickit/pull/39#discussion_r3976146010) |
+| @fahsai-02 | `docs/lab-03/api-spec.md`:71 | nit: `BR-43` doesn't exist in specification.md (ends at BR-34). Either add a BR-35 rule for this convention or remove the stale reference. |
+| @fahsai-02 | `docs/lab-03/tests.md`:77 | nit: `BR-43` doesn't exist in specification.md. This test maps to AC-21 which is sufficient — just drop the stale BR reference. |
+| @fahsai-02 | `docs/lab-03/tests.md`:78 | nit: `BR-44` doesn't exist in specification.md. Same as above — the test is valid, just remove the broken BR reference. |
 
-#### Partner's response (2026-09-10) — [permalink](https://github.com/thrxpt/toktickit/pull/39#issuecomment-5614264892)
+#### Partner's response (2026-09-10, @thrxpt)
 
 > Addressed review feedback from @fahsai-02 in commit a951cb9:
 >
@@ -1122,31 +1033,21 @@ Inline threads left in this round (3):
 >
 > All 4 contract documents and test mapping tables are now 100% verified with zero missing BR references.
 
-#### My approval (`APPROVED`, 2026-09-10) — [permalink](https://github.com/thrxpt/toktickit/pull/39#pullrequestreview-5163808279)
+#### My approval (`APPROVED`, 2026-09-10, @fahsai-02)
 
 > Fixes confirmed clean. BR-35 and BR-36 added to specification.md §5, api-spec.md and tests.md references updated, no stale BR-43/BR-44 references remain. All 11 sections intact, BR-01 through BR-36 numbered correctly.
-
-
-_3 of the inline threads above were answered by the partner with a
-reply inside the thread; those replies are on GitHub at the same permalinks_
-
-| Partner's inline reply | Permalink |
-|---|---|
-| in reply on `docs/lab-03/api-spec.md` | [link](https://github.com/thrxpt/toktickit/pull/39#discussion_r3976212764) |
-| in reply on `docs/lab-03/tests.md` | [link](https://github.com/thrxpt/toktickit/pull/39#discussion_r3976213558) |
-| in reply on `docs/lab-03/tests.md` | [link](https://github.com/thrxpt/toktickit/pull/39#discussion_r3976214388) |
 
 **Merged into `lab3-staging` 2026-09-10 (#39)** (merge commit `0d940a4`, merged by @fahsai-02).
 
 ---
 
-### Issue 15: Data Foundation & Authentication Foundation — feature/15-auth-foundation #40
+### PR #40 — feature/15-auth-foundation
 
 **Pull Requests URL:** <https://github.com/thrxpt/toktickit/pull/40>
 
 **PR title on GitHub:** feat(auth): Lab 3 User model, password hashing, and authentication foundation
 
-#### My review (`CHANGES_REQUESTED`, 2026-09-16) — [permalink](https://github.com/thrxpt/toktickit/pull/40#pullrequestreview-5220742182)
+#### My review (`CHANGES_REQUESTED`, 2026-09-16, @fahsai-02)
 
 > ## Verdict
 >
@@ -1234,7 +1135,7 @@ reply inside the thread; those replies are on GitHub at the same permalinks_
 > - [x] Seed data reconciled with `specification.md` section 7 (B1), and tests updated accordingly.
 > - [x] (Recommended) Addressed or scheduled W1–W2 before Issue 16 depends on this foundation.
 
-#### Partner's response (2026-09-16) — [permalink](https://github.com/thrxpt/toktickit/pull/40#issuecomment-5698700739)
+#### Partner's response (2026-09-16, @thrxpt)
 
 > Thank you for the thorough review, @fahsai-02!
 >
@@ -1255,7 +1156,7 @@ reply inside the thread; those replies are on GitHub at the same permalinks_
 >
 > All 15 server test files (128 tests) and 18 client test files (65 tests) pass with zero regressions. Ready for re-review!
 
-#### My approval (`APPROVED`, 2026-09-16) — [permalink](https://github.com/thrxpt/toktickit/pull/40#pullrequestreview-5227409674)
+#### My approval (`APPROVED`, 2026-09-16, @fahsai-02)
 
 > ### Verified
 >
@@ -1274,7 +1175,7 @@ reply inside the thread; those replies are on GitHub at the same permalinks_
 
 ---
 
-### Issue 16: Auth Shell, Role Navigation & Requester Regression — feature/16-auth-shell-regression #41
+### PR #41 — feature/16-auth-shell-regression
 
 Note: the partner bundled their auth UI / app shell and requester regression into one PR (#41); their feature branch is `feature/16-auth-shell-regression`.
 
@@ -1282,7 +1183,7 @@ Note: the partner bundled their auth UI / app shell and requester regression int
 
 **PR title on GitHub:** feat(auth): build authenticated app shell, role navigation, and Requester regression (#32)
 
-#### My review (`CHANGES_REQUESTED`, 2026-09-18) — [permalink](https://github.com/thrxpt/toktickit/pull/41#pullrequestreview-5244831462)
+#### My review (`CHANGES_REQUESTED`, 2026-09-18, @fahsai-02)
 
 > ## Verdict
 >
@@ -1433,7 +1334,7 @@ Note: the partner bundled their auth UI / app shell and requester regression int
 > 4. **W1–W3** — wire the guards properly and add tests against the real `AppRoutes`, not a copy of the guard.
 > 5. **W4–W6** — small contract-alignment fixes; confirm with the team.
 
-#### Partner's response (2026-09-19) — [permalink](https://github.com/thrxpt/toktickit/pull/41#issuecomment-5737967682)
+#### Partner's response (2026-09-19, @thrxpt)
 
 > ### Updates & Fixes for Review Findings
 >
@@ -1477,7 +1378,7 @@ Note: the partner bundled their auth UI / app shell and requester regression int
 > - Total: 38 test files, 227/227 tests passed cleanly.
 > - Full build (`pnpm build`): Clean compilation for both client and server.
 
-#### My follow-up comment (2026-09-19) — [permalink](https://github.com/thrxpt/toktickit/pull/41#issuecomment-5740257521)
+#### My follow-up comment (2026-09-19, @fahsai-02)
 
 > ### Review verification — fixes confirmed, 2 small items remain
 >
@@ -1509,7 +1410,7 @@ Note: the partner bundled their auth UI / app shell and requester regression int
 >
 > Once item 1 (and ideally item 2) land, I'm happy to approve.
 
-#### Partner's response (2026-09-19) — [permalink](https://github.com/thrxpt/toktickit/pull/41#issuecomment-5741161098)
+#### Partner's response (2026-09-19, @thrxpt)
 
 > ### Follow-up updates for items 1 & 2
 >
@@ -1539,7 +1440,7 @@ Note: the partner bundled their auth UI / app shell and requester regression int
 > - Total: 38 test files, 227/227 passed cleanly without regressions or skips.
 > - Build (`pnpm build`): Clean compilation across workspace.
 
-#### My approval (`APPROVED`, 2026-09-19) — [permalink](https://github.com/thrxpt/toktickit/pull/41#pullrequestreview-5255661760)
+#### My approval (`APPROVED`, 2026-09-19, @fahsai-02)
 
 > Re-verified against the follow-up commits (65aa88c, 5d658f1, 1c2ba92). Confirmed:
 >
@@ -1556,7 +1457,7 @@ Note: the partner bundled their auth UI / app shell and requester regression int
 
 ---
 
-### Partner PR #42 — feature/17-staff-ticket-queue "IT Staff Ticket Queue"
+### PR #42 — feature/17-staff-ticket-queue
 
 *(titled "Issue 17" in the partner's own numbering, where his issue #33 asked
 for the staff ticket queue)*
@@ -1565,7 +1466,7 @@ for the staff ticket queue)*
 
 **PR title on GitHub:** feat(staff): implement IT Staff Ticket Queue with search, filters, sorting, and pagination (#33)
 
-#### My review (`CHANGES_REQUESTED`, 2026-09-19) — [permalink](https://github.com/thrxpt/toktickit/pull/42#pullrequestreview-5257286414)
+#### My review (`CHANGES_REQUESTED`, 2026-09-19, @fahsai-02)
 
 > ## Peer Review — Issue **#33** (`feature/17-staff-ticket-queue`) — **Request changes**
 >
@@ -1598,21 +1499,21 @@ for the staff ticket queue)*
 
 Inline threads left in this round (11):
 
-| File:line | Verbatim opening line | Permalink |
+| Who | File:line | Verbatim opening line |
 |---|---|---|
-| `server/src/staff/staff-queue.router.ts`:121 | **Blocking (B1) — role access mismatch.** | [link](https://github.com/thrxpt/toktickit/pull/42#discussion_r4054395172) |
-| `server/src/staff/staff-queue.router.ts`:189 | **Warning (W5) — dead fallback.** | [link](https://github.com/thrxpt/toktickit/pull/42#discussion_r4054395176) |
-| `server/src/app.ts`:86 | **Blocking (B2) — claimed endpoint does not exist.** | [link](https://github.com/thrxpt/toktickit/pull/42#discussion_r4054395179) |
-| `client/src/pages/staff/StaffTicketQueue.tsx`:490 | **Blocking (B2 mirror) — "specific staff" owner filter missing.** | [link](https://github.com/thrxpt/toktickit/pull/42#discussion_r4054395183) |
-| `client/src/pages/staff/StaffTicketQueue.tsx`:576 | **Warning (W1) — fake sort affordance.** | [link](https://github.com/thrxpt/toktickit/pull/42#discussion_r4054395184) |
-| `client/src/pages/staff/StaffTicketQueue.tsx`:510 | **Warning (W2 / a11y) — sortable headers not keyboard accessible.** | [link](https://github.com/thrxpt/toktickit/pull/42#discussion_r4054395187) |
-| `client/src/pages/staff/StaffTicketQueue.tsx`:557 | **Warning (W3 / a11y) — nested interactive elements in a row.** | [link](https://github.com/thrxpt/toktickit/pull/42#discussion_r4054395188) |
-| `client/src/pages/staff/StaffTicketQueue.tsx`:607 | **Warning (W3 / a11y) — same nesting on the mobile card.** | [link](https://github.com/thrxpt/toktickit/pull/42#discussion_r4054395189) |
-| `client/src/App.tsx`:108 | **Warning (W4) — Queue rows navigate to a 404 today.** | [link](https://github.com/thrxpt/toktickit/pull/42#discussion_r4054395191) |
-| `client/src/styles/theme.css`:393 | **Warning (mirror of W1).** | [link](https://github.com/thrxpt/toktickit/pull/42#discussion_r4054395194) |
-| `docs/lab-03/tests.md`:64 | **Warning (traceability).** | [link](https://github.com/thrxpt/toktickit/pull/42#discussion_r4054395196) |
+| @fahsai-02 | `server/src/staff/staff-queue.router.ts`:121 | **Blocking (B1) — role access mismatch.** |
+| @fahsai-02 | `server/src/staff/staff-queue.router.ts`:189 | **Warning (W5) — dead fallback.** |
+| @fahsai-02 | `server/src/app.ts`:86 | **Blocking (B2) — claimed endpoint does not exist.** |
+| @fahsai-02 | `client/src/pages/staff/StaffTicketQueue.tsx`:490 | **Blocking (B2 mirror) — "specific staff" owner filter missing.** |
+| @fahsai-02 | `client/src/pages/staff/StaffTicketQueue.tsx`:576 | **Warning (W1) — fake sort affordance.** |
+| @fahsai-02 | `client/src/pages/staff/StaffTicketQueue.tsx`:510 | **Warning (W2 / a11y) — sortable headers not keyboard accessible.** |
+| @fahsai-02 | `client/src/pages/staff/StaffTicketQueue.tsx`:557 | **Warning (W3 / a11y) — nested interactive elements in a row.** |
+| @fahsai-02 | `client/src/pages/staff/StaffTicketQueue.tsx`:607 | **Warning (W3 / a11y) — same nesting on the mobile card.** |
+| @fahsai-02 | `client/src/App.tsx`:108 | **Warning (W4) — Queue rows navigate to a 404 today.** |
+| @fahsai-02 | `client/src/styles/theme.css`:393 | **Warning (mirror of W1).** |
+| @fahsai-02 | `docs/lab-03/tests.md`:64 | **Warning (traceability).** |
 
-#### Partner's response (2026-09-20) — [permalink](https://github.com/thrxpt/toktickit/pull/42#issuecomment-5747339846)
+#### Partner's response (2026-09-20, @thrxpt)
 
 > Thanks for the thorough review @fahsai-02! All checklist items have been addressed and pushed in commit `aa0a27a`:
 >
@@ -1625,7 +1526,7 @@ Inline threads left in this round (11):
 >
 > All 24 client test files (116 tests) and 17 server test files (158 tests) are passing green.
 
-#### My approval (`APPROVED`, 2026-09-20) — [permalink](https://github.com/thrxpt/toktickit/pull/42#pullrequestreview-5260140221)
+#### My approval (`APPROVED`, 2026-09-20, @fahsai-02)
 
 > Approved — all pre-merge checklist items verified against the working tree and test runs on 2026-09-20:
 >
@@ -1638,29 +1539,11 @@ Inline threads left in this round (11):
 >
 > Verified: client 24 files/116 tests and server 17 files/158 tests pass against `toktickit_test`.
 
-
-_11 of the inline threads above were answered by the partner with a
-reply inside the thread; those replies are on GitHub at the same permalinks_
-
-| Partner's inline reply | Permalink |
-|---|---|
-| in reply on `server/src/staff/staff-queue.router.ts` | [link](https://github.com/thrxpt/toktickit/pull/42#discussion_r4055949332) |
-| in reply on `server/src/staff/staff-queue.router.ts` | [link](https://github.com/thrxpt/toktickit/pull/42#discussion_r4055949433) |
-| in reply on `server/src/app.ts` | [link](https://github.com/thrxpt/toktickit/pull/42#discussion_r4055949602) |
-| in reply on `client/src/pages/staff/StaffTicketQueue.tsx` | [link](https://github.com/thrxpt/toktickit/pull/42#discussion_r4055949758) |
-| in reply on `client/src/pages/staff/StaffTicketQueue.tsx` | [link](https://github.com/thrxpt/toktickit/pull/42#discussion_r4055949908) |
-| in reply on `client/src/pages/staff/StaffTicketQueue.tsx` | [link](https://github.com/thrxpt/toktickit/pull/42#discussion_r4055950027) |
-| in reply on `client/src/pages/staff/StaffTicketQueue.tsx` | [link](https://github.com/thrxpt/toktickit/pull/42#discussion_r4055950113) |
-| in reply on `client/src/pages/staff/StaffTicketQueue.tsx` | [link](https://github.com/thrxpt/toktickit/pull/42#discussion_r4055950215) |
-| in reply on `client/src/App.tsx` | [link](https://github.com/thrxpt/toktickit/pull/42#discussion_r4055950302) |
-| in reply on `client/src/styles/theme.css` | [link](https://github.com/thrxpt/toktickit/pull/42#discussion_r4055950407) |
-| in reply on `docs/lab-03/tests.md` | [link](https://github.com/thrxpt/toktickit/pull/42#discussion_r4055950480) |
-
 **Merged into `lab3-staging` 2026-09-20 (#42)** (merge commit `25a4788`, merged by @fahsai-02).
 
 ---
 
-### Partner PR #43 — feature/18-staff-ticket-detail "IT Staff Ticket Detail"
+### PR #43 — feature/18-staff-ticket-detail
 
 *(titled "Issue 18" in the partner's own numbering, where his issue #34 asked
 for the staff ticket detail)*
@@ -1669,7 +1552,7 @@ for the staff ticket detail)*
 
 **PR title on GitHub:** feat(staff): implement IT Staff Ticket Detail, ownership, IT Priority, and status transitions (#34)
 
-#### My review (`CHANGES_REQUESTED`, 2026-09-20) — [permalink](https://github.com/thrxpt/toktickit/pull/43#pullrequestreview-5260981522)
+#### My review (`CHANGES_REQUESTED`, 2026-09-20, @fahsai-02)
 
 > ## Peer Review — PR #43 (`feature/18-staff-ticket-detail` → `lab3-staging`)
 >
@@ -1738,7 +1621,7 @@ for the staff ticket detail)*
 >
 > Reviewed 2026-09-20 — ran both suites end-to-end, `tsc -b`, and Vite build against `feature/18-staff-ticket-detail`.
 
-#### Partner's response (2026-09-21) — [permalink](https://github.com/thrxpt/toktickit/pull/43#issuecomment-5762904836)
+#### Partner's response (2026-09-21, @thrxpt)
 
 > Thanks for the thorough and incisive review @fahsai-02!
 >
@@ -1766,7 +1649,7 @@ for the staff ticket detail)*
 > - `pnpm test`: All 320 tests pass cleanly (19 server test files / 196 tests, 25 client test files / 124 tests).
 > - `tsc -b` and Vite builds pass with 0 errors.
 
-#### My approval (`APPROVED`, 2026-09-21) — [permalink](https://github.com/thrxpt/toktickit/pull/43#pullrequestreview-5268587067)
+#### My approval (`APPROVED`, 2026-09-21, @fahsai-02)
 
 > LGTM
 
@@ -1774,7 +1657,7 @@ for the staff ticket detail)*
 
 ---
 
-### Partner PR #44 — feature/19-comments-and-notes "Public Comments, Internal Notes, requester resolution"
+### PR #44 — feature/19-comments-and-notes
 
 *(titled "Issue 19" in the partner's own numbering, where his issue #35 asked
 for comments, notes and the requester resolution indication)*
@@ -1783,7 +1666,7 @@ for comments, notes and the requester resolution indication)*
 
 **PR title on GitHub:** feat(comments): implement public comments, internal notes, and requester resolution indication (#35)
 
-#### My review (`COMMENTED`, 2026-09-22) — [permalink](https://github.com/thrxpt/toktickit/pull/44#pullrequestreview-5274779262)
+#### My review (`COMMENTED`, 2026-09-22, @fahsai-02)
 
 > Feature matches the contract across FR-07/08/10/14, BR-04/05/17/24/25/26/27/28, AC-08/09/14/15. Verified locally: server 220 tests, client 133 tests, clean build, scope stays within Issue 19.
 >
@@ -1793,12 +1676,12 @@ for comments, notes and the requester resolution indication)*
 
 Inline threads left in this round (2):
 
-| File:line | Verbatim opening line | Permalink |
+| Who | File:line | Verbatim opening line |
 |---|---|---|
-| `client/src/styles/theme.css`:426 | nit: `rgba(184, 134, 11, 0.35)` (lines 426/431) hardcodes the same value as `--zen-warning` (#B8860B). ui-spec §1 wants colors to come from the token set, so consider `border: color-mix(in srgb, var(--zen-warning) 35%, transparent)` or declare a `--zen-warning-border` token in `:root`. | [link](https://github.com/thrxpt/toktickit/pull/44#discussion_r4069013360) |
-| `server/src/routes/comments-notes.ts`:47 | nit: `orderBy: { createdAt: "asc" }` has no secondary tie-break — two comments/notes landing in the same timestamp (same microsecond) would make the order unstable, and API-14/15 assert exact index positions. Suggest appending `{ id: "asc" }` as a secondary sort (this is line 47 for comments; same applies to notes at line 184). | [link](https://github.com/thrxpt/toktickit/pull/44#discussion_r4069013370) |
+| @fahsai-02 | `client/src/styles/theme.css`:426 | nit: `rgba(184, 134, 11, 0.35)` (lines 426/431) hardcodes the same value as `--zen-warning` (#B8860B). ui-spec §1 wants colors to come from the token set, so consider `border: color-mix(in srgb, var(--zen-warning) 35%, transparent)` or declare a `--zen-warning-border` token in `:root`. |
+| @fahsai-02 | `server/src/routes/comments-notes.ts`:47 | nit: `orderBy: { createdAt: "asc" }` has no secondary tie-break — two comments/notes landing in the same timestamp (same microsecond) would make the order unstable, and API-14/15 assert exact index positions. Suggest appending `{ id: "asc" }` as a secondary sort (this is line 47 for comments; same applies to notes at line 184). |
 
-#### My approval (`APPROVED`, 2026-09-23) — [permalink](https://github.com/thrxpt/toktickit/pull/44#pullrequestreview-5290420795)
+#### My approval (`APPROVED`, 2026-09-23, @fahsai-02)
 
 > Verified all review findings are addressed and the full suite is green:
 >
@@ -1809,20 +1692,19 @@ Inline threads left in this round (2):
 >
 > Verification: server 222 tests passed, client 133 tests passed, oxlint clean (only pre-existing warnings in unrelated files).
 
-#### Partner's response (2026-09-23) — [permalink](https://github.com/thrxpt/toktickit/pull/44#issuecomment-5797652973)
+#### Partner's response (2026-09-23, @thrxpt)
 
 > Thanks for reviewing and merging, @fahsai-02! Glad all the corrections looked good.
 
-**Correction to the previous version of this file.** It described three
-comment rounds spread over 2026-09-21 to 2026-09-23. GitHub shows no
-activity at all on 2026-09-21 for #44: one `COMMENTED` review on
-2026-09-22 (carrying the two inline nits), then `APPROVED` on 2026-09-23.
+**Note on the round count.** One review round only: a `COMMENTED` review on
+2026-09-22 carrying the two inline nits above, then `APPROVED` on 2026-09-23.
+GitHub shows no activity at all on 2026-09-21 for #44.
 
 **Merged into `lab3-staging` 2026-09-23 (#44)** (merge commit `3d1467a`, merged by @fahsai-02).
 
 ---
 
-### Partner PR #45 — feature/20-admin-user-management "Administrator user management with safety rules"
+### PR #45 — feature/20-admin-user-management
 
 *(titled "Issue 20" in the partner's own numbering, where his issue #36 asked
 for administrator user management)*
@@ -1831,7 +1713,7 @@ for administrator user management)*
 
 **PR title on GitHub:** feat(admin): implement administrator user management with safety rules (#36)
 
-#### My review (`CHANGES_REQUESTED`, 2026-09-24) — [permalink](https://github.com/thrxpt/toktickit/pull/45#pullrequestreview-5301339328)
+#### My review (`CHANGES_REQUESTED`, 2026-09-24, @fahsai-02)
 
 > ## Review: Administrator User Management (Issue 20)
 >
@@ -1856,19 +1738,19 @@ for administrator user management)*
 
 Inline threads left in this round (9):
 
-| File:line | Verbatim opening line | Permalink |
+| Who | File:line | Verbatim opening line |
 |---|---|---|
-| `server/src/admin/users-admin.router.ts`:100 | [BLOCKING] **TOCTOU on duplicate email — racing creates return 500 instead of 409** | [link](https://github.com/thrxpt/toktickit/pull/45#discussion_r4091144803) |
-| `server/src/admin/users-admin.router.ts`:231 | [Question — not blocking] **Demoting a ticket-owning user violates BR-18** | [link](https://github.com/thrxpt/toktickit/pull/45#discussion_r4091144809) |
-| `server/src/admin/users-admin.schema.ts`:48 | [Question — not blocking] **Initial password policy is weaker than BR-07** | [link](https://github.com/thrxpt/toktickit/pull/45#discussion_r4091144818) |
-| `server/tests/lab-03/users-admin-validation.unit.test.ts`:10 | [BLOCKING] **Test ID missing from describe and from `tests.md`** | [link](https://github.com/thrxpt/toktickit/pull/45#discussion_r4091144827) |
-| `client/tests/lab-03/style/badges.style.test.tsx`:127 | [BLOCKING] **STYLE-06 has no row in `tests.md`** | [link](https://github.com/thrxpt/toktickit/pull/45#discussion_r4091144832) |
-| `docs/lab-03/tests.md`:77 | [BLOCKING] **"All rows marked Passed" does not match the matrix** | [link](https://github.com/thrxpt/toktickit/pull/45#discussion_r4091144841) |
-| `client/src/pages/admin/UserManagement.tsx`:77 | [Minor] **`activeAdminCount` can go stale** | [link](https://github.com/thrxpt/toktickit/pull/45#discussion_r4091144846) |
-| `client/src/pages/admin/UserEditDrawer.tsx`:337 | [Minor] **Tooltip precedence differs from the API error actually returned** | [link](https://github.com/thrxpt/toktickit/pull/45#discussion_r4091144854) |
-| `client/src/pages/admin/UserEditDrawer.tsx`:623 | [Minor, a11y] **Drawer is not inert while the reset-password modal is open** | [link](https://github.com/thrxpt/toktickit/pull/45#discussion_r4091144858) |
+| @fahsai-02 | `server/src/admin/users-admin.router.ts`:100 | [BLOCKING] **TOCTOU on duplicate email — racing creates return 500 instead of 409** |
+| @fahsai-02 | `server/src/admin/users-admin.router.ts`:231 | [Question — not blocking] **Demoting a ticket-owning user violates BR-18** |
+| @fahsai-02 | `server/src/admin/users-admin.schema.ts`:48 | [Question — not blocking] **Initial password policy is weaker than BR-07** |
+| @fahsai-02 | `server/tests/lab-03/users-admin-validation.unit.test.ts`:10 | [BLOCKING] **Test ID missing from describe and from `tests.md`** |
+| @fahsai-02 | `client/tests/lab-03/style/badges.style.test.tsx`:127 | [BLOCKING] **STYLE-06 has no row in `tests.md`** |
+| @fahsai-02 | `docs/lab-03/tests.md`:77 | [BLOCKING] **"All rows marked Passed" does not match the matrix** |
+| @fahsai-02 | `client/src/pages/admin/UserManagement.tsx`:77 | [Minor] **`activeAdminCount` can go stale** |
+| @fahsai-02 | `client/src/pages/admin/UserEditDrawer.tsx`:337 | [Minor] **Tooltip precedence differs from the API error actually returned** |
+| @fahsai-02 | `client/src/pages/admin/UserEditDrawer.tsx`:623 | [Minor, a11y] **Drawer is not inert while the reset-password modal is open** |
 
-#### Partner's response (2026-09-24) — [permalink](https://github.com/thrxpt/toktickit/pull/45#issuecomment-5821501039)
+#### Partner's response (2026-09-24, @thrxpt)
 
 > ## Review Feedback Addressed (Commit 6f4b09a)
 >
@@ -1902,7 +1784,7 @@ Inline threads left in this round (9):
 >
 > All 52 test files (403 tests) pass and production builds compile cleanly.
 
-#### My approval (`APPROVED`, 2026-09-24) — [permalink](https://github.com/thrxpt/toktickit/pull/45#pullrequestreview-5310797099)
+#### My approval (`APPROVED`, 2026-09-24, @fahsai-02)
 
 > ## Approving — review feedback verified fixed
 >
@@ -1925,52 +1807,6 @@ Inline threads left in this round (9):
 >
 > Nice work — the four safety rules are authoritative on the server, the error envelope stays consistent, and the drawer ship is genuinely accessible.
 
-
-_9 of the inline threads above were answered by the partner with a
-reply inside the thread; those replies are on GitHub at the same permalinks_
-
-| Partner's inline reply | Permalink |
-|---|---|
-| in reply on `server/src/admin/users-admin.router.ts` | [link](https://github.com/thrxpt/toktickit/pull/45#discussion_r4098015649) |
-| in reply on `server/src/admin/users-admin.router.ts` | [link](https://github.com/thrxpt/toktickit/pull/45#discussion_r4098016794) |
-| in reply on `server/src/admin/users-admin.schema.ts` | [link](https://github.com/thrxpt/toktickit/pull/45#discussion_r4098017639) |
-| in reply on `server/tests/lab-03/users-admin-validation.unit.test.ts` | [link](https://github.com/thrxpt/toktickit/pull/45#discussion_r4098018491) |
-| in reply on `client/tests/lab-03/style/badges.style.test.tsx` | [link](https://github.com/thrxpt/toktickit/pull/45#discussion_r4098019846) |
-| in reply on `docs/lab-03/tests.md` | [link](https://github.com/thrxpt/toktickit/pull/45#discussion_r4098020745) |
-| in reply on `client/src/pages/admin/UserManagement.tsx` | [link](https://github.com/thrxpt/toktickit/pull/45#discussion_r4098021853) |
-| in reply on `client/src/pages/admin/UserEditDrawer.tsx` | [link](https://github.com/thrxpt/toktickit/pull/45#discussion_r4098022819) |
-| in reply on `client/src/pages/admin/UserEditDrawer.tsx` | [link](https://github.com/thrxpt/toktickit/pull/45#discussion_r4098024007) |
-
 **Merged into `lab3-staging` 2026-09-24 (#45)** (merge commit `e35b700`, merged by @fahsai-02).
 
 ---
-
-### No partner PR for the administrator work
-
-**Pull Requests URL:** *(none)*
-
-My partner's last merged PR is #45 (`feature/20-admin-user-management`, merged
-2026-09-24). The administrator user management **in this repository** is my own
-PR #72 (`feature/21-admin-user-management`, reviewed by @Ohmmykung09) — recorded
-in the first table of this file, not here. There is no partner PR to review for
-this issue.
----
-
-### No partner PR for the testing issue
-
-**Pull Requests URL:** *(none)*
-
-The E2E runner, the three Playwright specs, the Zen Green style suite and the DB
-cleanup helper are my own PR #73 (`feature/22-comprehensive-testing`), reviewed
-by @thrxpt — recorded in the first table. My partner did not open a PR for this
-issue.
----
-
-### No partner PR for the release issue
-
-**Pull Requests URL:** *(none)*
-
-The release work is my own PR #74 (`feature/23-release-polish`), reviewed and
-approved by @thrxpt on 2026-09-29 — recorded in the first table of this file,
-not here. My partner did not open a PR for the release. If they open one before
-submission, it is added here with the same level of detail as the rows above.

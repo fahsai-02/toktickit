@@ -4,8 +4,8 @@
 | :--- | :--- |
 | **Project** | Tok TickIT — IT Service Desk |
 | **Sprint** | Lab 3: Users, Roles, IT Staff Ticketing, and Admin Screens |
-| **Version** | v1.0 DRAFT — student-reviewed, baseline for implementation |
-| **Date** | 2026-09-10 |
+| **Version** | v1.1 — amended 2026-09-29 on top of v1.0 (approved 2026-09-10); see section 9 |
+| **Date** | 2026-09-29 |
 | **Contract source** | `specification.md` v1.0 (BR/FR/AC references below trace to it) |
 
 ---
@@ -13,16 +13,19 @@
 ## 1. Conventions
 
 - **Base URL:** `http://localhost:5000` in development. The port comes from the `PORT` environment variable of `server/.env` and defaults to `5000` when unset. The Vite client runs on `http://localhost:5173` and reaches the API via the dev proxy (`client/vite.config.ts` forwards `/api` to the backend). When `VITE_API_URL` is set in `client/.env`, the client makes direct cross-origin calls.
-- **Authentication:** Session-based via `express-session`. After successful login, a `connect.sid` cookie is set. All protected endpoints require this cookie; unauthenticated requests receive 401.
+- **Authentication:** Session-based via `express-session`. After successful login, a `connect.sid` cookie is set. All protected endpoints require this cookie; unauthenticated requests receive `401` (the append-only `405` guards are the one documented exception).
 - **Session store:** In-memory `MemoryStore` from `express-session` (see `server/src/app.ts` and `specification.md` AD-02). Acceptable for local development; does not survive server restart. Production deployment is excluded from Lab 3 scope.
 - **Identity transport:** `requesterId` is NO LONGER sent by the client on ticket/attachment endpoints. The server derives the user identity from the session (AD-04). The client-supplied `requesterId` in `POST /api/tickets` is ignored.
-- **Content types:** `application/json` for all requests/responses except attachment upload (`multipart/form-data`) and download (`application/octet-stream`).
-- **IDs:** positive integers. Malformed ID (non-numeric, zero, negative) → `400`.
+- **Content types:** `application/json` for all requests/responses except attachment upload (`multipart/form-data`) and attachment download, which returns a binary stream whose `Content-Type` is the attachment's **stored mime type** (`image/jpeg`, `image/png`, `image/webp`, `application/pdf`) plus `Content-Disposition: attachment; filename="<originalFileName>"`. The download is never served as `application/octet-stream`.
+- **IDs:** positive integers. Malformed ID (non-numeric, zero, negative) → `400`. This rule applies to **every** endpoint with an `:id`; where a section's own error list below omits `400`, that list is not exhaustive.
 - **Dates:** ISO 8601 UTC strings (e.g. `2026-09-10T10:00:00.000Z`).
-- **Trimming:** all string inputs are trimmed before validation and persistence.
+- **Trimming:** all string inputs are trimmed before validation and persistence, **except passwords** (`login.password`, `currentPassword`, `newPassword`, `confirmPassword`, `initialPassword`), which are compared and stored exactly as sent — a leading or trailing space in a password is part of the password.
 - **Enums:** `requestedPriority` / `itPriority` ∈ `LOW | MEDIUM | HIGH | URGENT`; `currentStatus` ∈ `NEW | OPEN | IN_PROGRESS | WAITING_FOR_REQUESTER | RESOLVED | CLOSED | REOPENED | CANCELLED`; `role` ∈ `REQUESTER | IT_STAFF | ADMINISTRATOR`.
 - **Email normalization:** email addresses are lowercased before storage and uniqueness comparison (BR-07).
 - **Append-only:** Public Comments and Internal Notes cannot be edited or deleted via the API in Lab 3; `PUT` and `DELETE` on comment/note endpoints return `405 METHOD_NOT_ALLOWED`.
+- **Deterministic ordering:** both ticket lists (sections 4.2 and 5.1) append `ticketNumber DESC` as a secondary sort key, so rows never tie across page boundaries. This is an implementation guarantee, not a selectable `sortBy` value.
+- **Append-only guards are not session-guarded:** the `PUT`/`DELETE` handlers that return `405` (sections 4.11 and 5.13) are registered without `requireAuth`, so an unauthenticated call receives `405`, not `401`. No ticket, comment, or note is read or written by them; the guard exists only to reject write methods on a collection that has no update path.
+- **`mustChangePassword` is not enforced by the API (BR-02, FR-06):** the backend reports the flag in the `login` and `me` payloads but does not block requests from a user whose flag is still `true`. The gate to `/change-password` is client-side route guarding. A client that skips the gate can still call every endpoint below with that session, so BR-02 is a navigation rule, not an authorization rule.
 
 ### Error envelope
 
@@ -227,6 +230,19 @@ Active related systems; filtered by category when `categoryId` supplied (unchang
 
 **Errors:** `400`, `500`
 
+### 3.3 GET `/api/health`
+
+Backend liveness probe carried over from Lab 1. No auth, no database access.
+
+**200 Response**
+```json
+{ "status": "ok", "service": "TokTickIT API" }
+```
+
+> **Note:** this is the only endpoint in the API that is **not** wrapped in the `{ "data": … }` envelope.
+
+**Errors:** none — the handler has no failure path.
+
 ---
 
 ## 4. Requester Ticket Endpoints (authenticated, ownership-enforced)
@@ -328,6 +344,8 @@ Paginated list of the authenticated Requester's own tickets (FR-12, AC-03).
 }
 ```
 
+Ordering is deterministic — see the `ticketNumber DESC` tie-break in section 1.
+
 **Errors:** `400`, `500`
 
 ---
@@ -385,38 +403,42 @@ Ownership: ticket belongs to another user → `403`; no such ticket → `404`.
 
 ### 4.4 POST `/api/tickets/:id/attachments`
 
-Upload one attachment to an owned ticket (unchanged from Lab 2, but session auth replaces `requesterId` form field).
+Upload one attachment. A Requester may upload only to a ticket they own; IT Staff and Administrators may upload to **any** ticket (section 4.12). Otherwise unchanged from Lab 2, except that the session replaces the `requesterId` form field.
 
 **Request:** `multipart/form-data`
 
 | Field | Rules |
 | :--- | :--- |
-| `file` | Required binary. Allowed: jpg, jpeg, png, webp, pdf. Max 5 MB |
+| `file` | Required binary. Allowed MIME/ext: `image/jpeg` (.jpg/.jpeg), `image/png` (.png), `image/webp` (.webp), `application/pdf` (.pdf) — else `415` (BR-18). Max 5 MB — else `413` (BR-18) |
 | `requesterId` | **REMOVED** — ownership derived from session |
 
-**201 Response:** same as Lab 2.
+**Business rules:** a ticket may hold at most **5 active** (i.e. not soft-removed) attachments; a further upload returns `400 BUSINESS_RULE_VIOLATION` ("Ticket already has the maximum of 5 active attachments."). **Check order:** authentication (`401`) → file type and size, rejected by the upload middleware before the handler runs (`415` / `413`) → malformed `:id` (`400`) → missing `file` (`400`) → ticket existence (`404`) → access (`403`) → active-attachment limit (`400`) → type re-validated before persisting (`415`).
 
-**Errors:** `400`, `403`, `404`, `413`, `415`, `500`
+**201 Response:** the attachment row — same shape as Lab 2 section 2.7 (`id`, `originalFileName`, `fileSize`, `mimeType`, `isRemoved`, `removedAt`, `removalReason`, `uploadedByRequesterId`, `createdAt`).
+
+**Errors:** `400` (malformed id, missing file, attachment limit reached), `403`, `404`, `413`, `415`, `500`
 
 ---
 
 ### 4.5 GET `/api/attachments/:id/download`
 
-Download an active attachment's binary content (unchanged from Lab 2, session auth).
+Download an active attachment's binary content. Access rules are in section 4.12.
 
 **Headers:** `Cookie: connect.sid=...`
 
-**200 Response:** binary stream.
+**Query:** the Lab 2 `requesterId` query parameter is **REMOVED** — the session is the only identity.
 
-Behavior matrix: Active file + owner → 200; Soft-removed → 410; Foreign → 403; Unknown → 404.
+**200 Response:** binary stream with `Content-Type: <stored mimeType>`, `Content-Disposition: attachment; filename="<originalFileName>"`, and `Content-Length: <fileSize>`.
 
-**Errors:** `400`, `403`, `404`, `410`, `500`
+Behavior matrix: unknown id → `404`; soft-removed (`isRemoved = true`) → `410`; active file on a foreign ticket → `403` **for a Requester** (IT Staff/Administrator receive `200`, section 4.12); active file on a permitted ticket whose stored file is missing from disk → `404`.
+
+**Errors:** `400` (malformed id), `403`, `404`, `410`, `500`
 
 ---
 
 ### 4.6 DELETE `/api/attachments/:id`
 
-Soft-remove an active attachment (unchanged from Lab 2, session auth replaces body `requesterId`).
+Soft-remove an active attachment. Access rules are in section 4.12.
 
 **Headers:** `Cookie: connect.sid=...`
 
@@ -431,9 +453,11 @@ Soft-remove an active attachment (unchanged from Lab 2, session auth replaces bo
 | :--- | :--- |
 | `removalReason` | Required; 3–200 chars after trim |
 
-**200 Response:** same as Lab 2.
+Removal is a soft delete: the row and its removal metadata are retained and the binary is no longer downloadable (4.5 → `410`). Removing an attachment that is already soft-removed returns `400 BUSINESS_RULE_VIOLATION` ("This attachment has already been removed."). There is no hard-delete endpoint in Lab 3.
 
-**Errors:** `400`, `403`, `404`, `500`
+**200 Response:** the attachment row with `isRemoved: true`, `removedAt`, and `removalReason` populated — same shape as Lab 2 section 2.9.
+
+**Errors:** `400` (malformed id, invalid `removalReason`, already removed), `403`, `404`, `500`
 
 ---
 
@@ -504,7 +528,7 @@ List Public Comments for an own ticket (FR-17), ordered newest-first.
 }
 ```
 
-**Errors:** `403`, `404`, `500`
+**Errors:** `400` (malformed id), `403`, `404`, `500`
 
 ---
 
@@ -532,13 +556,20 @@ Toggle the "Problem Appears Resolved" indicator (FR-19, AC-07, BR-05, BR-20).
 }
 ```
 
-**Errors:** `403`, `404`, `500`
+**Errors:** `400` (malformed id), `403`, `404`, `500`
 
 ---
 
 ### 4.10 PUT `/api/tickets/:id/resolution-summary` (Requester)
 
-Requesters cannot set the resolution summary. This endpoint is reserved for IT Staff/Admin (section 5.6). A Requester calling this endpoint receives `403`.
+The resolution summary is written **only** through the IT Staff endpoint in **section 5.7**. This Requester path is kept so the read-only intent is explicit, and it always answers:
+
+| Status | Code | Message |
+| :--- | :--- | :--- |
+| 401 | UNAUTHORIZED | Not authenticated |
+| 403 | FORBIDDEN | "The resolution summary can only be set by IT Staff." |
+
+The `403` is returned to **every** caller, IT Staff and Administrator included — it is not a role check. It marks this path as permanently read-only; use section 5.7 to save a summary.
 
 ---
 
@@ -550,6 +581,22 @@ Requesters cannot set the resolution summary. This endpoint is reserved for IT S
 | PUT | `/api/tickets/:id/comments/:commentId` | 405 METHOD_NOT_ALLOWED |
 | DELETE | `/api/tickets/:id/comments` | 405 METHOD_NOT_ALLOWED |
 | DELETE | `/api/tickets/:id/comments/:commentId` | 405 METHOD_NOT_ALLOWED |
+
+These handlers are registered without `requireAuth`, so an unauthenticated call also receives `405` rather than `401` (section 1).
+
+---
+
+### 4.12 Attachment access by role (BR-03, BR-04, AD-06)
+
+The three attachment endpoints (4.4, 4.5, 4.6) are the only Requester endpoints that IT Staff and Administrators may also use, because the IT Staff Ticket Detail reuses the same attachment UI (`ui-spec.md` section 5.5, "Attachments tab").
+
+| Caller | `POST /api/tickets/:id/attachments` | `GET /api/attachments/:id/download` | `DELETE /api/attachments/:id` |
+| :--- | :--- | :--- | :--- |
+| Requester, own ticket | `201` | `200` | `200` |
+| Requester, foreign ticket | `403` | `403` | `403` |
+| IT Staff / Administrator, any ticket | `201` | `200` | `200` |
+
+For a staff/admin upload, `uploadedByRequesterId` is set to the **ticket's own** legacy `Requester` row, because that FK column is unchanged from Lab 2 and must reference a `Requester`; it is never fabricated from the staff member's identity. A Requester's own upload is tagged with the legacy `Requester` row matching their session email, which is created on demand if the account predates it.
 
 ---
 
@@ -580,6 +627,8 @@ IT Staff Ticket Queue with search, filters, sorting, and pagination (FR-22, FR-2
 
 Invalid parameters → `400 VALIDATION_ERROR` with descriptive `fields`.
 
+**Scope:** the queue is **global** — it returns every ticket in the system with no requester scoping. The `ownerId` axis (an integer id, `unassigned`, or `me`) is the only ownership-related filter; there is no "my tickets" variant of this endpoint, because a staff member's own tickets are reachable through the same queue with `ownerId=me`.
+
 **200 Response**
 ```json
 {
@@ -601,6 +650,8 @@ Invalid parameters → `400 VALIDATION_ERROR` with descriptive `fields`.
   "meta": { "total": 87, "page": 1, "pageSize": 10, "totalPages": 9 }
 }
 ```
+
+Ordering is deterministic — see the `ticketNumber DESC` tie-break in section 1.
 
 **Errors:** `400`, `403`, `500`
 
@@ -639,7 +690,7 @@ Full ticket detail for staff operations (FR-26).
 }
 ```
 
-**Errors:** `403`, `404`, `500`
+**Errors:** `400` (malformed id), `403`, `404`, `500`
 
 ---
 
@@ -659,7 +710,7 @@ Set the current user as ticket owner (FR-27). Ticket must be unassigned or owned
 }
 ```
 
-**Errors:** `403`, `404`, `409` (already claimed by the same user), `500`
+**Errors:** `400` (malformed id), `403`, `404`, `409` (already claimed by the same user), `500`
 
 ---
 
@@ -817,7 +868,7 @@ List Public Comments (FR-32), ordered newest-first.
 
 **200 Response:** same shape as 4.8.
 
-**Errors:** `403`, `404`, `500`
+**Errors:** `400` (malformed id), `403`, `404`, `500`
 
 ---
 
@@ -878,7 +929,7 @@ List Internal Notes (FR-33), ordered newest-first. Visible only to IT Staff and 
 }
 ```
 
-**Errors:** `403` (Requester role), `404`, `500`
+**Errors:** `400` (malformed id), `403` (Requester role), `404`, `500`
 
 ---
 
@@ -917,6 +968,8 @@ Only active users with role `IT_STAFF` or `ADMINISTRATOR` are returned.
 | PUT | `/api/staff/tickets/:id/notes/:noteId` | 405 METHOD_NOT_ALLOWED |
 | DELETE | `/api/staff/tickets/:id/notes` | 405 METHOD_NOT_ALLOWED |
 | DELETE | `/api/staff/tickets/:id/notes/:noteId` | 405 METHOD_NOT_ALLOWED |
+
+These handlers are registered without `requireAuth`, so an unauthenticated call also receives `405` rather than `401` (section 1). A Requester calling `GET` or `POST` on the note endpoints still receives `403` (FR-35) — the append-only guard applies to the write methods, the role check to the two supported ones.
 
 ---
 
@@ -1071,10 +1124,15 @@ Edit a user's name, email, role, and activation state (FR-43, AC-14).
 | `role` | Optional; must be a valid role value (`400` if invalid) |
 | `isActive` | Optional; boolean |
 
-**Safety rules:**
-- An Administrator cannot deactivate their own account → `403 FORBIDDEN` with message "You cannot deactivate your own account."
-- Deactivating the last active Administrator → `409 CONFLICT` with message "Cannot deactivate the last active Administrator."
-- The same guards also apply to role **demotion**: changing an active Administrator's role away from `ADMINISTRATOR`, or changing `isActive` on their own account, triggers the identical self-change (`403`) and last-active-Administrator (`409`) checks (FR-45, FR-46, AC-11, AC-12).
+**Safety rules** — evaluated in this order, so the response is deterministic:
+
+| Order | Condition | Status | Code | Message |
+| :--- | :--- | :--- | :--- | :--- |
+| 1 | The target is an active Administrator and the change removes that status (deactivate **or** demote away from `ADMINISTRATOR`) while it is the **last** active Administrator | `409` | `CONFLICT` | "Cannot deactivate the last active Administrator." (FR-46, AC-12) |
+| 2 | The same removal targets the **authenticated Administrator's own** account | `403` | `FORBIDDEN` | "You cannot deactivate your own account." (FR-45, AC-11) |
+| 3 | The new email is already used by another user (case-insensitive) | `409` | `CONFLICT` | "A user with this email already exists." (FR-42, AC-14) |
+
+> **Why the order matters (AC-11 vs AC-12):** with exactly one active Administrator — the seeded state — a self-deactivation also satisfies rule 1, so the response is `409`, never `403`. The `403` is only observable once a second active Administrator exists. Both rules cover deactivation **and** role demotion away from `ADMINISTRATOR`; an Administrator may always change their own name, email, or any field that does not remove their own admin access.
 
 **200 Response**
 ```json
@@ -1153,29 +1211,50 @@ Sets `mustChangePassword = true` on the target user.
 
 ## 8. Acceptance Criteria Traceability
 
-| Endpoint | ACs |
-| :--- | :--- |
-| 2.1 Login | AC-01, AC-05, AC-06 |
-| 2.2 Logout | AC-01 (session invalidation) |
-| 2.3 Current user | AC-01 |
-| 2.4 Change password | AC-02 |
-| 4.1 Create ticket | AC-03 |
-| 4.2 List tickets | AC-03 |
-| 4.3 Ticket detail | AC-03 |
-| 4.4–4.6 Attachments | AC-03 (ownership) |
-| 4.7–4.8 Requester comments | AC-03 |
-| 4.9 Indicate resolved | AC-07 |
-| 5.1 Staff queue | AC-08 |
-| 5.2 Staff ticket detail | AC-04 (internal notes hidden from requester) |
-| 5.6 Status transition | AC-09 |
-| 5.10 Internal notes | AC-04 |
-| 6.1 User list | AC-13 |
-| 6.2 Create user | AC-10, AC-14 |
-| 6.3 Edit user | AC-11, AC-12, AC-14 |
-| 6.4 Reset password | AC-10 |
+| Endpoint | ACs | FRs (traced here where no AC covers the endpoint) |
+| :--- | :--- | :--- |
+| 2.1 Login | AC-01, AC-05, AC-06 | FR-01, FR-02, FR-03 |
+| 2.2 Logout | AC-01 (session invalidation) | FR-04 |
+| 2.3 Current user | AC-01 | FR-05 |
+| 2.4 Change password | AC-02 | FR-06, FR-07 |
+| 3.1–3.3 Reference data | — | FR-12 (Lab 2 regression) |
+| 4.1 Create ticket | AC-03 | FR-12, FR-13, FR-14 |
+| 4.2 List tickets | AC-03 | FR-12, FR-15 |
+| 4.3 Ticket detail | AC-03 | FR-15, FR-20 |
+| 4.4–4.6 Attachments | AC-03 (ownership) | FR-12, FR-15, BR-18 |
+| 4.7–4.8 Requester comments | AC-03 | FR-16, FR-17 |
+| 4.9 Indicate resolved | AC-07 | FR-19 |
+| 4.10 Resolution summary (read-only) | AC-03 | FR-31 (staff path in 5.7) |
+| 4.11 / 5.13 Append-only 405 | — | FR-18, FR-34 |
+| 5.1 Staff queue | AC-08 | FR-22, FR-23, FR-24 |
+| 5.2 Staff ticket detail | AC-04 (internal notes hidden from requester) | FR-26 |
+| 5.3 Claim | — | FR-27 |
+| 5.4 Assign | — | FR-28 |
+| 5.5 IT Priority | — | FR-29 |
+| 5.6 Status transition | AC-09 | FR-30 |
+| 5.7 Resolution summary | — | FR-31 |
+| 5.8–5.9 Staff comments | — | FR-32 |
+| 5.10–5.11 Internal notes | AC-04 | FR-33, FR-35, FR-36 |
+| 5.12 Staff user list | — | FR-39 |
+| 5.14 Category change | — | FR-37 |
+| 6.1 User list | AC-13 | FR-40 |
+| 6.2 Create user | AC-10, AC-14 | FR-41, FR-42 |
+| 6.3 Edit user | AC-11, AC-12, AC-14 | FR-43, FR-45, FR-46 |
+| 6.4 Reset password | AC-10 | FR-44 |
+
+> **Coverage note:** AC-01..AC-15 in `specification.md` section 9 do not cover claim, reassign, IT Priority, resolution summary, category change, or the staff-user list, so those six endpoints are traced to their functional requirements instead. AC-15 (responsive layout) is a UI concern verified in `tests.md` (RESP-01..30, STYLE-01..10), not here.
+
+---
+
+## 9. Amendment Log
+
+| Version | Date | Change | Reason |
+| :--- | :--- | :--- | :--- |
+| v1.0 | 2026-09-10 | Initial contract. Session-based auth, append-only enforcement, status-transition matrix, and admin safety rules approved by the student. | Lab 3 implementation baseline |
+| v1.1 | 2026-09-29 | **Documentation only — no endpoint, status code, request shape, or business rule changed, and no test was touched.** Corrections: download `Content-Type` (section 1); trimming rule scoped to exclude passwords; added the `ticketNumber DESC` tie-break, the un-guarded `405` handlers, the client-side `mustChangePassword` gate, and the "400 on malformed id applies everywhere" rule (section 1); added `GET /api/health` (section 3.3); documented the 5-active-attachment limit and check order, the 400 for malformed ids, the removed `requesterId` query parameter, the missing-file-on-disk and already-removed cases, and the IT Staff/Administrator attachment access matrix (sections 4.4–4.6, new 4.12); fixed the section 5.6 → 5.7 cross-reference in 4.10; stated the queue's global scope (section 5.1); documented admin guard precedence and its AC-11/AC-12 consequence (section 6.3); completed the section 8 traceability table. | A line-by-line audit of this contract against `server/src/**`, `specification.md`, `ui-spec.md`, and `tests.md` found 12 points where the document was silent or contradicted the shipped code. |
 
 ---
 
 *Changes to this contract require a matching change to `specification.md` and student approval.*
 
-**Approval:** Reviewed and approved by the student on 2026-09-10. Session-based auth, append-only enforcement, status-transition matrix, and admin safety rules confirmed. This version is the implementation baseline.
+**Approval:** Reviewed and approved by the student on 2026-09-10 (v1.0). Session-based auth, append-only enforcement, status-transition matrix, and admin safety rules confirmed. **Amended 2026-09-29 (v1.1)** — documentation-only alignment with the shipped implementation, approved by the student as the correction of that audit's findings; the implementation baseline is unchanged.

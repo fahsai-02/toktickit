@@ -4,9 +4,9 @@
 | :--- | :--- |
 | **Project** | Tok TickIT — IT Service Desk |
 | **Sprint** | Lab 3: Users, Roles, IT Staff Ticketing, and Admin Screens |
-| **Version** | v1.0 DRAFT — planned tests before implementation; statuses updated to final results at sprint close |
+| **Version** | v1.0 (Approved 2026-09-10) — planned before implementation; statuses updated to final results at sprint close |
 | **Date** | 2026-09-10 |
-| **Traceability source** | `specification.md` v1.0 AC-01..15 · `api-spec.md` v1.0 · `ui-spec.md` v1.0 |
+| **Traceability source** | `specification.md` v1.0 AC-01..15 · `api-spec.md` v1.1 · `ui-spec.md` v1.0 |
 
 ---
 
@@ -265,14 +265,16 @@ cd .. && pnpm test:e2e:lab3               # lab-03 E2E — desktop-project only,
 
 ## 6. Final Results
 
-*Server suite recorded 2026-09-12 (follow-up after MIG-01 review); client and E2E suites updated at sprint close with actual test output evidence. Issue 19 (#60) queue suites recorded 2026-09-20.*
+*Suite sizes below are the latest recorded runs. Each row carries the date of the
+run it reports, and the full chronological log — including every post-review fix
+and the defect each one closed — is in section 2 under MIG-01.*
 
 | Suite | Command | Result |
 |-------|---------|--------|
-| Server (unit + API) | `cd server && pnpm test` | **Pass** — 20 files / 286 tests (2026-09-23, after PR #72 post-review fixes) *(API-34..55, API-73..75, UNIT-03 from Issue 20; API-60..72 + API-18 from Issue 21 `feature/21-admin-user-management` incl. the P2002 → 409 constraint-path regression; reseed + remove stray manual accounts before run)* |
-| Client (component + style) | `cd client && pnpm test` | **Pass** — 18 files / 201 tests (2026-09-24, Issue 22 close-out) *(incl. UI-11..13 `StaffTicketDetail` and UI-14..16 `UserManagement` suites from Issues 20/21, plus STYLE-01..04 `zen-green-lab3-style.test.tsx`, 7 tests — Login button primary green + 8-status / priority / role badge palettes per ui-spec section 3)* |
-| E2E (Playwright, functional) | `cd .. && pnpm test:e2e:lab3` (root `package.json`; desktop-project only, `workers: 1` from `playwright.config.ts`; needs both servers running) | **Pass** — E2E-01..05 5/5 desktop + 10 viewport skips (2026-09-26, after the PR #73 post-review fixes; original close-out 2026-09-24); legacy `e2e/lab-02` specs skipped (45) |
-| E2E (Playwright, visual + audit) | `pnpm exec playwright test e2e/lab-03/responsive.visual.spec.ts e2e/lab-03/states.visual.spec.ts e2e/lab-03/visual-audit.spec.ts` (both servers running) | **Pass** — 2026-09-28, Issue 23: **105 passed** = 72 screenshot captures (10 screens + 14 states × 3 viewports) + 33 `visual-audit` assertions (11 × 3 viewports), all green (5.7m). Re-run at mobile **375px** to match AC-15 verbatim, after the Issue 23 fixes: `client/src/components/Button.css` focus ring, `client/src/App.css` mobile header. An earlier run at 390px reported 93 passed against only 10 states; both the count and the width were corrected once `STATE-31..42` were added and the AC width was adopted. |
+| Server (unit + API) | `cd server && pnpm test` | **Pass — 2026-09-28** — 20 files / 286 tests *(API-34..55 and API-73..75 staff-queue / staff-detail / comment-note coverage; API-60..72 + API-18 admin user management incl. the P2002 → 409 constraint-path regression. Run `pnpm exec prisma db seed` first, since the suite asserts against seeded data. Earlier verified runs: 2026-09-14 (12 / 138), 2026-09-19 (16 / 191), 2026-09-21 (19 / 259), 2026-09-22 (20 / 285), 2026-09-23 (20 / 286).)* |
+| Client (component + style) | `cd client && pnpm test` | **Pass — 2026-09-28** — 18 files / 201 tests *(incl. UI-11..13 `StaffTicketDetail`, UI-14..16 `UserManagement`, and STYLE-01..04 `zen-green-lab3-style.test.tsx`, 7 tests — Login button primary green + 8-status / priority / role badge palettes per ui-spec section 3. Earlier verified runs: 2026-09-19 (13 / 119), 2026-09-21 (15 / 156), 2026-09-22 (17 / 189), 2026-09-23 (17 / 194).)* |
+| E2E (Playwright, functional) | `cd .. && pnpm test:e2e:lab3` (root `package.json`; desktop-project only, `workers: 1` from `playwright.config.ts`; needs both servers running) | **Pass — 2026-09-26** — E2E-01..05 5/5 desktop + 10 viewport skips (the 10 skips are the desktop-only guards in the five functional specs), green on 3 consecutive full runs with the DB clean after each; legacy `e2e/lab-02` specs skipped (45). Re-confirmed as part of the 2026-09-28 whole-suite run below. |
+| E2E (Playwright, visual + audit) | `pnpm exec playwright test e2e/lab-03/responsive.visual.spec.ts e2e/lab-03/states.visual.spec.ts e2e/lab-03/visual-audit.spec.ts` (both servers running) | **Pass — 2026-09-28** — **105 passed** = 72 screenshot captures (10 screens + 14 states × 3 viewports) + 33 `visual-audit` assertions (11 × 3 viewports), all green. The final run is at mobile **375px** to match AC-15 verbatim, and covers the `client/src/components/Button.css` focus ring and `client/src/App.css` mobile header fixes. An earlier run at 390px reported 93 passed against only 10 states; both the count and the width were corrected once `STATE-31..42` were added and the AC width was adopted. The whole `e2e/lab-03` directory in the same run = **110 passed / 10 skipped** (7.4m), i.e. those 105 plus the 5 functional desktop tests. |
 
 ## 7. Known Limitations / Deferred
 

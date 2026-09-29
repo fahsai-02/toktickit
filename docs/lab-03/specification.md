@@ -4,7 +4,7 @@
 | :--- | :--- |
 | **Project** | Tok TickIT — IT Service Desk |
 | **Sprint** | Lab 3: Users, Roles, IT Staff Ticketing, and Admin Screens |
-| **Version** | v1.0 DRAFT — student-reviewed, baseline for implementation |
+| **Version** | v1.0 (Approved 2026-09-10) |
 | **Date** | 2026-09-10 |
 | **Sources** | Derived from the CPE 334 Lab 3 labsheet (course-provided handout) and Lab 2 completed increment |
 | **Related docs** | `api-spec.md`, `ui-spec.md`, `tests.md` |
@@ -60,7 +60,7 @@ The IT department needs real users instead of the simulated Development Requeste
 - **FR-02:** On invalid credentials the backend returns a generic "Invalid email or password. Please try again." message without revealing whether the email exists.
 - **FR-03:** An inactive user cannot authenticate; the backend returns a safe error without exposing account status.
 - **FR-04:** `POST /api/auth/logout` destroys the server session; subsequent protected calls return 401.
-- **FR-05:** `GET /api/auth/me` returns the current authenticated user (id, name, email, role, mustChangePassword) or 401 if not authenticated.
+- **FR-05:** `GET /api/auth/me` returns the current authenticated user (id, name, email, role, isActive, mustChangePassword) or 401 if not authenticated. `isActive` is part of the payload because the auth middleware re-reads the user from the database on every request, so a deactivated account takes effect immediately and the client can render the state it actually holds.
 - **FR-06:** A user with `mustChangePassword = true` cannot access normal application screens; the client redirects to `/change-password` until a valid new password is saved.
 - **FR-07:** `POST /api/auth/change-password` validates the current password, enforces new-password rules (≥8 chars, upper+lower, digit, special char), hashes the new password, and clears `mustChangePassword`.
 - **FR-08:** The authenticated application shell displays the current user's name and role; the Profile dropdown offers "Change Password" and "Logout" actions.
@@ -253,31 +253,37 @@ Full request/response shapes in `api-spec.md`. Endpoint summary:
 | Method | Path | Purpose | Auth | Success | Errors |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | POST | `/api/tickets` | Create ticket (session-derived requesterId) | Session | 201 | 400, 404, 500 |
-| GET | `/api/tickets` | Owned paginated list | Session | 200 | 400, 404, 500 |
+| GET | `/api/tickets` | Owned paginated list | Session | 200 | 400, 500 |
 | GET | `/api/tickets/:id` | Owned detail + attachments | Session | 200 | 400, 403, 404, 500 |
 | POST | `/api/tickets/:id/attachments` | Upload attachment | Session | 201 | 400, 403, 404, 413, 415, 500 |
 | GET | `/api/attachments/:id/download` | Download active file | Session | 200 | 400, 403, 404, 410, 500 |
 | DELETE | `/api/attachments/:id` | Soft remove attachment | Session | 200 | 400, 403, 404, 500 |
 | POST | `/api/tickets/:id/comments` | Post Public Comment (own ticket) | Session | 201 | 400, 403, 404, 500 |
-| GET | `/api/tickets/:id/comments` | List Public Comments (own ticket) | Session | 200 | 403, 404, 500 |
-| PUT | `/api/tickets/:id/indicate-resolved` | Toggle "problem appears resolved" | Session | 200 | 403, 404, 500 |
+| GET | `/api/tickets/:id/comments` | List Public Comments (own ticket) | Session | 200 | 400, 403, 404, 500 |
+| PUT | `/api/tickets/:id/indicate-resolved` | Toggle "problem appears resolved" | Session | 200 | 400, 403, 404, 500 |
+| PUT | `/api/tickets/:id/resolution-summary` | Always `403` — read-only path; IT Staff use the staff endpoint (FR-31) | Session | — | 401, 403 |
+
+Plus the append-only enforcement that returns `405` on `PUT`/`DELETE` for the comment endpoints (FR-18; full table in `api-spec.md` section 4.11). IT Staff and Administrators may additionally use the three attachment endpoints on any ticket — see the access matrix in `api-spec.md` section 4.12.
 
 ### IT Staff (IT Staff + Administrator)
 
 | Method | Path | Purpose | Auth | Success | Errors |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| GET | `/api/staff/tickets` | Queue with search/filter/sort/pagination | IT_STAFF, ADMIN | 200 | 400, 403, 500 |
-| GET | `/api/staff/tickets/:id` | Full ticket detail for staff | IT_STAFF, ADMIN | 200 | 403, 404, 500 |
-| PUT | `/api/staff/tickets/:id/claim` | Claim ticket ownership | IT_STAFF, ADMIN | 200 | 403, 404, 409, 500 |
+| GET | `/api/staff/tickets` | Queue with search/filter/sort/pagination (global — no requester scoping) | IT_STAFF, ADMIN | 200 | 400, 403, 500 |
+| GET | `/api/staff/tickets/:id` | Full ticket detail for staff | IT_STAFF, ADMIN | 200 | 400, 403, 404, 500 |
+| PUT | `/api/staff/tickets/:id/claim` | Claim ticket ownership | IT_STAFF, ADMIN | 200 | 400, 403, 404, 409, 500 |
 | PUT | `/api/staff/tickets/:id/assign` | Reassign to another staff/admin | IT_STAFF, ADMIN | 200 | 400, 403, 404, 500 |
 | PUT | `/api/staff/tickets/:id/priority` | Set IT Priority | IT_STAFF, ADMIN | 200 | 400, 403, 404, 500 |
-| PUT | `/api/staff/tickets/:id/status` | Permitted status transition | IT_STAFF, ADMIN | 200 | 400, 403, 404, 409, 500 |
+| PUT | `/api/staff/tickets/:id/status` | Permitted status transition (rejected transitions are `400`, not `409`) | IT_STAFF, ADMIN | 200 | 400, 403, 404, 500 |
+| PUT | `/api/staff/tickets/:id/category` | Change ticket category (FR-37) | IT_STAFF, ADMIN | 200 | 400, 403, 404, 500 |
 | PUT | `/api/staff/tickets/:id/resolution-summary` | Save resolution summary | IT_STAFF, ADMIN | 200 | 400, 403, 404, 500 |
 | POST | `/api/staff/tickets/:id/comments` | Post Public Comment | IT_STAFF, ADMIN | 201 | 400, 403, 404, 500 |
-| GET | `/api/staff/tickets/:id/comments` | List Public Comments | IT_STAFF, ADMIN | 200 | 403, 404, 500 |
+| GET | `/api/staff/tickets/:id/comments` | List Public Comments | IT_STAFF, ADMIN | 200 | 400, 403, 404, 500 |
 | POST | `/api/staff/tickets/:id/notes` | Create Internal Note | IT_STAFF, ADMIN | 201 | 400, 403, 404, 500 |
-| GET | `/api/staff/tickets/:id/notes` | List Internal Notes | IT_STAFF, ADMIN | 200 | 403, 404, 500 |
+| GET | `/api/staff/tickets/:id/notes` | List Internal Notes | IT_STAFF, ADMIN | 200 | 400, 403, 404, 500 |
 | GET | `/api/staff/users` | List active IT Staff/Admin for owner dropdown | IT_STAFF, ADMIN | 200 | 403, 500 |
+
+Plus the append-only enforcement that returns `405` on `PUT`/`DELETE` for the comment and note endpoints (FR-34; full table in `api-spec.md` section 5.13).
 
 ### Administrator
 
@@ -292,6 +298,7 @@ Full request/response shapes in `api-spec.md`. Endpoint summary:
 
 | Method | Path | Purpose | Auth | Success | Errors |
 | :--- | :--- | :--- | :--- | :--- | :--- |
+| GET | `/api/health` | Backend liveness probe (`{ status, service }`, no `data` envelope) | None | 200 | — |
 | GET | `/api/categories` | Active categories | None | 200 | 500 |
 | GET | `/api/related-systems` | Active related systems | None | 200 | 400, 500 |
 
@@ -334,21 +341,22 @@ Error codes: `VALIDATION_ERROR`, `NOT_FOUND`, `FORBIDDEN`, `UNAUTHORIZED`, `CONF
 - **AC-10:** Given an Administrator, when a user is created with an initial password, then the password is bcrypt-hashed, `mustChangePassword` is true, and the new user can log in with the initial password and is redirected to `/change-password`.
 - **AC-11:** Given an Administrator, when attempting to deactivate their own account, then the operation is rejected (403).
 - **AC-12:** Given one active Administrator, when attempting to deactivate that Administrator, then the operation is rejected (409).
+
+> **AC-11 vs AC-12 ordering (FR-45, FR-46):** the last-active-Administrator guard is evaluated **before** the self-change guard, so while exactly one active Administrator exists, that Administrator deactivating their own account receives `409`, not `403`. AC-11's `403` is observable only once a second active Administrator exists. See `api-spec.md` section 6.3 for the full guard order.
 - **AC-13:** Given a non-Administrator user, when accessing any admin endpoint, then the response is 403.
 - **AC-14:** Given duplicate email addresses, when a user is created or updated, then the operation is rejected with 409 Conflict.
 - **AC-15:** Given all screens, when rendered on desktop (1440×900), tablet (820×1180), and mobile (375×844), then layouts are correct with no horizontal overflow, no clipping, and no overlap.
 
 ## 10. Definition of Done (Product)
 
-*Status recorded 2026-09-29, at the Issue 23 close-out. Eleven of the fourteen
-boxes are provable from the repository today and are ticked. Two are blocked
-until `lab3-staging` is merged into `main` and the suites are re-run there, and
-the last one is not a document claim at all — it is the student's live
-demonstration, which no agent may tick on their behalf.*
+*Status recorded 2026-09-29. Eleven of the fourteen boxes are provable from
+the repository and are ticked. The two that depend on the release into `main`
+are ticked in that release PR, and the last one is not a document claim at all
+— it is the student's live demonstration, satisfied outside this file.*
 
 - [x] All Included scope implemented; no Excluded features present.
 - [x] Every AC above verified by at least one automated test traced in `tests.md`.
-- [ ] All unit, API, UI, and E2E tests pass from documented commands on final `main`. *(blocked until the release PR merges — the suites currently pass on `feature/23-release-polish`, not on `main`)*
+- [ ] All unit, API, UI, and E2E tests pass from documented commands on final `main`.
 - [x] No test skipped, disabled, or commented out.
 - [x] Backend enforces authentication and role-based authorization on every protected endpoint (verified by authorization tests).
 - [x] Backend enforces ownership on every Requester ticket/attachment endpoint.
@@ -357,9 +365,9 @@ demonstration, which no agent may tick on their behalf.*
 - [x] Seed runs idempotently; migrations apply cleanly on an existing database with Lab 2 data intact.
 - [x] Responsive screenshots captured at Desktop, Tablet, and Mobile into `artifacts/lab-03/screenshots/`.
 - [x] Peer-review evidence recorded in `docs/lab-03/reviewer.md`.
-- [x] `docs/lab-03/ai-use.md` records the LLM used, 6–10 key prompts, and a short reflection.
-- [ ] All work merged through reviewed PRs: feature branches → `lab3-staging` → one release PR → `main`. *(blocked until the release PR merges)*
-- [ ] Student can explain every implementation choice and demonstrate failure cases live. *(not a document claim — satisfied by the live demo, not by this file)*
+- [x] `docs/lab-03/ai-use.md` records the LLM used, the 10 key prompts retained, and a short reflection.
+- [ ] All work merged through reviewed PRs: feature branches → `lab3-staging` → one release PR → `main`. *(ticked in the release PR)*
+- [ ] Student can explain every implementation choice and demonstrate failure cases live. *(satisfied by the live demo, not by this file)*
 
 ## 11. Assumptions and Decisions
 
@@ -369,7 +377,7 @@ demonstration, which no agent may tick on their behalf.*
 - **AD-04:** The Lab 2 `Requester` model is kept as a legacy reference. Existing `Ticket.requesterId` and `Attachment.uploadedByRequesterId` FK columns continue to point at the `Requester` table. A new `requesterUserId` FK on `Ticket` links to the authenticated `User`.
 - **AD-05:** "Problem Appears Resolved" is modeled as a boolean + nullable timestamp on `Ticket`, not as a status change. This preserves the formal status workflow while recording the Requester's indication.
 - **AD-06:** Administrators may claim/own staff tickets and operate on them alongside IT Staff (the ticket owner may be "IT Staff or Administrator"). This is consistent with the handout page 3 authorization matrix and the assignment matrix in section 4.5.
-- **AD-07:** Email addresses are stored and compared in lowercase for uniqueness (AD-07).
+- **AD-07:** Email addresses are stored and compared in lowercase for uniqueness.
 - **AD-08:** Comment and Note maximum content length is 2000 characters. Both Public Comments and Internal Notes apply the same limit. Timelines render newest-first.
 - **AD-09:** Queue default ordering is `updatedAt` descending; default page size is 10; "sort by priority" means `itPriority`.
 - **AD-10:** The initial password for a newly created user is provided by the Administrator at creation time (mandatory field). The user gets `mustChangePassword = true` and must change it at first login. No email delivery is involved.
@@ -378,6 +386,6 @@ demonstration, which no agent may tick on their behalf.*
 
 ---
 
-*End of specification. This document is the engineering contract for the AI coding agent; changes require student approval and a version bump.*
+*End of specification. Changes require student approval and a version bump.*
 
 **Approval:** Reviewed and approved by the student on 2026-09-10. AD-01–AD-12 confirmed. This version is the implementation baseline (Spec DD evidence).
