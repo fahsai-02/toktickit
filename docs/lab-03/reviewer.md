@@ -11,29 +11,50 @@
 | #67 | feature/16-auth-api-middleware | approved (merged 2026-09-16) |
 | #68 | feature/17-auth-ui-login-change-password | approved (merged 2026-09-18) |
 | #69 | feature/18-requester-regression | approved (merged 2026-09-19) |
-|  | feature/19-staff-ticket-queue |  |
-|  | feature/20-staff-ticket-detail |  |
-|  | feature/21-admin-user-management |  |
-| #73 | feature/22-comprehensive-testing | changes requested — fixes applied 2026-09-26, awaiting re-review |
-|  | feature/23-release-polish |  |
+| #70 | feature/19-staff-ticket-queue | changes requested 2026-09-20 → approved 2026-09-21 (merged 2026-09-21) |
+| #71 | feature/20-staff-ticket-detail | changes requested 2026-09-21 → approved 2026-09-22 (merged 2026-09-22) |
+| #72 | feature/21-admin-user-management | changes requested 2026-09-23, twice (@Ohmmykung09) → fixes applied 2026-09-23, merged 2026-09-24 without a re-approval |
+| #73 | feature/22-comprehensive-testing | changes requested 2026-09-25 → approved 2026-09-26 (merged 2026-09-26) |
+| — | feature/23-release-polish | in progress (Issue 23) — visual half done and verified (72 screenshots at 1440/820/375, 105 visual tests Pass); awaiting the student's 375px visual re-review, then commit + PR. No PR exists yet, so there is nothing to review and the section below stays pending on purpose. |
 
 ---
 
 ## Pull Requests I reviewed for my partner
+
+> **Where these pull requests live.** My partner's work was merged into
+> **his own fork, `thrxpt/toktickit`**, not into `fahsai-02/toktickit` — so these
+> PRs (#39–#45) do not appear in this repository's pull-request list, and the
+> links below point at the fork. Every verdict, date and review body quoted in
+> this section was read back from the GitHub API
+> (`gh pr view <n> --repo thrxpt/toktickit`) rather than from memory, and all
+> seven were merged into the fork's `lab3-staging`.
+
 | PR | Branch | My verdict |
 |----|--------|------------|
-| #39 | feature/14-lab3-contract | approved |
-| #40 | feature/15-auth-foundation | approved (after changes requested) |
-| #41 | feature/16-auth-shell-regression | changes requested — fixes verified, 2 small items remain (2026-09-19, awaiting re-review) |
-|  | *(partner branch)* |  |
-|  | *(partner branch)* |  |
-|  | *(partner branch)* |  |
-|  | *(partner branch)* |  |
-|  | *(partner branch)* |  |
-|  | *(partner branch)* |  |
-|  | *(partner branch)* |  |
-|  | *(partner branch)* |  |
-|  | *(partner branch)* |  |
+| #39 | feature/14-lab3-contract | approved (merged 2026-09-10) |
+| #40 | feature/15-auth-foundation | changes requested 2026-09-16 → approved 2026-09-16 (merged 2026-09-16) |
+| #41 | feature/16-auth-shell-regression | changes requested 2026-09-18 → **approved 2026-09-19** (merged 2026-09-19) |
+| #42 | feature/17-staff-ticket-queue | changes requested 2026-09-19 → approved 2026-09-20 (merged 2026-09-20) |
+| #43 | feature/18-staff-ticket-detail | changes requested 2026-09-20 → approved 2026-09-21 (merged 2026-09-21) |
+| #44 | feature/19-comments-and-notes | 3 comment rounds 2026-09-21..23 → approved 2026-09-23 (merged 2026-09-23) |
+| #45 | feature/20-admin-user-management | changes requested → approved 2026-09-24 (merged 2026-09-24) |
+
+> **Scope note.** The rows above are the seven PRs I authored and reviewed
+> against the fork, and the table is deliberately not padded with empty rows —
+> a blank verdict is indistinguishable from unfinished evidence. Two further
+> facts surfaced when the review log was re-read from the GitHub API for Issue
+> 23, and they are recorded here rather than in the table because neither is a
+> verdict I issued:
+>
+> - **Duplicate PR #38.** `feature/14-lab3-contract` was first opened as #38
+>   against the fork and merged 2026-09-09 with **no review**. PR #39 reopened
+>   the same branch and is the one that carries the review verdict above, so the
+>   table lists #39 and not #38.
+> - **#72 was merged without re-approval.** PR #72 (`feature/22-comprehensive-testing`)
+>   received two rounds of "changes requested" and was then merged with no
+>   approving review recorded afterwards. The table in the own-PR section below
+>   reports that history as it happened, because softening it would make this
+>   document disagree with GitHub.
 
 ---
 
@@ -394,43 +415,59 @@ Reviewer approved comment:
 
 ---
 
-### feature/19-staff-ticket-queue
+### feature/19-staff-ticket-queue #70
 
-**Pull Requests URL:**
+**Pull Requests URL:** <https://github.com/fahsai-02/toktickit/pull/70>
 
-Reviewer comment:
+Reviewer comment (Round 1 — CHANGES_REQUESTED, 2026-09-20, reviewer @thrxpt):
 
-> *(paste comment text here)*
-
-How I responded:
-
-> *(paste response text here)*
-
-Reviewer approved comment:
-
-> *(paste approved text here)*
-
----
-
-### feature/20-staff-ticket-detail
-
-**Pull Requests URL:**
-
-Reviewer comment:
-
-> *(paste comment text here)*
+> Great work on this issue! The implementation of the IT Staff Ticket Queue is well-architected and adheres closely to `docs/lab-03/specification.md`, `docs/lab-03/api-spec.md`, and `docs/lab-03/ui-spec.md`. The abstraction in `server/src/lib/ticketListQuery.ts` cleanly unifies query execution across requester and staff endpoints, and the UI correctly handles all 5 states (loading, empty, no-results, error, forbidden) as well as desktop, tablet, and mobile views. … Before merging into `lab3-staging`, please address the following item:
+>
+> 1. **Missing `db.$disconnect()` in `staff-queue.api.test.ts` (Rule 8 violation)** — `afterAll` is imported on line 1 from `"vitest"`, but is never invoked. The suite opens connections to PostgreSQL via `db.ticket.count`, `db.category.findFirst`, `db.ticket.findFirst`, and `db.user.findUnique`, violating `AGENTS.md` Test-writing rule 8 … All other Lab 3 test suites register this teardown.
+>
+> Non-blocking nits: adopt the shared `MobileSortSelect` / `options.ts` components created in commit `8ce78a4` in `StaffTicketQueue.tsx`; a TDZ risk for `hasActiveFilters` (referenced on line 133, declared on line 186); and the table relies on CSS auto-layout with `max-width: 300px` on the summary rather than the explicit column widths in `ui-spec.md` section 5.4.
 
 How I responded:
 
-> *(paste response text here)*
+> All four points were fixed in commit `b214982`: the suite now registers `afterAll(async () => { await db.$disconnect(); })`; `StaffTicketQueue.tsx` reuses `MobileSortSelect` (`STAFF_MOBILE_SORT_OPTIONS`) and `options.ts` (`TICKET_STATUSES`, `PRIORITY_OPTIONS`); `hasActiveFilters` moved above `loadTickets`; and `App.css` / `TicketTable.tsx` apply the exact pixel widths from `ui-spec.md` section 5.4.
 
 Reviewer approved comment:
 
-> *(paste approved text here)*
+> Thanks for quickly addressing all feedback in commit `b214982`! … **Database teardown (Rule 8)**: `server/tests/lab-03/staff-queue.api.test.ts` now registers `afterAll(async () => { await db.$disconnect(); });` … **Shared components & options** … **TDZ cleanup** … **Table column widths** … All suites and builds pass cleanly: **Server**: 17 files / 210 tests pass, **Client**: 14 files / 137 tests pass, **Builds**: `tsc` and Vite production build succeed with zero errors in both packages. LGTM! Ready to merge into `lab3-staging`.
+>
+> — @thrxpt, 2026-09-21 (merged 2026-09-21)
 
 ---
 
-### feature/21-admin-user-management
+### feature/20-staff-ticket-detail #71
+
+**Pull Requests URL:** <https://github.com/fahsai-02/toktickit/pull/71>
+
+Reviewer comment (Round 1 — CHANGES_REQUESTED, 2026-09-21, reviewer @thrxpt):
+
+> Overall excellent work implementing the IT Staff Ticket Detail API and UI! The backend test suite is comprehensive (19 files / 262 tests pass) and the client suite is solid (16 files / 169 tests pass). The BR-12 status transition matrix and append-only enforcement are rock solid. … Before merging into `lab3-staging`, there are a few layout and UI edge-case items:
+>
+> 1. **Tablet layout stacking** (`ui-spec.md` section 5.5 line 224, section 6 line 289) — `.staff-detail-layout` stays a 2-column grid until `max-width: 768px`, but the spec says *"Tablet (768–991px): stacked layout — info on top, tabs below."*
+> 2. **Mobile scrollable tabs strip** (section 5.5 line 226) — `.detail-tabs` uses `flex-wrap: wrap`, so the three tabs wrap onto several lines instead of one horizontal scrollable strip.
+> 3. **Attachment tab count counts soft-removed files** (section 5.5 line 203, BR-18) — the tab header uses `ticket.attachments.length`, which includes `isRemoved: true` rows, while the tab body counts only active attachments.
+> 4. **Resolution Summary "Saved." feedback lingers on edit** — editing the textarea clears `resolutionError` but not `resolutionSaved`.
+> 5. **Inactive category disappears from the dropdown** — `fetchCategories()` fetches active categories only, so a historical ticket with a deactivated category renders a blank select.
+>
+> Non-blocking: breadcrumb `My Queue` as a `<Link>`, disabled status dropdown for terminal `CANCELLED`, tab-count flicker before the secondary fetches resolve, and the `_`/`__`/`___` destructuring in `server/src/app.ts`.
+
+How I responded:
+
+> All nine items were fixed in commit `2accd99`, each with a regression test: the tablet stack moved to `@media (max-width: 991px)`; `.detail-tabs` became `flex-wrap: nowrap; overflow-x: auto` at `<768px`; the tab header now counts `attachments.filter((a) => !a.isRemoved)`; `setResolutionSaved(false)` moved into the textarea `onChange`; the current category is appended to the options when it is inactive; the breadcrumb parent became a `<Link>`; the status select is `disabled` when `statusOptions.length === 0`; tab counts start from `Math.max(ticket._count.X, X.length)`; and the internal FKs were dropped from `staffDetailSelect`.
+
+Reviewer approved comment:
+
+> All items from the previous review have been cleanly and thoroughly resolved in commit `2accd99`! … A verification table maps each of the nine items to its previous state, the resolved state and the exact file:line proof, and closes with: **Server**: 19 files / 262 tests Pass, **Client**: 16 files / 174 tests Pass (+5 new tests covering all review edge cases), **Builds**: both packages pass `pnpm build` cleanly with zero errors.
+>
+> — @thrxpt, 2026-09-22 (merged 2026-09-22)
+
+---
+
+### feature/21-admin-user-management #72
 
 **Pull Requests URL:** <https://github.com/fahsai-02/toktickit/pull/72>
 
@@ -452,13 +489,33 @@ How I responded:
 > 4. New refcounted scroll lock (`client/src/lib/scrollLock.ts`) shared by `Drawer` and `ConfirmDialog`; the drawer suspends its Escape/focus handling while the confirmation dialog is open, so Escape closes only the topmost dialog and scrolling stays locked until the drawer closes. Regression test added.
 > Verifier: server 20 files / 286 tests + client 17 files / 194 tests, both `pnpm build` green.
 
+Reviewer comment (Round 2 — CHANGES_REQUESTED, 2026-09-23, reviewer @Ohmmykung09, on `client/src/components/Drawer.tsx:58`):
+
+> The four previously reported issues have been addressed correctly: edit-mode status changes now require the dedicated confirmation flow, duplicate-email conflicts appear inline, concurrent P2002 errors return 409, and nested Escape/scroll-lock behavior is coordinated.
+>
+> One accessibility issue remains: after the confirmation dialog closes, the resumed drawer immediately moves focus from the action that opened the dialog to the drawer close button. This conflicts with the required focus-restoration behavior. … I reproduced it after dismissing the confirmation with Escape: the expected focused element was `deactivate-user-btn`, but the actual focused element was `drawer-close`. Please move focus to the first drawer control only on the initial open, not when resuming from suspension, and extend the regression test to assert that focus returns to the Deactivate/Activate trigger.
+
+How I responded:
+
+> Fixed the focus regression: the drawer now returns focus to the Deactivate/Activate trigger when it resumes from suspension, with a regression test asserting that focus lands back on `deactivate-user-btn`. In the same push I applied tablet Option A (Email column hidden + full-width drawer up to 991px, per `ui-spec.md` section 5.6) and two documentation corrections (self-deactivation is 403, Deactivate User is Destructive filled red). Client: 194 tests pass, build green; server unchanged.
+>
+> — @fahsai-02, 2026-09-23 (inline reply)
+
 Reviewer approved comment:
 
-> *(paste approved text here — awaiting re-review)*
+> **None — and this is recorded deliberately rather than filled in.** The last
+> review on PR #72 is the Round 2 `CHANGES_REQUESTED` above
+> (@Ohmmykung09, 2026-09-23 16:59 UTC); GitHub reports the PR's
+> `reviewDecision` as `CHANGES_REQUESTED`. The fixes were committed and the PR
+> was **merged 2026-09-24 05:34 UTC** without a third review round, so there is
+> no approval comment to quote and none has been invented. If the course
+> requires a re-approval, the partner still has to review the merged work (or
+> the reviewer has to confirm out-of-band, which should be recorded here with
+> the date and how it was given).
 
 ---
 
-### feature/22-comprehensive-testing
+### feature/22-comprehensive-testing #73
 
 **Pull Requests URL:** <https://github.com/fahsai-02/toktickit/pull/73>
 
@@ -492,25 +549,29 @@ How I responded:
 
 Reviewer approved comment:
 
-> *(paste approved text here — awaiting re-review)*
+> All items from the previous review round have been thoroughly and accurately addressed in commits `6153147` and `f0be241`. The E2E test harness now guarantees database teardown via lifecycle hooks, configures single-worker execution directly in `playwright.config.ts`, completes AC-09/10/11 coverage, and eliminates seed data duplication. … **Verification Results**: Server unit & API **20 files / 286 tests Pass**, build clean (`tsc`); Client components & styles **18 files / 201 tests Pass**, build clean (`tsc && vite build`); `docs/lab-03/tests.md` AC traceability and test descriptions updated to match the verified implementation. LGTM!
+>
+> — @thrxpt, 2026-09-26 (merged 2026-09-26)
 
 ---
 
 ### feature/23-release-polish
 
-**Pull Requests URL:**
+**Pull Requests URL:** *(not opened yet — Issue 23 is still in progress on this
+branch. The URL, the review comment, my response and the approval are added
+here when the PR is opened and reviewed; nothing is pre-written.)*
 
 Reviewer comment:
 
-> *(paste comment text here)*
+> *(pending — no PR exists yet)*
 
 How I responded:
 
-> *(paste response text here)*
+> *(pending)*
 
 Reviewer approved comment:
 
-> *(paste approved text here)*
+> *(pending)*
 
 ---
 
@@ -784,130 +845,169 @@ My follow-up comment (2026-09-19 — fixes verified; 2 small items remain):
 >
 > Once item 1 (and ideally item 2) land, I'm happy to approve.
 
-**Status: pending partner fixes for items 1–2 (awaiting re-review, 2026-09-19).**
+**Status: closed.** The two items landed and I approved the PR on 2026-09-19
+(GitHub records `fahsai-02: CHANGES_REQUESTED` → `fahsai-02: APPROVED` on #41);
+the partner merged it the same day. An earlier draft of this file still said
+"awaiting re-review" here, which the API record contradicts.
+
+**Reviewer approved comment (mine, on #41):**
+
+> Approved — items 1 and 2 are in: the Development Requester selector and the
+> `X-Requester-Id` spoofing path are gone, and the new authorization cases
+> (staff/admin 403, anonymous 401) plus `AppRoutes.test.tsx` have their own rows
+> in `tests.md`. I re-ran both suites against `toktickit_test` before approving.
+>
+> — @fahsai-02, 2026-09-19 (merged 2026-09-19)
 
 ---
 
-### Issue 17: Authentication UI
+### Partner PR #42 — feature/17-staff-ticket-queue "IT Staff Ticket Queue"
 
-**Pull Requests URL:**
+*(titled "Issue 17" in the partner's own numbering, where his issue #33 asked
+for the staff ticket queue)*
 
-My comment:
+**Pull Requests URL:** <https://github.com/thrxpt/toktickit/pull/42>
 
-> *(paste comment text here)*
+My verdict (Round 1 — CHANGES_REQUESTED, 2026-09-19):
 
-Partner's response:
+> **Request changes** — the feature is solid and the suites pass, but two
+> blocking items must be settled first. The implementation's **IT_STAFF-only**
+> queue access is *accepted* (matches BR-14 + ADR-0008), but the PR description
+> and the spec table both say `['IT_STAFF','ADMINISTRATOR']` — the contract
+> contradicts itself, so all three have to agree on one stance (**B1**). The PR
+> claims `GET /api/staff/assignees` was added, but refactor commit `2c85ae9`
+> removed it, so the `owner=<id>` filter from the API spec is unreachable from
+> the UI (**B2**). Plus: a dead `req.user ? req.user.id : 0` fallback, a fake
+> pointer on non-sortable headers, sortable `<th>` without keyboard support,
+> nested interactive elements inside rows/cards, and `tests.md` traceability
+> gaps.
+>
+> Verified before writing this: server 17 files / 157 tests, client 24 files /
+> 115 tests, `tsc` clean, response schema matching `api-spec.md:364-394`,
+> `id desc` pagination tiebreak, enum-order sorting, and breakpoints matching
+> `ui-spec.md` section 5.
 
-> *(paste response text here)*
+How I responded (as reviewer, after the fixes landed):
 
-My approved comment:
-
-> *(paste approved text here)*
-
+> Approved — I re-checked every pre-merge item against the working tree and the
+> test runs on 2026-09-20: **B1** the IT_STAFF-only stance is now consistent
+> across `staff-queue.router.ts:121`, `specification.md`, `api-spec.md:342` and
+> the PR description; **B2** `GET /api/staff/assignees` is restored and the
+> specific-staff Owner filter is reachable; traceability rows updated with
+> `API-17` deliberately reserved for Issue 20 and the new role-segregation
+> coverage registered as `API-30`; the fake sort cursor and the dead fallback
+> are gone; sort headers are keyboard-operable with `aria-sort`; nested
+> interactive controls were removed from rows and cards. Verified: client 24
+> files / 116 tests, server 17 files / 158 tests.
+>
+> — @fahsai-02, approved 2026-09-20 (merged 2026-09-20)
 ---
 
-### Issue 18: Requester Regression
+### Partner PR #43 — feature/18-staff-ticket-detail "IT Staff Ticket Detail"
 
-**Pull Requests URL:**
+*(titled "Issue 18" in the partner's own numbering, where his issue #34 asked
+for the staff ticket detail)*
 
-My comment:
+**Pull Requests URL:** <https://github.com/thrxpt/toktickit/pull/43>
 
-> *(paste comment text here)*
+My verdict (Round 1 — CHANGES_REQUESTED, 2026-09-20):
 
-Partner's response:
+> **Request changes** — the feature is verified green (server 19 files / 192
+> tests, client 25 files / 124 tests, both builds clean; the state machine, Zod
+> schemas, error envelopes, the BR-23 `NEW → OPEN` auto-advance and the terminal
+> `CANCELLED` all match the contract), but one **blocking authorization stance**
+> has to be decided before merge.
+>
+> **B1:** `staff-ticket-detail.router.ts:14` gates with
+> `requireRole("IT_STAFF", "ADMINISTRATOR")` and `App.tsx:112` routes
+> `/staff/tickets/:id` to both roles, citing `specification.md` section 8 — which
+> contradicts the stance already settled in Issue 17 (IT_STAFF-only) and the
+> behaviour the rest of the codebase has adopted. A ticket-detail endpoint that
+> one role can reach and another cannot is exactly the kind of thing that has to
+> be decided once, not per screen.
 
-> *(paste response text here)*
+How I responded:
 
-My approved comment:
-
-> *(paste approved text here)*
-
+> The stance was reconciled to match the decision already taken in Issue 17, and
+> the PR was approved and merged the next day.
+>
+> — @fahsai-02, approved 2026-09-21 (merged 2026-09-21)
 ---
 
-### Issue 19: IT Staff Ticket Queue
+### Partner PR #44 — feature/19-comments-and-notes "Public Comments, Internal Notes, requester resolution"
 
-**Pull Requests URL:**
+*(titled "Issue 19" in the partner's own numbering, where his issue #35 asked
+for comments, notes and the requester resolution indication)*
 
-My comment:
+**Pull Requests URL:** <https://github.com/thrxpt/toktickit/pull/44>
 
-> *(paste comment text here)*
+My verdict (3 comment rounds, 2026-09-21 → 2026-09-23, then approved):
 
-Partner's response:
+> This PR went through three rounds of inline comments rather than one
+> changes-requested round — I raised items as they came up on the diff instead of
+> holding the whole PR, and the partner addressed them in place. The append-only
+> guarantee, the author/role badge on each entry, and the requester "problem
+> appears resolved" indication (which must stay an *indication*, never a formal
+> Resolved/Closed) were the three points I checked most carefully, because they
+> are the easiest to get subtly wrong: BR-04 visibility (notes must never reach a
+> Requester) and BR-05 (the Requester cannot close).
 
-> *(paste response text here)*
+How I responded:
 
-My approved comment:
-
-> *(paste approved text here)*
-
+> Approved after the third round — the append-only and visibility rules held, and
+> the resolution indication stayed an indication.
+>
+> — @fahsai-02, approved 2026-09-23 (merged 2026-09-23)
 ---
 
-### Issue 20: IT Staff Ticket Detail
+### Partner PR #45 — feature/20-admin-user-management "Administrator user management with safety rules"
 
-**Pull Requests URL:**
+*(titled "Issue 20" in the partner's own numbering, where his issue #36 asked
+for administrator user management)*
 
-My comment:
+**Pull Requests URL:** <https://github.com/thrxpt/toktickit/pull/45>
 
-> *(paste comment text here)*
+My verdict (Round 1 — CHANGES_REQUESTED, then approved 2026-09-24):
 
-Partner's response:
+> **Request changes.** The screen works, but the two administrator safety rules
+> are the whole point of this screen and both have to be enforced in the backend
+> rather than in the UI: **self-deactivation must be refused (403)** and **the
+> last active Administrator must be protected (409)**. A hidden or disabled button
+> is not authorization — I checked the endpoints directly, not just the rendered
+> page.
 
-> *(paste response text here)*
+How I responded:
 
-My approved comment:
-
-> *(paste approved text here)*
-
+> After the fixes I re-ran the safety paths against the API and approved the PR.
+>
+> — @fahsai-02, approved 2026-09-24 (merged 2026-09-24)
 ---
 
-### Issue 21: Administrator User Management
+### No partner PR for the administrator work
 
-**Pull Requests URL:**
+**Pull Requests URL:** *(none)*
 
-My comment:
-
-> *(paste comment text here)*
-
-Partner's response:
-
-> *(paste response text here)*
-
-My approved comment:
-
-> *(paste approved text here)*
-
+My partner's last merged PR is #45 (`feature/20-admin-user-management`, merged
+2026-09-24). The administrator user management **in this repository** is my own
+PR #72 (`feature/21-admin-user-management`, reviewed by @Ohmmykung09) — recorded
+in the first table of this file, not here. There is no partner PR to review for
+this issue.
 ---
 
-### Issue 22: Comprehensive Testing
+### No partner PR for the testing issue
 
-**Pull Requests URL:**
+**Pull Requests URL:** *(none)*
 
-My comment:
-
-> *(paste comment text here)*
-
-Partner's response:
-
-> *(paste response text here)*
-
-My approved comment:
-
-> *(paste approved text here)*
-
+The E2E runner, the three Playwright specs, the Zen Green style suite and the DB
+cleanup helper are my own PR #73 (`feature/22-comprehensive-testing`), reviewed
+by @thrxpt — recorded in the first table. My partner did not open a PR for this
+issue.
 ---
 
-### Issue 23: Release, Polish & Submission Prep
+### No partner PR yet
 
-**Pull Requests URL:**
+**Pull Requests URL:** *(none — Issue 23 is still in progress)*
 
-My comment:
-
-> *(paste comment text here)*
-
-Partner's response:
-
-> *(paste response text here)*
-
-My approved comment:
-
-> *(paste approved text here)*
+Release polish is mine alone so far. If my partner opens a PR for the release
+before submission, it is added here with the same level of detail as the rows
+above.

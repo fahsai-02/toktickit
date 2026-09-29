@@ -1,4 +1,4 @@
-import { expect, test, type Page, type TestInfo } from "@playwright/test";
+import { expect, test, type APIRequestContext, type Page, type TestInfo } from "@playwright/test";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { SEED_USERS } from "../../server/src/lib/seedData.js";
@@ -37,15 +37,23 @@ export function resetLab3Db() {
  * Desktop project only. The functional lab-03 specs `test.skip` themselves on
  * the tablet/mobile projects, and re-seeding for a test that never executes is
  * pure cost — each hook hashes 11 accounts with bcrypt at cost 12.
+ *
+ * Pass `{ allProjects: true }` for the visual specs (Issue 23, RESP-01..30),
+ * which DO execute on all three viewport projects. They need it: every seeded
+ * Requester holds an initial password (BR-02), so reaching any requester screen
+ * means completing a mandatory first-login change, which rewrites that account's
+ * password. Re-seeding per project restores the documented password before each
+ * viewport run, so the same seed account can be reused on desktop, tablet, and
+ * mobile without the second viewport failing to log in.
  */
-export function useLab3DbHooks() {
+export function useLab3DbHooks(options: { allProjects?: boolean } = {}) {
   // Typed off `test.beforeAll` itself so the signature (and Playwright's
   // "first argument must destructure" rule) stays in sync with the installed
   // version. `beforeAll` is overloaded — (hookFn) and (title, hookFn) — so the
   // hook parameter is index 1. `TestInfo` is the hook's second argument.
   type DbHook = Parameters<typeof test.beforeAll>[1];
   const hook: DbHook = ({}, testInfo: TestInfo) => {
-    if (testInfo.project.name !== "desktop") return;
+    if (!options.allProjects && testInfo.project.name !== "desktop") return;
     // A hook gets the PROJECT timeout (60s in playwright.config.ts), not the
     // test's own `test.setTimeout`, so the seed needs a bigger budget here.
     test.setTimeout(180_000);
@@ -160,4 +168,217 @@ export async function changePasswordViaUi(
   await page.fill("#change-confirm", newPassword);
   await page.click('[data-testid="change-password-submit"]');
   await expect(page).not.toHaveURL(/\/change-password/);
+}
+
+/** Base URL of the API — the Vite dev server proxies `/api` to it. */
+export const API_BASE = "http://localhost:5000";
+
+// ── Screenshot + layout evidence (Issue 23, RESP-01..30) ──────────────────
+
+/**
+ * Root of the committed screenshot tree. Paths mirror `ui-spec.md` section 9
+ * exactly, so a reviewer can diff a spec line against a file on disk.
+ *
+ * `.gitignore` carries a blanket `*.png` (it exists to keep stray images out of
+ * commits), so these files need `git add -f` — the same treatment the Lab 2
+ * screenshots under `artifacts/lab-02/screenshots/` already have.
+ */
+export const SHOT_ROOT = "artifacts/lab-03/screenshots";
+
+/**
+ * True for the projects whose width falls in the mobile layout band
+ * (`client/src/App.css` `@media (max-width: 768px)`), which is what decides
+ * whether a screen shows its desktop table or its mobile card list.
+ *
+ * Callers must ask this instead of comparing against the project name, so a
+ * newly added viewport project cannot accidentally be asserted as a desktop
+ * table on a screen that renders cards.
+ */
+export function isMobileProject(projectName: string) {
+  return projectName === "mobile";
+}
+
+/**
+ * Assert the page does not scroll sideways at the current viewport — the
+ * headline acceptance criterion of Issue 23 ("no unintended horizontal
+ * scrolling"). `scrollWidth` is the widest pixel column the document occupies;
+ * when it exceeds the window width, something is sticking out and the user
+ * would have to scroll a page that is supposed to fit.
+ *
+ * One pixel of slack is allowed: sub-pixel layout rounds `scrollWidth` up, and
+ * a 1px overhang produces no scrollbar in any browser, so failing on it would
+ * be a false alarm. The two real defects this caught were 2px (hamburger) and
+ * 19px (profile button + role badge), both far outside that slack.
+ */
+export async function assertNoHorizontalScroll(page: Page) {
+  const scrollWidth = await page.evaluate(
+    () => Math.max(document.body.scrollWidth, document.documentElement.scrollWidth)
+  );
+  const innerWidth = await page.evaluate(() => window.innerWidth);
+  expect(
+    scrollWidth,
+    `document scrollWidth ${scrollWidth} exceeds innerWidth ${innerWidth}`
+  ).toBeLessThanOrEqual(innerWidth + 1);
+}
+
+export interface CaptureOptions {
+  /**
+   * `true` (default) captures the whole scrollable page. Overlay shots — the
+   * create/edit drawer, the deactivation dialog — pass `false`: those elements
+   * are `position: fixed`, and a stitched full-page screenshot re-renders them
+   * against the taller virtual viewport, which smears a single overlay across
+   * the whole image.
+   */
+  fullPage?: boolean;
+}
+
+/**
+ * Save a viewport screenshot to
+ * `artifacts/lab-03/screenshots/<screen>/<project>.png`, where `<screen>` may
+ * contain a slash (`states/login-error`) and `<project>` is the Playwright
+ * project name (desktop / tablet / mobile).
+ */
+export async function capture(
+  page: Page,
+  screen: string,
+  project: string,
+  options: CaptureOptions = {}
+) {
+  const { fullPage = true } = options;
+  // Scroll to the top first: Playwright stitches a full-page shot from the
+  // current scroll offset, so a page left scrolled mid-list starts the image
+  // halfway down and puts the sticky header below a blank band.
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.evaluate(() => document.fonts?.ready);
+  // 600ms, not 150ms (the Lab 2 helper learned this the hard way): the sticky
+  // navbar needs longer to re-stick after a scroll-to-top, otherwise the mobile
+  // shots keep a white gap above the header.
+  await page.waitForTimeout(600);
+  await page.screenshot({
+    path: `${SHOT_ROOT}/${screen}/${project}.png`,
+    fullPage,
+  });
+}
+
+/**
+ * Log in and, when BR-02 forces it, complete the mandatory first-login change
+ * so the app unlocks. Returns the password the session actually holds.
+ *
+ * Every seeded Requester holds an initial password, so any requester screen
+ * below `/change-password` needs this. Accounts whose seed flag is already
+ * `false` (IT Staff, Administrator) skip straight through.
+ *
+ * Pass `{ completeMandatoryChange: false }` to STOP on the change-password
+ * screen instead of submitting it — that is what the RESP-04..06 screenshot
+ * needs, and submitting there would both destroy the evidence and burn the
+ * account's initial password for every later test in the run.
+ */
+export async function loginAndUnlock(
+  page: Page,
+  email: string,
+  password: string,
+  options: { completeMandatoryChange?: boolean } = {}
+) {
+  const { completeMandatoryChange = true } = options;
+  await page.goto("/login");
+  await page.fill("#login-email", email);
+  await page.fill("#login-password", password);
+  // Wait for the POST /api/auth/login round-trip itself. Without this the
+  // caller would read `page.url()` while the button is still in its busy
+  // state, decide "no redirect happened", and go on to assert against a page
+  // that has not been given the session cookie yet.
+  const loginResponse = page.waitForResponse(
+    (r) => r.url().includes("/api/auth/login") && r.request().method() === "POST"
+  );
+  await page.click('[data-testid="login-submit"]');
+  await loginResponse;
+  await page.waitForURL((url) => !url.pathname.startsWith("/login"));
+
+  if (new URL(page.url()).pathname !== "/change-password") return password;
+  if (!completeMandatoryChange) return password;
+
+  const newPassword = `Visual${Math.random().toString(36).slice(2, 10)}1!`;
+  await changePasswordViaUi(page, password, newPassword);
+  return newPassword;
+}
+
+/**
+ * Log in over the Admin API and return the raw `Cookie` header value.
+ *
+ * The cookie is handed back to callers instead of relying on
+ * `APIRequestContext`'s own cookie jar: one context is shared per test, and a
+ * jar cookie left over from an earlier login does not reliably give way to an
+ * explicit `Cookie` header, which surfaced as a puzzling 401 from
+ * `GET /api/admin/users`.
+ */
+export async function adminSessionCookie(
+  request: APIRequestContext,
+  adminEmail: string,
+  adminPassword: string
+): Promise<string> {
+  const login = await request.post(`${API_BASE}/api/auth/login`, {
+    data: { email: adminEmail, password: adminPassword },
+  });
+  expect(login.status(), `admin login: ${login.status()} ${await login.text()}`).toBe(200);
+  const cookie = login.headers()["set-cookie"] ?? "";
+  expect(cookie, "admin login must set a session cookie").not.toBe("");
+  return cookie.split(";")[0];
+}
+
+/**
+ * Create an account through the real Admin API and return its credentials.
+ * Used only where a state cannot be reached with seed data alone (a Requester
+ * with zero tickets, a second Administrator for the self-deactivation guard).
+ *
+ * The `e2e.` email prefix is what `server/prisma/cleanup-e2e.ts` matches on, so
+ * the throwaway never survives into the shared dev DB. The admin session cookie
+ * comes back too, so a caller can keep using the same session instead of
+ * logging in a second time.
+ */
+export async function createUserViaAdminApi(
+  request: APIRequestContext,
+  adminEmail: string,
+  adminPassword: string,
+  role: "REQUESTER" | "IT_STAFF" | "ADMINISTRATOR"
+): Promise<{ email: string; password: string; sessionCookie: string }> {
+  const email = e2eEmail(role.toLowerCase());
+  const password = NEW_USER_INITIAL_PASSWORD;
+  const cookie = await adminSessionCookie(request, adminEmail, adminPassword);
+
+  const res = await request.post(`${API_BASE}/api/admin/users`, {
+    headers: { cookie },
+    data: { name: `Visual ${role} ${Date.now()}`, email, role, initialPassword: password },
+  });
+  expect(res.status(), `admin create user: ${res.status()} ${await res.text()}`).toBe(201);
+  return { email, password, sessionCookie: cookie };
+}
+
+/**
+ * Flip a user's activation through the real Admin API, used to undo a
+ * throwaway account from `createUserViaAdminApi` before a later test depends on
+ * the Administrator count (Lab 3 has no user-deletion endpoint, so "deactivate"
+ * is the only way back). Driven over the API rather than the drawer so the call
+ * does not have to fight an overlay a failed assertion left open.
+ */
+export async function setUserActiveViaAdminApi(
+  request: APIRequestContext,
+  sessionCookie: string,
+  targetEmail: string,
+  isActive: boolean
+) {
+  const headers = { cookie: sessionCookie };
+  const listed = await request.get(
+    `${API_BASE}/api/admin/users?search=${encodeURIComponent(targetEmail)}`,
+    { headers }
+  );
+  expect(listed.status(), `admin list: ${listed.status()} ${await listed.text()}`).toBe(200);
+  const body = (await listed.json()) as { data?: { id: number; email: string }[] };
+  const target = body.data?.find((u) => u.email === targetEmail);
+  expect(target, `admin list must return ${targetEmail}`).toBeTruthy();
+
+  const res = await request.put(`${API_BASE}/api/admin/users/${target!.id}`, {
+    headers,
+    data: { isActive },
+  });
+  expect(res.status(), `admin set isActive: ${res.status()} ${await res.text()}`).toBe(200);
 }

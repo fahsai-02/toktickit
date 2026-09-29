@@ -128,7 +128,10 @@ export default function Navbar() {
                 onClick={() => setProfileOpen((v) => !v)}
               >
                 <span className="profile-name">{user.name}</span>
-                <Badge variant={roleBadgeVariant(user.role)}>
+                <Badge
+                  variant={roleBadgeVariant(user.role)}
+                  className="profile-role"
+                >
                   {roleLabel(user.role)}
                 </Badge>
                 <ChevronDown size={16} aria-hidden="true" />

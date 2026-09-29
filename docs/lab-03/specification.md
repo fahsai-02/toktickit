@@ -336,7 +336,7 @@ Error codes: `VALIDATION_ERROR`, `NOT_FOUND`, `FORBIDDEN`, `UNAUTHORIZED`, `CONF
 - **AC-12:** Given one active Administrator, when attempting to deactivate that Administrator, then the operation is rejected (409).
 - **AC-13:** Given a non-Administrator user, when accessing any admin endpoint, then the response is 403.
 - **AC-14:** Given duplicate email addresses, when a user is created or updated, then the operation is rejected with 409 Conflict.
-- **AC-15:** Given all screens, when rendered on desktop (1440×900), tablet (820×1180), and mobile (390×844), then layouts are correct with no horizontal overflow, no clipping, and no overlap.
+- **AC-15:** Given all screens, when rendered on desktop (1440×900), tablet (820×1180), and mobile (375×844), then layouts are correct with no horizontal overflow, no clipping, and no overlap.
 
 ## 10. Definition of Done (Product)
 
@@ -368,7 +368,7 @@ Error codes: `VALIDATION_ERROR`, `NOT_FOUND`, `FORBIDDEN`, `UNAUTHORIZED`, `CONF
 - **AD-09:** Queue default ordering is `updatedAt` descending; default page size is 10; "sort by priority" means `itPriority`.
 - **AD-10:** The initial password for a newly created user is provided by the Administrator at creation time (mandatory field). The user gets `mustChangePassword = true` and must change it at first login. No email delivery is involved.
 - **AD-11:** `itPriority` is initialized from `requestedPriority` on ticket creation and may only be changed by IT Staff or Administrator thereafter.
-- **AD-12:** Single Playwright project covers the responsive screenshot matrix (desktop 1440px, tablet 820px, mobile 390px), same as Lab 2.
+- **AD-12:** A single Playwright project per viewport covers the responsive screenshot matrix: desktop 1440px, tablet 820px, mobile 375px. Mobile is 375px to match AC-15 exactly. Tablet is 820px rather than the AC's 768px because `client/src/App.css` switches to the mobile layout at `max-width: 768px`, so a 768px-wide run would capture the mobile layout instead of the tablet one; 820px sits inside the tablet band (769–991px) defined in `ui-spec.md` section 6. Lab 2 used 390px for mobile, so the mobile width changed this lab.
 
 ---
 

@@ -69,5 +69,16 @@ docs/lab-02/TokTickIT_GitHub_Workflow_Guide_TH_EN.pdf
 submission.md
 *.png
 *.pdf
-issues.md
-lab3-engineering-spec-transcription.md
+
+# ...but the screenshot sets ARE a graded deliverable (AC-15, PDF Part 3).
+# The bare `*.png` rule above is what a handout image needs; without this
+# negation `git add artifacts/` silently skips every captured viewport and the
+# whole visual evidence set never reaches `main`. Keep the two in sync.
+!artifacts/**/*.png
+
+# instructor-provided course handouts (never commit)
+docs/lab-03/lab3-engineering-spec-transcription.md
+
+# local planning notes (never commit)
+docs/lab-03/issues.md
+docs/lab-03/issue-22-action-plan.md

@@ -29,6 +29,10 @@ export default defineConfig({
         viewport: { width: 1440, height: 900 },
       },
     },
+    // Tablet stays at 820px: `client/src/App.css` switches to the mobile
+    // layout at `max-width: 768px`, so a 768px-wide run would render the
+    // mobile layout instead of the tablet one. 820px sits inside the tablet
+    // band (769-991px) defined in `ui-spec.md` section 6.
     {
       name: "tablet",
       use: {
@@ -37,12 +41,16 @@ export default defineConfig({
         viewport: { width: 820, height: 1180 },
       },
     },
+    // Mobile is 375px to match the Issue 23 acceptance criteria verbatim
+    // ("1440px desktop, 768px tablet, or 375px mobile"). 375 is the narrowest
+    // supported layout, so it is where clipping, overlap and horizontal
+    // scrolling surface first — a wider capture would hide all three.
     {
       name: "mobile",
       use: {
         ...devices["Desktop Chrome"],
         channel: "chrome",
-        viewport: { width: 390, height: 844 },
+        viewport: { width: 375, height: 844 },
       },
     },
   ],
