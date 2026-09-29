@@ -242,10 +242,12 @@ spec re-seeds and cleans up through the `useLab3DbHooks()` helper.
 |---------|------|---------|
 | `desktop` | 1440×900 | functional E2E + all visual specs |
 | `tablet` | 820×1180 | visual specs |
-| `mobile` | 390×844 | visual specs |
+| `mobile` | 375×844 | visual specs |
 
 Tablet stays at 820px because the CSS switches to the mobile layout at
 `max-width: 768px`, so a 768px run would capture the mobile layout instead.
+Mobile is 375px, the narrowest width AC-15 names, so a run at 390px would have
+left the required width untested.
 
 ## Git Workflow
 

@@ -340,20 +340,26 @@ Error codes: `VALIDATION_ERROR`, `NOT_FOUND`, `FORBIDDEN`, `UNAUTHORIZED`, `CONF
 
 ## 10. Definition of Done (Product)
 
-- [ ] All Included scope implemented; no Excluded features present.
-- [ ] Every AC above verified by at least one automated test traced in `tests.md`.
-- [ ] All unit, API, UI, and E2E tests pass from documented commands on final `main`.
-- [ ] No test skipped, disabled, or commented out.
-- [ ] Backend enforces authentication and role-based authorization on every protected endpoint (verified by authorization tests).
-- [ ] Backend enforces ownership on every Requester ticket/attachment endpoint.
-- [ ] Screens conform to `ui-spec.md` (tokens, states, badges, responsive breakpoints) confirmed by screenshots at 3 viewports.
-- [ ] Implemented endpoints conform to `api-spec.md`; Prisma schema matches Section 7 with committed migrations.
-- [ ] Seed runs idempotently; migrations apply cleanly on an existing database with Lab 2 data intact.
-- [ ] Responsive screenshots captured at Desktop, Tablet, and Mobile into `artifacts/lab-03/screenshots/`.
-- [ ] Peer-review evidence recorded in `docs/lab-03/reviewer.md`.
-- [ ] `docs/lab-03/ai-use.md` records the LLM used, 6–10 key prompts, and a short reflection.
-- [ ] All work merged through reviewed PRs: feature branches → `lab3-staging` → one release PR → `main`.
-- [ ] Student can explain every implementation choice and demonstrate failure cases live.
+*Status recorded 2026-09-29, at the Issue 23 close-out. Eleven of the fourteen
+boxes are provable from the repository today and are ticked. Two are blocked
+until `lab3-staging` is merged into `main` and the suites are re-run there, and
+the last one is not a document claim at all — it is the student's live
+demonstration, which no agent may tick on their behalf.*
+
+- [x] All Included scope implemented; no Excluded features present.
+- [x] Every AC above verified by at least one automated test traced in `tests.md`.
+- [ ] All unit, API, UI, and E2E tests pass from documented commands on final `main`. *(blocked until the release PR merges — the suites currently pass on `feature/23-release-polish`, not on `main`)*
+- [x] No test skipped, disabled, or commented out.
+- [x] Backend enforces authentication and role-based authorization on every protected endpoint (verified by authorization tests).
+- [x] Backend enforces ownership on every Requester ticket/attachment endpoint.
+- [x] Screens conform to `ui-spec.md` (tokens, states, badges, responsive breakpoints) confirmed by screenshots at 3 viewports.
+- [x] Implemented endpoints conform to `api-spec.md`; Prisma schema matches Section 7 with committed migrations.
+- [x] Seed runs idempotently; migrations apply cleanly on an existing database with Lab 2 data intact.
+- [x] Responsive screenshots captured at Desktop, Tablet, and Mobile into `artifacts/lab-03/screenshots/`.
+- [x] Peer-review evidence recorded in `docs/lab-03/reviewer.md`.
+- [x] `docs/lab-03/ai-use.md` records the LLM used, 6–10 key prompts, and a short reflection.
+- [ ] All work merged through reviewed PRs: feature branches → `lab3-staging` → one release PR → `main`. *(blocked until the release PR merges)*
+- [ ] Student can explain every implementation choice and demonstrate failure cases live. *(not a document claim — satisfied by the live demo, not by this file)*
 
 ## 11. Assumptions and Decisions
 

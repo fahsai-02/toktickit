@@ -247,9 +247,11 @@ Every AC maps to ≥1 automated test:
 
 ## 4. Responsive and Visual Checklist
 
-Covered by RESP-01..30 (screens), STATE-01..42 (states) and STYLE-05..10 (measured design rules), with the per-item test IDs recorded in the `Auto (test ID)` column of the checklist in `ui-spec.md` Section 9.1. Item 9 (no unintended horizontal scrolling) is enforced automatically in all 69 capture runs rather than eyeballed, and STYLE-08 additionally intersects the boxes of every visible control on five screens so an overlap cannot hide between viewports.
+Covered by RESP-01..30 (screens), STATE-01..42 (states) and STYLE-05..10 (measured design rules), with the per-item test IDs recorded in the `Auto (test ID)` column of the checklist in `ui-spec.md` Section 9.1. Item 9 (no unintended horizontal scrolling) is enforced automatically in 69 of the 72 capture runs rather than eyeballed (the 3 excluded runs are the
+STATE-37..39 contrast test, which measures one control's colour ratio and so
+opens no full page), and STYLE-08 additionally intersects the boxes of every visible control on five screens so an overlap cannot hide between viewports.
 
-What the automation deliberately does **not** claim: a computed check is not a design judgement. The `Manual pass (student sign-off)` column is left blank for the student to complete against the 60 PNGs in `artifacts/lab-03/screenshots/` — `ui-spec.md` Section 9.1 carries a table mapping each group of checklist items to the screenshot directory to open — because "does this look right" is the one question a test cannot answer. The visual specs also capture and assert; they do not pixel-diff against a baseline, so a deliberate design change will not fail the run — it has to be reviewed.
+What the automation deliberately does **not** claim: a computed check is not a design judgement. The `Manual pass (student sign-off)` column carries the student's own verdict on the 72 PNGs in `artifacts/lab-03/screenshots/`, recorded per item in `ui-spec.md` Section 9.1 — all 26 rows read `Pass`, transcribed from the student reviewing the images at all three viewports (and pressing <kbd>Tab</kbd> through the running app for the two rows no screenshot can evidence). It is a human judgement column, not an automated one, because "does this look right" is the one question a test cannot answer. The visual specs also capture and assert; they do not pixel-diff against a baseline, so a deliberate design change will not fail the run — it has to be reviewed.
 
 ## 5. Test Commands
 

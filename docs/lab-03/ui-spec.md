@@ -430,14 +430,17 @@ are different evidence, and only the student can provide the second one.
 > many pages, but **no capture navigates to a later page** — that half of the row
 > rests on the bar being present, and on client unit test `UI-09` for paging.
 
-### How to fill the `Manual pass` column
+### How this column was filled, and how to re-check it
 
 The `Auto (test ID)` column is machine evidence; this column is the student's own
-visual sign-off and is left blank on purpose. Each screenshot referenced by a
+visual sign-off, and it is **filled** — every row carries a verdict. Each
+screenshot referenced by a
 test ID lives at
-`artifacts/lab-03/screenshots/<name>/<desktop|tablet|mobile>.png`. To sign an
-item off, open that PNG, compare it against the checklist wording and this
-document, then write `Pass` (or `Fail — <what is wrong>`) in the cell.
+`artifacts/lab-03/screenshots/<name>/<desktop|tablet|mobile>.png`. To re-check an
+item yourself, open that PNG, compare it against the checklist wording and this
+document, then read what the recorded verdict was. If a verdict no longer
+matches the image, the image changed and the row must be re-reviewed, not copied
+forward.
 
 The checklist items group into the evidence below. Screens are in
 `artifacts/lab-03/screenshots/<screen>/<viewport>.png`; states are in
