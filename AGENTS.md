@@ -319,7 +319,7 @@ docs/lab-03/
 - Loading, saving, success, validation, empty, no-results, forbidden, and safe failure feedback
 - Usable on desktop, tablet, and mobile
 
-### Lab 3 — Issue 15 (#56) Data Foundation Agreed Decisions (source of truth: `docs/lab-03/lab3-engineering-spec-transcription.md`, then `docs/lab-03/specification.md` §7 + `api-spec.md`)
+### Lab 3 — Issue 15 (#56) Data Foundation Agreed Decisions (source of truth: `docs/lab-03/lab3-engineering-spec-transcription.md`, then `docs/lab-03/specification.md` section 7 + `api-spec.md`)
 
 These were agreed with the student and MUST be respected in every future chat:
 
@@ -334,7 +334,7 @@ These were agreed with the student and MUST be respected in every future chat:
 
 2. **Migration:** `prisma migrate dev --name lab3_user_auth_models` preserves ALL Lab 2 data (dev DB currently: Requester 6, Category 4, RelatedSystem 7, Ticket 343, Attachment 179 — these counts must survive). `requesterUserId` backfill is done in the SEED (via raw SQL join on Requester/User email, `WHERE "requesterUserId" IS NULL`), NOT in the migration SQL.
 
-3. **Password hashing:** use `bcryptjs` (NOT native `bcrypt`), cost/rounds **12** (spec §11 line 316). Hashes start with `$2`; `bcrypt.compare` must succeed.
+3. **Password hashing:** use `bcryptjs` (NOT native `bcrypt`), cost/rounds **12** (`specification.md` section 5 BR-08, restated in section 8 "Authentication Decisions"; an earlier version of this note pointed at "spec §11 line 316", which is a closing brace of the error-envelope block and names the wrong place). Hashes start with `$2`; `bcrypt.compare` must succeed.
 
 4. **Seed credentials (separate per role, all documented in `docs/lab-03/seed-credentials.md` + seed file comments, local-dev-only):**
    - Requester (6, mapped from Lab 2 Requesters): `TempPass123!`, `mustChangePassword = true`.
@@ -348,7 +348,7 @@ These were agreed with the student and MUST be respected in every future chat:
 
 6. **MIG-01 automated test is IN this issue** (`server/tests/lab-03/migration-regression.api.test.ts`): verifies counts preserved, FK correctness, `requesterUserId` backfilled for all tickets, hashes start `$2` + compare succeeds, all-8 statuses present. Update `docs/lab-03/tests.md` MIG-01 `Planned` → `Pass` after it passes.
 
-7. **Docs/evidence to touch in this issue:** `docs/lab-03/seed-credentials.md` (create), `docs/lab-03/tests.md` (MIG-01 status + run results), spec §7 only if reality diverges from what's written. PR branch `feature/15-data-foundation` → `lab3-staging`, title `feat(schema): lab3 user models, migration & seed (#56)`.
+7. **Docs/evidence to touch in this issue:** `docs/lab-03/seed-credentials.md` (create), `docs/lab-03/tests.md` (MIG-01 status + run results), specification section 7 only if reality diverges from what's written. PR branch `feature/15-data-foundation` → `lab3-staging`, title `feat(schema): lab3 user models, migration & seed (#56)`.
 
 ### Stash on hand (re-check before acting — this note was once wrong)
 

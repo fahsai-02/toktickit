@@ -30,9 +30,9 @@ session, so you can never act as someone else by editing a request.
 **Administrator** — manage accounts:
 
 - **User Management**: list, search, filter by role, create a user with an
-  initial password, edit name/email/role, and activate or deactivate accounts —
-  with the two safety rules enforced server-side: you cannot deactivate your own
-  account, and the last active Administrator cannot be removed.
+  initial password, edit name/email/role, and activate or deactivate accounts.
+  Two safety rules are enforced server-side: you cannot deactivate your own
+  account, and the last active Administrator cannot be deactivated.
 
 ## Tech Stack
 
@@ -111,9 +111,11 @@ toktickit/
    pnpm exec prisma db seed
    ```
 
-   The seed loads requesters, categories, and related systems (e.g. Hardware →
-   Printer, Corporate Laptop; Software → LEB2 App, Grade Submission App;
-   Network → Campus Wi-Fi, VPN).
+   The seed is idempotent, so it is safe to re-run at any time. It loads
+   categories, related systems, the Lab 2 requesters, the Lab 3 `User` accounts,
+   a set of realistic tickets, and example Public Comments and Internal Notes.
+   Categories and related systems include Hardware → Printer, Corporate Laptop;
+   Software → LEB2 App, Grade Submission App; Network → Campus Wi-Fi, VPN.
 
 ## Run
 
@@ -133,9 +135,13 @@ only):
 | Administrator | `/staff/queue`, `/create-ticket`, `/admin/users` |
 
 The navigation shows only the links your role is allowed to use, and the backend
-re-checks every one of them — a hidden button is not authorization. Seeded
-accounts hold an **initial** password, so the first sign-in is forced through
-**Change Password** before the app opens.
+re-checks every one of them — a hidden button is not authorization.
+
+Accounts whose password is still an initial one open on **Change Password** and
+cannot reach the app until a new password is saved. Seeded accounts that sign
+straight in with their documented password: the Administrator, and the IT Staff
+Sara Patel and James Wilson. The per-account list, with the password and its
+`mustChangePassword` flag for each, is in `docs/lab-03/seed-credentials.md`.
 
 ## API Endpoints
 
@@ -242,10 +248,12 @@ spec re-seeds and cleans up through the `useLab3DbHooks()` helper.
 |---------|------|---------|
 | `desktop` | 1440×900 | functional E2E + all visual specs |
 | `tablet` | 820×1180 | visual specs |
-| `mobile` | 390×844 | visual specs |
+| `mobile` | 375×844 | visual specs |
 
 Tablet stays at 820px because the CSS switches to the mobile layout at
 `max-width: 768px`, so a 768px run would capture the mobile layout instead.
+Mobile is 375px, the narrowest width AC-15 names, so a run at 390px would have
+left the required width untested.
 
 ## Git Workflow
 

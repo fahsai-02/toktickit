@@ -4,9 +4,9 @@
 | :--- | :--- |
 | **Project** | Tok TickIT — IT Service Desk |
 | **Sprint** | Lab 3: Users, Roles, IT Staff Ticketing, and Admin Screens |
-| **Version** | v1.0 DRAFT — student-reviewed, baseline for implementation |
+| **Version** | v1.0 (Approved 2026-09-10) |
 | **Date** | 2026-09-10 |
-| **Contract source** | `specification.md` v1.0; `api-spec.md` v1.0 |
+| **Contract source** | `specification.md` v1.0; `api-spec.md` v1.1 |
 
 ---
 
@@ -171,7 +171,7 @@ Extends Lab 2 Ticket Detail (read-only) with:
 | Owner | 140px | Name text (or "Unassigned" in muted text) |
 | Last Updated | 120px | Formatted date |
 
-- Row click → navigate to `/staff/tickets/:id`. Until the detail screen (section 5.5) ships, this route renders a placeholder that links back to My Queue — so a row click never bounces the user back to the list.
+- Row click → navigate to `/staff/tickets/:id` — so a row click never bounces the user back to the list.
 - Hover: pale-green tint.
 - **Pagination bar:** "Showing X–Y of Z", Prev / page numbers / Next. Default page size 10.
 - **States:**
@@ -356,7 +356,7 @@ are different evidence, and only the student can provide the second one.
 > column claims a human did.
 >
 > **The mobile viewport was then changed from 390px to 375px** to match the
-> Issue 23 acceptance criteria verbatim, and all 72 images were re-captured. The
+> AC-15 acceptance criteria verbatim, and all 72 images were re-captured. The
 > desktop and tablet images are unchanged; the 24 mobile images are new. The
 > student re-reviewed those 24 captures at 375px and found nothing to change, so
 > every `Pass` in this column stands on that second review — the same person
@@ -410,7 +410,7 @@ are different evidence, and only the student can provide the second one.
 | 24 | Long text/clamp behaves gracefully; nothing unreadable | STYLE-10 | Pass |
 | 25 | Focus states visible on all interactive elements | STYLE-05 | Pass — checked live by keyboard, not from a capture |
 
-> **Correction on item 18 (Issue 23, after student review).** This row used to
+> **Correction on item 18 (after student review).** This row used to
 > claim `RESP-13..15, RESP-25..27` as proof that filters, sort and pagination were
 > usable. It was not. The queue's filter card sits behind `{filtersOpen && …}`
 > and starts closed, so every one of those screenshots shows the *unfiltered*
@@ -430,14 +430,17 @@ are different evidence, and only the student can provide the second one.
 > many pages, but **no capture navigates to a later page** — that half of the row
 > rests on the bar being present, and on client unit test `UI-09` for paging.
 
-### How to fill the `Manual pass` column
+### How this column was filled, and how to re-check it
 
 The `Auto (test ID)` column is machine evidence; this column is the student's own
-visual sign-off and is left blank on purpose. Each screenshot referenced by a
+visual sign-off, and it is **filled** — every row carries a verdict. Each
+screenshot referenced by a
 test ID lives at
-`artifacts/lab-03/screenshots/<name>/<desktop|tablet|mobile>.png`. To sign an
-item off, open that PNG, compare it against the checklist wording and this
-document, then write `Pass` (or `Fail — <what is wrong>`) in the cell.
+`artifacts/lab-03/screenshots/<name>/<desktop|tablet|mobile>.png`. To re-check an
+item yourself, open that PNG, compare it against the checklist wording and this
+document, then read what the recorded verdict was. If a verdict no longer
+matches the image, the image changed and the row must be re-reviewed, not copied
+forward.
 
 The checklist items group into the evidence below. Screens are in
 `artifacts/lab-03/screenshots/<screen>/<viewport>.png`; states are in
@@ -476,7 +479,7 @@ Re-running `pnpm exec playwright test e2e/lab-03/responsive.visual.spec.ts e2e/l
 
 **Approval:** Reviewed and approved by the student on 2026-09-10. All screen layouts, responsive rules, visual checklist items, and component inventory confirmed. This version is the implementation baseline.
 
-**Amendment (Issue 23, release polish):** the screenshot set was extended with
+**Amendment (release polish):** the screenshot set was extended with
 two Requester screens — `requester-my-tickets` and `requester-create-ticket` — so
 the busiest Requester list and the densest form have responsive evidence of their
 own. The `Auto` column in section 9.1 now names the test ID that automates each
@@ -488,7 +491,7 @@ names 375px), and the whole set was re-captured at that width. Tablet stays at
 820px rather than the AC's 768px because `client/src/App.css` switches to the
 mobile layout at `max-width: 768px`, so a 768px run would capture the mobile
 layout instead of the tablet one; see AD-12 in `specification.md`. No breakpoint,
-spacing scale, or copy was changed; the token and focus-ring changes are listed
-under "Release fixes" below.
+spacing scale, or copy was changed; the token, focus-ring, and mobile-header
+changes are listed under "Release fixes" below.
 
-**Release fixes found by this audit (Issue 23):** the focus ring on `.btn-primary` was `2px solid #fff` with a 2px offset, which drew a white ring on the white page — the primary action of every screen had no visible focus indicator. It is now `2px solid var(--color-secondary)` (`client/src/components/Button.css`), which is what section 7 and checklist item 25 require. Separately, the mobile header overflowed (first seen at 390px) because the profile name and role badge were not allowed to shrink; `client/src/App.css` now lets them truncate, which is a layout change and is why the sentence above no longer claims no layout change. `STYLE-05` now locks the focus contract in by tabbing through four screens at each of the three viewports and reading the computed ring at every stop. All three fixes were re-verified at 375px.
+**Release fixes found by this audit:** the focus ring on `.btn-primary` was `2px solid #fff` with a 2px offset, which drew a white ring on the white page — the primary action of every screen had no visible focus indicator. It is now `2px solid var(--color-secondary)` (`client/src/components/Button.css`), which is what section 7 and checklist item 25 require. Separately, the mobile header overflowed (first seen at 390px) because the profile name and role badge were not allowed to shrink; `client/src/App.css` now lets them truncate. `STYLE-05` now locks the focus contract in by tabbing through four screens at each of the three viewports and reading the computed ring at every stop. All three fixes were re-verified at 375px.
