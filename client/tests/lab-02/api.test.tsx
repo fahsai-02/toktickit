@@ -2,7 +2,6 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 import { createTicket, ApiError } from "../../src/api.js";
 
 const input = {
-  requesterId: 1,
   categoryId: 2,
   relatedSystemId: 7,
   requestedPriority: "MEDIUM" as const,
@@ -22,7 +21,7 @@ describe("createTicket", () => {
     vi.unstubAllGlobals();
   });
 
-  it("returns the created ticket on success", async () => {
+  it("POSTs the ticket payload to /api/tickets and returns the created ticket", async () => {
     const ticket = {
       id: 1,
       ticketNumber: "TKT-2026-000001",
@@ -38,12 +37,24 @@ describe("createTicket", () => {
       createdAt: "2026-08-29T10:00:00.000Z",
       updatedAt: "2026-08-29T10:00:00.000Z",
     };
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue(response(true, 201, { data: ticket }))
-    );
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(response(true, 201, { data: ticket }));
+    vi.stubGlobal("fetch", fetchMock);
 
     await expect(createTicket(input)).resolves.toBe(ticket);
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, options] = fetchMock.mock.calls[0] as [
+      string,
+      RequestInit | undefined
+    ];
+    expect(url).toMatch(/\/api\/tickets$/);
+    expect(options?.method).toBe("POST");
+    expect(options?.headers).toMatchObject({
+      "Content-Type": "application/json",
+    });
+    expect(JSON.parse(options?.body as string)).toEqual(input);
   });
 
   it("throws ApiError with field errors on validation failure", async () => {

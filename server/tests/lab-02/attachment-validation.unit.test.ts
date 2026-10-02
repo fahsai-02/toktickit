@@ -1,37 +1,5 @@
 import { describe, it, expect } from "vitest";
-
-const ALLOWED_MIME_TYPES = [
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "application/pdf",
-];
-
-const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".pdf"];
-
-function validateAttachmentType(
-  mimeType: string,
-  extension: string
-): { valid: boolean; reason?: string } {
-  if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
-    return { valid: false, reason: `Unsupported MIME type: ${mimeType}` };
-  }
-  if (!ALLOWED_EXTENSIONS.includes(extension)) {
-    return { valid: false, reason: `Unsupported extension: ${extension}` };
-  }
-  if (
-    (mimeType === "image/jpeg" && ![".jpg", ".jpeg"].includes(extension)) ||
-    (mimeType === "image/png" && extension !== ".png") ||
-    (mimeType === "image/webp" && extension !== ".webp") ||
-    (mimeType === "application/pdf" && extension !== ".pdf")
-  ) {
-    return {
-      valid: false,
-      reason: `MIME type ${mimeType} does not match extension ${extension}`,
-    };
-  }
-  return { valid: true };
-}
+import { validateAttachmentType } from "../../src/lib/attachmentValidation.js";
 
 describe("UNIT-02: Attachment MIME/ext validator", () => {
   describe("allowed types accepted", () => {

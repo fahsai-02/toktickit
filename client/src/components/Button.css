@@ -26,8 +26,13 @@
     background: var(--color-primary);
   }
 
+  /* ui-spec section 7 requires a 2px --color-secondary ring with a 2px offset
+     on every interactive element, and the offset puts that ring on the PAGE
+     background rather than on the button. A white outline here therefore drew
+     a white ring on a white page — an invisible focus indicator on the primary
+     action of every screen (found by the Issue 23 visual audit, STYLE-05). */
   .btn-primary:focus-visible {
-    outline: 2px solid #fff;
+    outline: 2px solid var(--color-secondary);
     outline-offset: 2px;
   }
 

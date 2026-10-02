@@ -4,7 +4,6 @@ import AttachmentSection from "../../src/components/AttachmentSection.js";
 import * as api from "../../src/api.js";
 import type { Attachment } from "../../src/api.js";
 
-const requesterId = 1;
 const ticketId = 10;
 
 const activeAttachment: Attachment = {
@@ -35,7 +34,6 @@ function renderSection(attachments: Attachment[] = [], onUpdate?: (a: Attachment
   return render(
     <AttachmentSection
       ticketId={ticketId}
-      requesterId={requesterId}
       attachments={attachments}
       onUpdate={onUpdate ?? vi.fn()}
     />
@@ -206,7 +204,6 @@ describe("AttachmentSection", () => {
       await waitFor(() => {
         expect(api.removeAttachment).toHaveBeenCalledWith(
           activeAttachment.id,
-          requesterId,
           "Wrong file attached"
         );
       });

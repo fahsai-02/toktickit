@@ -11,6 +11,7 @@ interface SelectFieldProps extends SelectHTMLAttributes<HTMLSelectElement> {
   options: SelectOption[];
   placeholder?: string;
   error?: string;
+  errorTestId?: string;
 }
 
 export default function SelectField({
@@ -19,6 +20,7 @@ export default function SelectField({
   options,
   placeholder,
   error,
+  errorTestId,
   id,
   className = "",
   ...rest
@@ -51,7 +53,7 @@ export default function SelectField({
         ))}
       </select>
       {error && (
-        <p id={errorId} className="field-error-msg">
+        <p id={errorId} className="field-error-msg" data-testid={errorTestId}>
           {error}
         </p>
       )}

@@ -13,7 +13,7 @@ import {
   type Ticket,
   type Attachment,
 } from "./api.js";
-import { useRequester } from "./RequesterContext.js";
+import { useAuth } from "./AuthContext.js";
 import Button from "./components/Button.js";
 import SelectField from "./components/SelectField.js";
 import TextField from "./components/TextField.js";
@@ -22,8 +22,7 @@ import ReadOnlyField from "./components/ReadOnlyField.js";
 import Callout from "./components/Callout.js";
 import Spinner from "./components/Spinner.js";
 import { formatFileSize } from "./lib/format.js";
-
-const PRIORITIES: RequestedPriority[] = ["LOW", "MEDIUM", "HIGH", "URGENT"];
+import { PRIORITY_OPTIONS } from "./lib/options.js";
 
 const ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "webp", "pdf"];
 const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
@@ -54,7 +53,8 @@ function fileExtension(name: string): string {
 
 export default function CreateTicket() {
   const navigate = useNavigate();
-  const { requester } = useRequester();
+  const { user } = useAuth();
+  const requester = user ? { id: user.id, name: user.name } : null;
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [relatedSystems, setRelatedSystems] = useState<RelatedSystem[]>([]);
@@ -197,7 +197,6 @@ export default function CreateTicket() {
     setSubmitting(true);
     try {
       const ticket = await createTicket({
-        requesterId: currentRequester.id,
         categoryId: categoryId as number,
         relatedSystemId: systemId as number,
         requestedPriority: priority as RequestedPriority,
@@ -216,7 +215,7 @@ export default function CreateTicket() {
 
         for (const sf of stagedFiles) {
           try {
-            const attachment = await uploadAttachment(ticket.id, currentRequester.id, sf.file);
+            const attachment = await uploadAttachment(ticket.id, sf.file);
             uploaded.push(attachment);
           } catch (err) {
             const message = err instanceof Error ? err.message : "Upload failed";
@@ -263,7 +262,7 @@ export default function CreateTicket() {
     });
     setUploadingFiles((prev) => new Set(prev).add(sf.id));
     try {
-      const attachment = await uploadAttachment(successTicket.id, currentRequester.id, sf.file);
+      const attachment = await uploadAttachment(successTicket.id, sf.file);
       setUploadedAttachments((prev) => [...prev, attachment]);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Upload failed";
@@ -443,7 +442,7 @@ export default function CreateTicket() {
               setPriority(e.target.value as RequestedPriority | "")
             }
             error={fieldErrors.requestedPriority}
-            options={PRIORITIES.map((p) => ({ value: p, label: p }))}
+            options={PRIORITY_OPTIONS}
           />
         </div>
 

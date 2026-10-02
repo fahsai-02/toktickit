@@ -1,6 +1,10 @@
-import type { TicketListItem } from "../api.js";
+import type {
+  RequestedPriority,
+  TicketStatus,
+  Category,
+} from "../api.js";
 import Badge, {
-  statusBadgeVariant,
+  coloredStatusBadgeVariant,
   priorityBadgeVariant,
 } from "./Badge.js";
 import { formatDate } from "../lib/format.js";
@@ -10,23 +14,83 @@ interface SortConfig {
   sortOrder: "asc" | "desc";
 }
 
-interface TicketTableProps {
-  tickets: TicketListItem[];
-  sort: SortConfig;
-  onSort: (field: string) => void;
-  onRowClick: (ticket: TicketListItem) => void;
+/**
+ * One row shape shared by both screens. The requester list sends
+ * `TicketListItem`s; the staff queue sends `StaffTicketListItem`s, which add
+ * `owner` (nullable). `owner` is optional here so either array is assignable.
+ */
+export interface TicketRow {
+  id: number;
+  ticketNumber: string;
+  summary: string;
+  requestedPriority: RequestedPriority;
+  itPriority: RequestedPriority | null;
+  currentStatus: TicketStatus;
+  category: Category;
+  createdAt: string;
+  updatedAt: string;
+  owner?: { id: number; name: string } | null;
 }
 
-const SORTABLE_FIELDS = ["ticketNumber", "updatedAt", "createdAt", "requestedPriority"];
+type Variant = "requester" | "staff";
+
+interface TicketTableProps {
+  tickets: TicketRow[];
+  sort: SortConfig;
+  onSort: (field: string) => void;
+  onRowClick: (ticket: TicketRow) => void;
+  variant?: Variant;
+}
+
+// api-spec section 5.1 whitelist — the staff queue may only sort these 5
+// fields. There is intentionally no `requestedPriority` entry (the server
+// rejects that sort with a 400). Requesters may sort their own columns too.
+const SORTABLE_FIELDS: Record<Variant, string[]> = {
+  requester: ["ticketNumber", "updatedAt", "createdAt", "requestedPriority"],
+  staff: ["ticketNumber", "updatedAt", "createdAt", "itPriority", "currentStatus"],
+};
+
+const HEADERS: Record<Variant, Array<{ key: string; label: string }>> = {
+  requester: [
+    { key: "ticketNumber", label: "Ticket Number" },
+    { key: "summary", label: "Summary" },
+    { key: "category", label: "Category" },
+    { key: "requestedPriority", label: "Requested Priority" },
+    { key: "itPriority", label: "IT Priority" },
+    { key: "currentStatus", label: "Current Status" },
+    { key: "updatedAt", label: "Last Updated" },
+  ],
+  staff: [
+    { key: "ticketNumber", label: "Ticket No." },
+    { key: "createdAt", label: "Created Date" },
+    { key: "summary", label: "Summary" },
+    { key: "category", label: "Category" },
+    { key: "requestedPriority", label: "Req. Priority" },
+    { key: "itPriority", label: "IT Priority" },
+    { key: "currentStatus", label: "Status" },
+    { key: "owner", label: "Owner" },
+    { key: "updatedAt", label: "Last Updated" },
+  ],
+};
+
+// Date columns collapse together at tablet width. The class must land on the
+// `th` too, otherwise the header keeps 9 columns while rows drop 2 cells and
+// the data no longer lines up under its columns.
+const TABLET_HIDDEN: Record<Variant, string[]> = {
+  requester: [],
+  staff: ["createdAt", "updatedAt"],
+};
 
 function SortArrow({
   field,
   sort,
+  sortable,
 }: {
   field: string;
   sort: SortConfig;
+  sortable: string[];
 }) {
-  if (!(SORTABLE_FIELDS as string[]).includes(field)) {
+  if (!sortable.includes(field)) {
     return null;
   }
   const active = sort.sortBy === field;
@@ -42,45 +106,36 @@ export default function TicketTable({
   sort,
   onSort,
   onRowClick,
+  variant = "requester",
 }: TicketTableProps) {
+  const isStaff = variant === "staff";
+  const sortable = SORTABLE_FIELDS[variant];
+  const headers = HEADERS[variant];
+  const hidden = TABLET_HIDDEN[variant];
+
   return (
     <div className="ticket-table-wrap">
-      <table className="ticket-table" data-testid="ticket-table">
+      <table
+        className="ticket-table"
+        data-testid={isStaff ? "staff-table" : "ticket-table"}
+      >
         <thead>
           <tr>
-            {(
-              [
-                "ticketNumber",
-                "summary",
-                "category",
-                "requestedPriority",
-                "itPriority",
-                "currentStatus",
-                "updatedAt",
-              ] as const
-            ).map((key) => {
-              const sortable = SORTABLE_FIELDS.includes(key);
-              const label =
-                key === "updatedAt"
-                  ? "Last Updated"
-                  : key === "ticketNumber"
-                    ? "Ticket Number"
-                    : key === "requestedPriority"
-                      ? "Requested Priority"
-                      : key === "itPriority"
-                        ? "IT Priority"
-                        : key === "currentStatus"
-                          ? "Current Status"
-                          : key.charAt(0).toUpperCase() + key.slice(1);
+            {headers.map(({ key, label }) => {
+              const isSortable = sortable.includes(key);
+              const hideAtTablet = hidden.includes(key);
               return (
                 <th
                   key={key}
-                  className={sortable ? "sortable-th" : ""}
-                  onClick={sortable ? () => onSort(key) : undefined}
+                  className={`${isSortable ? "sortable-th" : ""} ${
+                    hideAtTablet ? "staff-col-date" : ""
+                  } ${isStaff ? `staff-col-${key}` : ""}`.trim()}
+                  onClick={isSortable ? () => onSort(key) : undefined}
                   scope="col"
+                  data-testid={isStaff ? `staff-th-${key}` : undefined}
                 >
                   {label}
-                  <SortArrow field={key} sort={sort} />
+                  <SortArrow field={key} sort={sort} sortable={sortable} />
                 </th>
               );
             })}
@@ -100,25 +155,65 @@ export default function TicketTable({
                   onRowClick(t);
                 }
               }}
-              data-testid={`ticket-row-${t.id}`}
+              data-testid={
+                isStaff ? `staff-ticket-row-${t.id}` : `ticket-row-${t.id}`
+              }
             >
-              <td className="col-ticket-number">{t.ticketNumber}</td>
-              <td className="col-summary">{t.summary}</td>
-              <td>{t.category.name}</td>
-              <td>
+              <td className={`col-ticket-number ${isStaff ? "staff-col-ticketNumber" : ""}`}>
+                {t.ticketNumber}
+              </td>
+              {isStaff && (
+                <td className="staff-col-createdAt staff-col-date">
+                  {formatDate(t.createdAt)}
+                </td>
+              )}
+              <td
+                className={`col-summary ${isStaff ? "staff-col-summary" : ""}`}
+              >
+                {isStaff ? (
+                  <span className="ticket-summary-clamp">{t.summary}</span>
+                ) : (
+                  t.summary
+                )}
+              </td>
+              <td className={isStaff ? "staff-col-category" : ""}>
+                {t.category.name}
+              </td>
+              <td className={isStaff ? "staff-col-requestedPriority" : ""}>
                 <Badge variant={priorityBadgeVariant(t.requestedPriority)}>
                   {t.requestedPriority}
                 </Badge>
               </td>
-              <td>
-                <Badge variant="it-priority">{t.itPriority ?? "\u2014"}</Badge>
+              <td className={isStaff ? "staff-col-itPriority" : ""}>
+                {t.itPriority ? (
+                  <Badge variant={priorityBadgeVariant(t.itPriority)}>
+                    {t.itPriority}
+                  </Badge>
+                ) : (
+                  <Badge variant="neutral">{"\u2014"}</Badge>
+                )}
               </td>
-              <td>
-                <Badge variant={statusBadgeVariant(t.currentStatus)}>
+              <td className={isStaff ? "staff-col-currentStatus" : ""}>
+                <Badge variant={coloredStatusBadgeVariant(t.currentStatus)}>
                   {t.currentStatus}
                 </Badge>
               </td>
-              <td>{formatDate(t.updatedAt)}</td>
+              {isStaff && (
+                <td className="staff-col-owner">
+                  <span
+                    className={`col-owner ${
+                      t.owner ? "" : "col-owner--unassigned"
+                    }`}
+                  >
+                    {t.owner ? t.owner.name : "Unassigned"}
+                  </span>
+                </td>
+              )}
+              <td
+                className={`${isStaff ? "staff-col-updatedAt staff-col-date" : ""}`}
+              >
+                {formatDate(t.updatedAt)}
+              </td>
             </tr>
           ))}
         </tbody>

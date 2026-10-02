@@ -2,16 +2,22 @@ const API_URL = import.meta.env.VITE_API_URL ?? "";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
-export interface Category {
-  id: number;
-  name: string;
-}
+export type UserRole = "REQUESTER" | "IT_STAFF" | "ADMINISTRATOR";
 
-export interface Requester {
+export interface User {
   id: number;
   name: string;
   email: string;
-  department: string | null;
+  role: UserRole;
+  /** Present on /api/auth/me; marked optional so pre-admin-UI test fixtures
+   *  (which predate this field) keep type-checking without edits. */
+  isActive?: boolean;
+  mustChangePassword: boolean;
+}
+
+export interface Category {
+  id: number;
+  name: string;
 }
 
 export interface RelatedSystem {
@@ -22,19 +28,79 @@ export interface RelatedSystem {
 
 
 
-// ── Lab 2 Reference APIs ───────────────────────────────────────────────────
+// ── Lab 3 Authentication APIs (Issue 17) ────────────────────────────────────
+// Session-based auth: the server sets a `connect.sid` cookie on login.
+// Every call below sends `credentials: "include"` so the browser attaches
+// that cookie — without it the server sees every request as unauthenticated.
 
-export async function fetchRequesters(): Promise<Requester[]> {
-  const res = await fetch(`${API_URL}/api/dev/requesters`);
+export async function login(
+  email: string,
+  password: string
+): Promise<User> {
+  const res = await fetch(`${API_URL}/api/auth/login`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
   if (!res.ok) {
-    await handleApiError(res, "Failed to fetch requesters");
+    await handleApiError(res, "Failed to sign in");
   }
-  const { data } = (await res.json()) as { data: Requester[] };
+  const { data } = (await res.json()) as { data: User };
   return data;
 }
 
+export async function logout(): Promise<void> {
+  const res = await fetch(`${API_URL}/api/auth/logout`, {
+    method: "POST",
+    credentials: "include",
+  });
+  if (!res.ok) {
+    await handleApiError(res, "Failed to sign out");
+  }
+}
+
+export async function fetchMe(): Promise<User> {
+  const res = await fetch(`${API_URL}/api/auth/me`, {
+    credentials: "include",
+  });
+  if (!res.ok) {
+    await handleApiError(res, "Failed to fetch current user");
+  }
+  const { data } = (await res.json()) as { data: User };
+  return data;
+}
+
+export interface ChangePasswordInput {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+export async function changePassword(
+  input: ChangePasswordInput
+): Promise<void> {
+  const res = await fetch(`${API_URL}/api/auth/change-password`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    await handleApiError(res, "Failed to change password");
+  }
+}
+
+// ── Lab 2 Reference APIs ───────────────────────────────────────────────────
+// NOTE (Issue 17 fix): every call below sends `credentials: "include"` so the
+// session cookie travels with it. Without this the server will see these
+// requests as unauthenticated the moment Issue 18 enforces `requireAuth` on
+// the ticket/attachment routes.
+
 export async function fetchCategories(): Promise<Category[]> {
-  const res = await fetch(`${API_URL}/api/categories`);
+  const res = await fetch(`${API_URL}/api/categories`, {
+    credentials: "include",
+  });
   if (!res.ok) {
     await handleApiError(res, "Failed to fetch categories");
   }
@@ -49,7 +115,7 @@ export async function fetchRelatedSystems(
   if (categoryId !== undefined) {
     url.searchParams.set("categoryId", String(categoryId));
   }
-  const res = await fetch(url);
+  const res = await fetch(url, { credentials: "include" });
   if (!res.ok) {
     await handleApiError(res, "Failed to fetch related systems");
   }
@@ -58,7 +124,15 @@ export async function fetchRelatedSystems(
 }
 
 export type RequestedPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
-export type TicketStatus = "NEW";
+export type TicketStatus =
+  | "NEW"
+  | "OPEN"
+  | "IN_PROGRESS"
+  | "WAITING_FOR_REQUESTER"
+  | "RESOLVED"
+  | "CLOSED"
+  | "REOPENED"
+  | "CANCELLED";
 
 export interface TicketRequester {
   id: number;
@@ -82,7 +156,6 @@ export interface Ticket {
 }
 
 export interface NewTicketInput {
-  requesterId: number;
   categoryId: number;
   relatedSystemId: number;
   requestedPriority: RequestedPriority;
@@ -112,7 +185,6 @@ export interface TicketListMeta {
 }
 
 export interface TicketListParams {
-  requesterId: number;
   search?: string;
   categoryId?: number;
   currentStatus?: string;
@@ -128,7 +200,6 @@ export async function fetchTickets(
 ): Promise<{ data: TicketListItem[]; meta: TicketListMeta }> {
   const base = API_URL || window.location.origin;
   const url = new URL("/api/tickets", base);
-  url.searchParams.set("requesterId", String(params.requesterId));
   if (params.search) url.searchParams.set("search", params.search);
   if (params.categoryId !== undefined)
     url.searchParams.set("categoryId", String(params.categoryId));
@@ -143,11 +214,379 @@ export async function fetchTickets(
   if (params.pageSize !== undefined)
     url.searchParams.set("pageSize", String(params.pageSize));
 
-  const res = await fetch(url);
+  const res = await fetch(url, { credentials: "include" });
   if (!res.ok) {
     await handleApiError(res, `Failed to fetch tickets: ${res.status}`);
   }
   return (await res.json()) as { data: TicketListItem[]; meta: TicketListMeta };
+}
+
+// ── IT Staff Ticket Queue (Issue 19) ────────────────────────────────────────
+
+export interface StaffTicketListItem {
+  id: number;
+  ticketNumber: string;
+  summary: string;
+  requestedPriority: RequestedPriority;
+  itPriority: RequestedPriority | null;
+  currentStatus: TicketStatus;
+  category: Category;
+  requester: TicketRequester;
+  owner: { id: number; name: string } | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StaffTicketListParams {
+  search?: string;
+  categoryId?: number;
+  currentStatus?: string;
+  requestedPriority?: string;
+  itPriority?: string;
+  /** "me" | "unassigned" | an integer owner id (api-spec section 5.1). */
+  ownerId?: string;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+  page?: number;
+  pageSize?: number;
+}
+
+export async function fetchStaffTickets(
+  params: StaffTicketListParams
+): Promise<{ data: StaffTicketListItem[]; meta: TicketListMeta }> {
+  const base = API_URL || window.location.origin;
+  const url = new URL("/api/staff/tickets", base);
+  if (params.search) url.searchParams.set("search", params.search);
+  if (params.categoryId !== undefined)
+    url.searchParams.set("categoryId", String(params.categoryId));
+  if (params.currentStatus)
+    url.searchParams.set("currentStatus", params.currentStatus);
+  if (params.requestedPriority)
+    url.searchParams.set("requestedPriority", params.requestedPriority);
+  if (params.itPriority)
+    url.searchParams.set("itPriority", params.itPriority);
+  if (params.ownerId) url.searchParams.set("ownerId", params.ownerId);
+  if (params.sortBy) url.searchParams.set("sortBy", params.sortBy);
+  if (params.sortOrder) url.searchParams.set("sortOrder", params.sortOrder);
+  if (params.page !== undefined)
+    url.searchParams.set("page", String(params.page));
+  if (params.pageSize !== undefined)
+    url.searchParams.set("pageSize", String(params.pageSize));
+
+  const res = await fetch(url, { credentials: "include" });
+  if (!res.ok) {
+    await handleApiError(res, `Failed to fetch staff queue: ${res.status}`);
+  }
+  return (await res.json()) as { data: StaffTicketListItem[]; meta: TicketListMeta };
+}
+
+// ── IT Staff Ticket Detail (Issue 20, api-spec section 5.2-5.13) ────────────
+
+/** Same shape as the requester detail (api-spec 5.2 "same as 4.3"). */
+export type StaffTicketDetail = TicketDetail;
+
+export interface StaffUser {
+  id: number;
+  name: string;
+  role: UserRole;
+}
+
+export interface TicketOwner {
+  id: number;
+  name: string;
+  role: UserRole;
+}
+
+export interface InternalNote {
+  id: number;
+  ticketId: number;
+  authorId: number;
+  content: string;
+  createdAt: string;
+  author: { id: number; name: string; role: UserRole };
+}
+
+export async function fetchStaffTicket(ticketId: number): Promise<StaffTicketDetail> {
+  const base = API_URL || window.location.origin;
+  const url = new URL(`/api/staff/tickets/${ticketId}`, base);
+  const res = await fetch(url, { credentials: "include" });
+  if (!res.ok) {
+    await handleApiError(res, `Failed to fetch ticket: ${res.status}`);
+  }
+  const { data } = (await res.json()) as { data: StaffTicketDetail };
+  return data;
+}
+
+export async function claimTicket(ticketId: number): Promise<{ owner: TicketOwner }> {
+  const res = await fetch(`${API_URL}/api/staff/tickets/${ticketId}/claim`, {
+    method: "PUT",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: "{}",
+  });
+  if (!res.ok) {
+    await handleApiError(res, "Failed to claim ticket");
+  }
+  const { data } = (await res.json()) as { data: { owner: TicketOwner } };
+  return data;
+}
+
+export async function assignTicket(
+  ticketId: number,
+  ownerId: number
+): Promise<{ owner: TicketOwner }> {
+  const res = await fetch(`${API_URL}/api/staff/tickets/${ticketId}/assign`, {
+    method: "PUT",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ownerId }),
+  });
+  if (!res.ok) {
+    await handleApiError(res, "Failed to assign ticket");
+  }
+  const { data } = (await res.json()) as { data: { owner: TicketOwner } };
+  return data;
+}
+
+export async function updateStaffTicketPriority(
+  ticketId: number,
+  itPriority: RequestedPriority
+): Promise<{ itPriority: RequestedPriority }> {
+  const res = await fetch(`${API_URL}/api/staff/tickets/${ticketId}/priority`, {
+    method: "PUT",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ itPriority }),
+  });
+  if (!res.ok) {
+    await handleApiError(res, "Failed to set IT priority");
+  }
+  const { data } = (await res.json()) as { data: { itPriority: RequestedPriority } };
+  return data;
+}
+
+export async function updateStaffTicketStatus(
+  ticketId: number,
+  currentStatus: TicketStatus
+): Promise<{ currentStatus: TicketStatus }> {
+  const res = await fetch(`${API_URL}/api/staff/tickets/${ticketId}/status`, {
+    method: "PUT",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ currentStatus }),
+  });
+  if (!res.ok) {
+    await handleApiError(res, "Failed to update ticket status");
+  }
+  const { data } = (await res.json()) as { data: { currentStatus: TicketStatus } };
+  return data;
+}
+
+export async function updateStaffTicketCategory(
+  ticketId: number,
+  categoryId: number
+): Promise<{ category: Category }> {
+  const res = await fetch(`${API_URL}/api/staff/tickets/${ticketId}/category`, {
+    method: "PUT",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ categoryId }),
+  });
+  if (!res.ok) {
+    await handleApiError(res, "Failed to set category");
+  }
+  const { data } = (await res.json()) as { data: { category: Category } };
+  return data;
+}
+
+export async function saveResolutionSummary(
+  ticketId: number,
+  resolutionSummary: string
+): Promise<{ resolutionSummary: string }> {
+  const res = await fetch(
+    `${API_URL}/api/staff/tickets/${ticketId}/resolution-summary`,
+    {
+      method: "PUT",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ resolutionSummary }),
+    }
+  );
+  if (!res.ok) {
+    await handleApiError(res, "Failed to save resolution summary");
+  }
+  const { data } = (await res.json()) as { data: { resolutionSummary: string } };
+  return data;
+}
+
+export async function fetchStaffComments(ticketId: number): Promise<PublicComment[]> {
+  const base = API_URL || window.location.origin;
+  const url = new URL(`/api/staff/tickets/${ticketId}/comments`, base);
+  const res = await fetch(url, { credentials: "include" });
+  if (!res.ok) {
+    await handleApiError(res, `Failed to fetch comments: ${res.status}`);
+  }
+  const { data } = (await res.json()) as { data: PublicComment[] };
+  return data;
+}
+
+export async function postStaffComment(
+  ticketId: number,
+  content: string
+): Promise<PublicComment> {
+  const res = await fetch(`${API_URL}/api/staff/tickets/${ticketId}/comments`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ content }),
+  });
+  if (!res.ok) {
+    await handleApiError(res, "Failed to post comment");
+  }
+  const { data } = (await res.json()) as { data: PublicComment };
+  return data;
+}
+
+export async function fetchInternalNotes(ticketId: number): Promise<InternalNote[]> {
+  const base = API_URL || window.location.origin;
+  const url = new URL(`/api/staff/tickets/${ticketId}/notes`, base);
+  const res = await fetch(url, { credentials: "include" });
+  if (!res.ok) {
+    await handleApiError(res, `Failed to fetch notes: ${res.status}`);
+  }
+  const { data } = (await res.json()) as { data: InternalNote[] };
+  return data;
+}
+
+export async function createInternalNote(
+  ticketId: number,
+  content: string
+): Promise<InternalNote> {
+  const res = await fetch(`${API_URL}/api/staff/tickets/${ticketId}/notes`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ content }),
+  });
+  if (!res.ok) {
+    await handleApiError(res, "Failed to create note");
+  }
+  const { data } = (await res.json()) as { data: InternalNote };
+  return data;
+}
+
+export async function fetchStaffUsers(): Promise<StaffUser[]> {
+  const base = API_URL || window.location.origin;
+  const url = new URL("/api/staff/users", base);
+  const res = await fetch(url, { credentials: "include" });
+  if (!res.ok) {
+    await handleApiError(res, `Failed to fetch staff users: ${res.status}`);
+  }
+  const { data } = (await res.json()) as { data: StaffUser[] };
+  return data;
+}
+
+// ── Administrator User Management (Issue 21, api-spec section 6) ───────────
+// The ADMINISTRATOR guard lives on the server; these helpers just carry the
+// session cookie and surface `ApiError` (with `.fields`) for the page to show.
+
+export interface AdminUser {
+  id: number;
+  name: string;
+  email: string;
+  role: UserRole;
+  isActive: boolean;
+}
+
+/** The POST/PUT responses also include mustChangePassword (+ createdAt). */
+export interface AdminUserWithMeta extends AdminUser {
+  mustChangePassword: boolean;
+  createdAt?: string;
+}
+
+export interface AdminUserListParams {
+  search?: string;
+  role?: UserRole | "";
+}
+
+export interface CreateAdminUserInput {
+  name: string;
+  email: string;
+  role: UserRole;
+  isActive?: boolean;
+  initialPassword: string;
+}
+
+export interface UpdateAdminUserInput {
+  name?: string;
+  email?: string;
+  role?: UserRole;
+  isActive?: boolean;
+}
+
+export async function fetchAdminUsers(
+  params?: AdminUserListParams
+): Promise<AdminUser[]> {
+  const base = API_URL || window.location.origin;
+  const url = new URL("/api/admin/users", base);
+  if (params?.search) url.searchParams.set("search", params.search);
+  if (params?.role) url.searchParams.set("role", params.role);
+  const res = await fetch(url, { credentials: "include" });
+  if (!res.ok) {
+    await handleApiError(res, `Failed to fetch users: ${res.status}`);
+  }
+  const { data } = (await res.json()) as { data: AdminUser[] };
+  return data;
+}
+
+export async function createAdminUser(
+  input: CreateAdminUserInput
+): Promise<AdminUserWithMeta> {
+  const res = await fetch(`${API_URL}/api/admin/users`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    await handleApiError(res, "Failed to create user");
+  }
+  const { data } = (await res.json()) as { data: AdminUserWithMeta };
+  return data;
+}
+
+export async function updateAdminUser(
+  userId: number,
+  input: UpdateAdminUserInput
+): Promise<AdminUserWithMeta> {
+  const res = await fetch(`${API_URL}/api/admin/users/${userId}`, {
+    method: "PUT",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    await handleApiError(res, "Failed to update user");
+  }
+  const { data } = (await res.json()) as { data: AdminUserWithMeta };
+  return data;
+}
+
+export async function resetAdminPassword(
+  userId: number,
+  initialPassword: string
+): Promise<{ message: string }> {
+  const res = await fetch(`${API_URL}/api/admin/users/${userId}/reset-password`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ initialPassword }),
+  });
+  if (!res.ok) {
+    await handleApiError(res, "Failed to reset password");
+  }
+  const { data } = (await res.json()) as { data: { message: string } };
+  return data;
 }
 
 export class ApiError extends Error {
@@ -185,6 +624,7 @@ async function handleApiError(
 export async function createTicket(input: NewTicketInput): Promise<Ticket> {
   const res = await fetch(`${API_URL}/api/tickets`, {
     method: "POST",
+    credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
   });
@@ -223,20 +663,21 @@ export interface TicketDetail {
   requester: TicketRequester;
   category: Category;
   relatedSystem: Pick<RelatedSystem, "id" | "name">;
+  resolutionSummary: string | null;
+  requesterIndicatedResolved: boolean;
+  indicatedResolvedAt: string | null;
+  owner: { id: number; name: string; role: UserRole } | null;
+  _count: { attachments: number; comments: number; notes: number };
   createdAt: string;
   updatedAt: string;
   attachments: Attachment[];
 }
 
-export async function fetchTicket(
-  ticketId: number,
-  requesterId: number
-): Promise<TicketDetail> {
+export async function fetchTicket(ticketId: number): Promise<TicketDetail> {
   const base = API_URL || window.location.origin;
   const url = new URL(`/api/tickets/${ticketId}`, base);
-  url.searchParams.set("requesterId", String(requesterId));
 
-  const res = await fetch(url);
+  const res = await fetch(url, { credentials: "include" });
   if (!res.ok) {
     await handleApiError(res, `Failed to fetch ticket: ${res.status}`);
   }
@@ -244,19 +685,84 @@ export async function fetchTicket(
   return data;
 }
 
+// ── Public Comments (Issue 18, api-spec 4.7-4.8) ──────────────────────────
+
+export interface PublicComment {
+  id: number;
+  ticketId: number;
+  authorId: number;
+  content: string;
+  createdAt: string;
+  author: { id: number; name: string; role: UserRole };
+}
+
+export async function fetchTicketComments(
+  ticketId: number
+): Promise<PublicComment[]> {
+  const base = API_URL || window.location.origin;
+  const url = new URL(`/api/tickets/${ticketId}/comments`, base);
+
+  const res = await fetch(url, { credentials: "include" });
+  if (!res.ok) {
+    await handleApiError(res, `Failed to fetch comments: ${res.status}`);
+  }
+  const { data } = (await res.json()) as { data: PublicComment[] };
+  return data;
+}
+
+export async function postPublicComment(
+  ticketId: number,
+  content: string
+): Promise<PublicComment> {
+  const res = await fetch(`${API_URL}/api/tickets/${ticketId}/comments`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ content }),
+  });
+  if (!res.ok) {
+    await handleApiError(res, "Failed to post comment");
+  }
+  const { data } = (await res.json()) as { data: PublicComment };
+  return data;
+}
+
+// ── "Problem Appears Resolved" toggle (Issue 18, api-spec 4.9) ────────────
+
+export interface ResolvedIndicator {
+  id: number;
+  requesterIndicatedResolved: boolean;
+  indicatedResolvedAt: string | null;
+}
+
+export async function indicateResolved(
+  ticketId: number
+): Promise<ResolvedIndicator> {
+  const res = await fetch(`${API_URL}/api/tickets/${ticketId}/indicate-resolved`, {
+    method: "PUT",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: "{}",
+  });
+  if (!res.ok) {
+    await handleApiError(res, "Failed to update resolved indicator");
+  }
+  const { data } = (await res.json()) as { data: ResolvedIndicator };
+  return data;
+}
+
 // ── Attachments (Issue 11) ─────────────────────────────────────────────
 
 export async function uploadAttachment(
   ticketId: number,
-  requesterId: number,
   file: File
 ): Promise<Attachment> {
   const formData = new FormData();
-  formData.append("requesterId", String(requesterId));
   formData.append("file", file);
 
   const res = await fetch(`${API_URL}/api/tickets/${ticketId}/attachments`, {
     method: "POST",
+    credentials: "include",
     body: formData,
   });
 
@@ -268,15 +774,11 @@ export async function uploadAttachment(
   return data;
 }
 
-export async function downloadAttachment(
-  attachmentId: number,
-  requesterId: number
-): Promise<Blob> {
+export async function downloadAttachment(attachmentId: number): Promise<Blob> {
   const base = API_URL || window.location.origin;
   const url = new URL(`/api/attachments/${attachmentId}/download`, base);
-  url.searchParams.set("requesterId", String(requesterId));
 
-  const res = await fetch(url);
+  const res = await fetch(url, { credentials: "include" });
   if (!res.ok) {
     await handleApiError(res, `Failed to download attachment: ${res.status}`);
   }
@@ -286,13 +788,13 @@ export async function downloadAttachment(
 
 export async function removeAttachment(
   attachmentId: number,
-  requesterId: number,
   removalReason: string
 ): Promise<Attachment> {
   const res = await fetch(`${API_URL}/api/attachments/${attachmentId}`, {
     method: "DELETE",
+    credentials: "include",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ requesterId, removalReason }),
+    body: JSON.stringify({ removalReason }),
   });
 
   if (!res.ok) {

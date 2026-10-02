@@ -11,17 +11,17 @@ describe("GET /api/categories (Lab 2 contract)", () => {
     expect(Array.isArray(res.body.data)).toBe(true);
   });
 
-  it("returns only active categories", async () => {
+  it("returns only the 4 active seeded categories (no extras, no inactive)", async () => {
     const res = await request(app).get("/api/categories");
 
     expect(res.status).toBe(200);
-    expect(res.body.data.length).toBeGreaterThanOrEqual(4);
-
     const names = res.body.data.map((c: { name: string }) => c.name);
-    expect(names).toContain("Account and Access");
-    expect(names).toContain("Hardware");
-    expect(names).toContain("Software");
-    expect(names).toContain("Network");
+    expect(names).toEqual([
+      "Account and Access",
+      "Hardware",
+      "Software",
+      "Network",
+    ]);
   });
 
   it("returns each category with only id and name", async () => {

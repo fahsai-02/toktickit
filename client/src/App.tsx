@@ -1,33 +1,206 @@
-import { Routes, Route, Navigate } from "react-router-dom";
-import { useRequester } from "./RequesterContext.js";
-import RequesterSelection from "./RequesterSelection.js";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import type { ReactElement } from "react";
+import { useAuth } from "./AuthContext.js";
+import type { UserRole } from "./api.js";
+import Login from "./Login.js";
+import ChangePassword from "./ChangePassword.js";
 import AppShell from "./AppShell.js";
 import MyTickets from "./MyTickets.js";
 import CreateTicket from "./CreateTicket.js";
 import TicketDetail from "./TicketDetail.js";
+import StaffTicketQueue from "./StaffTicketQueue.js";
+import StaffTicketDetail from "./StaffTicketDetail.js";
+import UserManagement from "./UserManagement.js";
+import Spinner from "./components/Spinner.js";
 
-export default function App() {
-  const { requester } = useRequester();
-
-  if (!requester) {
+/** Landing page: sends each user to the default screen for their state. */
+function HomeRedirect() {
+  const { user, loading } = useAuth();
+  if (loading) {
     return (
-      <Routes>
-        <Route path="/select-requester" element={<RequesterSelection />} />
-        <Route path="*" element={<Navigate to="/select-requester" replace />} />
-      </Routes>
+      <div className="selection-page" data-testid="app-loading">
+        <Spinner />
+      </div>
     );
   }
+  if (!user) return <Navigate to="/login" replace />;
+  if (user.mustChangePassword) return <Navigate to="/change-password" replace />;
+  if (user.role === "REQUESTER") return <Navigate to="/my-tickets" replace />;
+  // ui-spec section 4.1: IT Staff and Admins land on the staff queue; the
+  // admin user-management screen is added at release time (ui-spec 4.4).
+  if (user.role === "IT_STAFF" || user.role === "ADMINISTRATOR") {
+    return <Navigate to="/staff/queue" replace />;
+  }
+  return <Navigate to="/create-ticket" replace />;
+}
 
+/**
+ * Guard for screens that require a signed-in user whose password is
+ * already changed. Renders a full-page spinner while the initial
+ * GET /api/auth/me check is in flight so a page refresh never flashes
+ * the login screen for an authenticated user.
+ */
+function RequireAuth({ children }: { children: ReactElement }) {
+  const { user, loading } = useAuth();
+  const location = useLocation();
+  if (loading) {
+    return (
+      <div className="selection-page" data-testid="app-loading">
+        <Spinner />
+      </div>
+    );
+  }
+  if (!user) {
+    return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+  }
+  if (user.mustChangePassword) {
+    return <Navigate to="/change-password" replace />;
+  }
+  return children;
+}
+
+/** Guard for /change-password: reachable when signed in (forced or voluntary). */
+function RequireSignedIn({ children }: { children: ReactElement }) {
+  const { user, loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="selection-page" data-testid="app-loading">
+        <Spinner />
+      </div>
+    );
+  }
+  if (!user) return <Navigate to="/login" replace />;
+  return children;
+}
+
+/**
+ * Role guard for screens that belong to specific roles (ui-spec.md
+ * section 4.1). Disallowed roles bounce to "/" so HomeRedirect can send
+ * them to their own default — never a dead end or a leaked screen.
+ */
+function RequireRole({
+  roles,
+  children,
+}: {
+  roles: UserRole[];
+  children: ReactElement;
+}) {
+  const { user, loading } = useAuth();
+  const location = useLocation();
+  if (loading) {
+    return (
+      <div className="selection-page" data-testid="app-loading">
+        <Spinner />
+      </div>
+    );
+  }
+  if (!user) {
+    return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+  }
+  if (user.mustChangePassword) {
+    return <Navigate to="/change-password" replace />;
+  }
+  if (!roles.includes(user.role)) {
+    return <Navigate to="/" replace />;
+  }
+  return children;
+}
+
+/** Public-only screen: signed-in users are sent into the app (or forced change). */
+function RequireAnonymous({ children }: { children: ReactElement }) {
+  const { user, loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="selection-page" data-testid="app-loading">
+        <Spinner />
+      </div>
+    );
+  }
+  if (user) {
+    return (
+      <Navigate
+        to={user.mustChangePassword ? "/change-password" : "/"}
+        replace
+      />
+    );
+  }
+  return children;
+}
+
+export default function App() {
   return (
     <Routes>
-      <Route element={<AppShell />}>
-        <Route path="/my-tickets" element={<MyTickets />} />
-        <Route path="/tickets/:ticketId" element={<TicketDetail />} />
+      <Route
+        path="/login"
+        element={
+          <RequireAnonymous>
+            <Login />
+          </RequireAnonymous>
+        }
+      />
+      <Route
+        path="/change-password"
+        element={
+          <RequireSignedIn>
+            <ChangePassword />
+          </RequireSignedIn>
+        }
+      />
+      <Route
+        element={
+          <RequireAuth>
+            <AppShell />
+          </RequireAuth>
+        }
+      >
+        <Route
+          path="/my-tickets"
+          element={
+            <RequireRole roles={["REQUESTER"]}>
+              <MyTickets />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/tickets/:ticketId"
+          element={
+            <RequireRole roles={["REQUESTER"]}>
+              <TicketDetail />
+            </RequireRole>
+          }
+        />
+        {/* Create Ticket is granted to every role (ui-spec.md section 4.1). */}
         <Route path="/create-ticket" element={<CreateTicket />} />
-        <Route path="/select-requester" element={<Navigate to="/my-tickets" replace />} />
-        <Route path="/" element={<Navigate to="/my-tickets" replace />} />
-        <Route path="*" element={<Navigate to="/my-tickets" replace />} />
+        {/* IT Staff Ticket Queue (Issue 19): Admins may also open it
+            (issue 19 AC — api-spec 5.1 grants the staff queue to both). */}
+        <Route
+          path="/staff/queue"
+          element={
+            <RequireRole roles={["IT_STAFF", "ADMINISTRATOR"]}>
+              <StaffTicketQueue />
+            </RequireRole>
+          }
+        />
+        {/* Placeholder so a row click lands somewhere instead of bouncing
+            back to the queue (Issue 19). Full staff detail: later issue. */}
+        <Route
+          path="/staff/tickets/:ticketId"
+          element={
+            <RequireRole roles={["IT_STAFF", "ADMINISTRATOR"]}>
+              <StaffTicketDetail />
+            </RequireRole>
+          }
+        />
+        {/* Administrator User Management (Issue 21): api-spec.md section 6
+            grants user management to ADMINS only. The page self-guards so a
+            non-admin who types the URL sees the ui-spec 5.6 "forbidden"
+            screen instead of being bounced to their home. */}
+        <Route path="/admin/users" element={<UserManagement />} />
       </Route>
+      <Route path="/" element={<HomeRedirect />} />
+      {/* /select-requester was removed in Lab 3 (Issue 17) — anything
+          unknown falls back to the role default. */}
+      <Route path="*" element={<HomeRedirect />} />
     </Routes>
   );
 }

@@ -32,30 +32,37 @@ describe("GET /api/related-systems", () => {
   });
 
   it("filters by categoryId — returns matching + general (null) systems", async () => {
+    const catsRes = await request(app).get("/api/categories");
+    expect(catsRes.status).toBe(200);
+    const categories = catsRes.body.data as Array<{ id: number }>;
+    expect(categories.length).toBeGreaterThan(0);
+
     const allRes = await request(app).get("/api/related-systems");
-    const allSystems = allRes.body.data;
+    expect(allRes.status).toBe(200);
+    const allSystems = allRes.body.data as Array<{ categoryId: number | null }>;
 
-    const categoriesWithSystems = [
-      ...new Set(
-        allSystems
-          .filter((s: { categoryId: number | null }) => s.categoryId !== null)
-          .map((s: { categoryId: number }) => s.categoryId)
-      ),
-    ];
+    // Verify the filter against every category that actually has systems, so the
+    // test cannot silently pass when no systems exist (the seed guarantees some).
+    let verified = 0;
+    for (const cat of categories) {
+      const matching = allSystems.filter((s) => s.categoryId === cat.id).length;
+      if (matching === 0) continue;
 
-    if (categoriesWithSystems.length === 0) return;
+      const filteredRes = await request(app).get(
+        `/api/related-systems?categoryId=${cat.id}`
+      );
 
-    const catId = categoriesWithSystems[0]!;
-    const filteredRes = await request(app).get(
-      `/api/related-systems?categoryId=${catId}`
-    );
-
-    expect(filteredRes.status).toBe(200);
-    for (const system of filteredRes.body.data) {
-      expect(
-        system.categoryId === catId || system.categoryId === null
-      ).toBe(true);
+      expect(filteredRes.status).toBe(200);
+      expect(filteredRes.body.data.length).toBeGreaterThanOrEqual(matching);
+      for (const system of filteredRes.body.data) {
+        expect(
+          system.categoryId === cat.id || system.categoryId === null
+        ).toBe(true);
+      }
+      verified++;
     }
+
+    expect(verified).toBeGreaterThan(0);
   });
 
   it("returns 400 for non-numeric categoryId", async () => {

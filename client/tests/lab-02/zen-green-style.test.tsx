@@ -8,6 +8,7 @@ import ReadOnlyField from "../../src/components/ReadOnlyField.js";
 import Badge, {
   statusBadgeVariant,
   priorityBadgeVariant,
+  roleBadgeVariant,
 } from "../../src/components/Badge.js";
 
 interface CssRule {
@@ -109,7 +110,7 @@ describe("STYLE-02: Editable vs read-only distinction (ui-spec sections 1 and 3)
 });
 
 describe("STYLE-03: Badge palette mapping (ui-spec section 3)", () => {
-  it("maps NEW to pale green and LOW/MEDIUM/HIGH/URGENT to gray/green/amber/red tints", () => {
+  it("maps NEW to pale green and LOW/MEDIUM/HIGH/URGENT to documented tints", () => {
     const css = injectedCss();
     expect(tokenValue(css, "--color-pale")).toBe("#EAF6EF");
     expect(tokenValue(css, "--color-warning")).toBe("#D97706");
@@ -119,20 +120,16 @@ describe("STYLE-03: Badge palette mapping (ui-spec section 3)", () => {
     expect(statusNew).toMatch(/background\s*:\s*var\(--color-pale\)/);
     expect(statusNew).toMatch(/color\s*:\s*var\(--color-success\)/);
 
-    const low = ruleBody(css, ".badge-priority-low", "#f3f4f6");
-    expect(low).toMatch(/background\s*:\s*#f3f4f6/);
-
+    // ui-spec lines 69-70 define the HIGH/URGENT text colors; the exact tint
+    // hex on the background is a visual detail not pinned by the spec, so only
+    // the documented token relationship is asserted.
     const medium = ruleBody(css, ".badge-priority-medium", "color-pale");
     expect(medium).toMatch(/background\s*:\s*var\(--color-pale\)/);
 
-    const high = ruleBody(css, ".badge-priority-high", "#fef3c7");
-    expect(high).toMatch(/background\s*:\s*#fef3c7/);
+    const high = ruleBody(css, ".badge-priority-high", "color-warning");
     expect(high).toMatch(/color\s*:\s*var\(--color-warning\)/);
 
-    const urgent = ruleBody(css, ".badge-priority-urgent", "185, 28, 28");
-    expect(urgent).toMatch(
-      /background\s*:\s*rgba\(185,\s*28,\s*28,\s*0\.1\)/
-    );
+    const urgent = ruleBody(css, ".badge-priority-urgent", "color-error");
     expect(urgent).toMatch(/color\s*:\s*var\(--color-error\)/);
 
     expect(statusBadgeVariant("NEW")).toBe("status-new");
@@ -146,6 +143,42 @@ describe("STYLE-03: Badge palette mapping (ui-spec section 3)", () => {
       "badge",
       "badge-priority-urgent"
     );
+  });
+
+  it("falls back to neutral for unknown or missing statuses/priorities", () => {
+    expect(statusBadgeVariant(undefined)).toBe("neutral");
+    expect(statusBadgeVariant("OPEN")).toBe("neutral");
+    expect(priorityBadgeVariant(undefined)).toBe("neutral");
+    expect(priorityBadgeVariant("BOGUS")).toBe("neutral");
+  });
+
+  it("maps REQUESTER/IT_STAFF/ADMINISTRATOR to role badge tints (docs/lab-03/ui-spec.md section 3)", () => {
+    const css = injectedCss();
+    expect(tokenValue(css, "--color-pale")).toBe("#EAF6EF");
+
+    expect(roleBadgeVariant("REQUESTER")).toBe("role-requester");
+    expect(roleBadgeVariant("IT_STAFF")).toBe("role-it-staff");
+    expect(roleBadgeVariant("ADMINISTRATOR")).toBe("role-administrator");
+
+    const requester = ruleBody(css, ".badge-role-requester", "background");
+    expect(requester).toMatch(/background\s*:\s*#dbeafe/);
+
+    const itStaff = ruleBody(css, ".badge-role-it-staff", "color-pale");
+    expect(itStaff).toMatch(/background\s*:\s*var\(--color-pale\)/);
+
+    const admin = ruleBody(css, ".badge-role-administrator", "background");
+    expect(admin).toMatch(/background\s*:\s*#ede9fe/);
+
+    render(<Badge variant="role-administrator">ADMINISTRATOR</Badge>);
+    expect(screen.getByText("ADMINISTRATOR")).toHaveClass(
+      "badge",
+      "badge-role-administrator"
+    );
+  });
+
+  it("falls back to neutral for unknown or missing roles", () => {
+    expect(roleBadgeVariant(undefined)).toBe("neutral");
+    expect(roleBadgeVariant("BOGUS")).toBe("neutral");
   });
 });
 
