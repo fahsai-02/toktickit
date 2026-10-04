@@ -1,7 +1,7 @@
 import { db } from "../db.js";
 import type { Prisma } from "../generated/prisma/client.js";
 
-// Shared ticketing list query (api-spec sections 4.4 and 5.1). Both the
+// Shared ticketing list query (api-spec sections 4.2 and 5.1). Both the
 // requester "My Tickets" list and the IT Staff "My Queue" build their own
 // validated `where`/`orderBy`/`select`, then hand the frag pieces to
 // `runTicketListQuery` so the response envelope stays byte-for-byte identical
