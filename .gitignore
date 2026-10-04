@@ -79,5 +79,10 @@ submission.md
 
 # instructor-provided course handouts (never commit)
 CV_PROJECT_SUMMARY.md
+# Local planning notes live in a `local/` subfolder and are ignored there only.
+# A flat `docs/lab-03/*.md` rule was considered and deliberately left out: it would
+# also match the seven real Lab 3 deliverables (`specification.md`, `api-spec.md`,
+# `ui-spec.md`, `tests.md`, `reviewer.md`, `ai-use.md`, `seed-credentials.md`), so a
+# genuinely new deliverable there would be silently ignored. Keep this pattern narrow.
 docs/lab-03/local/*.md
 docs/lab-04/local/*.md

@@ -4,7 +4,7 @@
 | :--- | :--- |
 | **Project** | Tok TickIT — IT Service Desk |
 | **Sprint** | Lab 4: Actions Taken, Ticket Workflow, and Role Dashboards |
-| **Version** | v1.0 (Draft 2026-10-04 — awaiting student approval) |
+| **Version** | v1.1 (Approved 2026-10-04) |
 | **Date** | 2026-10-04 |
 | **Sources** | Derived from the CPE 334 Lab 4 labsheet (course-provided handout), the Lab 3 approved increment, and the completed Lab 1–2 increments |
 | **Related docs** | `api-spec.md`, `ui-spec.md`, `tests.md` |
@@ -34,8 +34,8 @@ months later nobody can say whether the fix was verified or whether the same
 fault will return. Leadership's problem is that nobody can answer "how many
 Tickets are waiting on the Requester?" or "what is urgent right now?" without
 exporting the database by hand. The Requester's problem is that the IT Staff
-Queue is a full-screen table of 343 rows with no indication of which ones
-actually concern them.
+Queue is a full-screen table of every Ticket in the system, with no indication of
+which ones actually concern them.
 
 We are asked for three things. First, an Actions Taken record attached to a
 Ticket: date and time, description, result, who performed it, whether follow-up
@@ -298,6 +298,11 @@ Additionally excluded, as a Lab 4 scope decision rather than a handout one:
 - **BR-13:** The Requester's "problem appears resolved" indication is advisory.
   It records a Requester's belief and never sets, clears, or implies a formal
   status.
+
+  > **Note:** Lab 4 BR numbering is independent of Lab 3. Where this sprint reuses
+  > a number, the rule differs — Lab 4 BR-13 is this advisory indication, while
+  > Lab 3 BR-13 was the inactive-assignee rejection, which is Lab 4 **BR-14**.
+  > Every rule that continues a Lab 3 rule says so explicitly.
 - **BR-14:** Assigning Ticket ownership to an inactive IT Staff or Administrator
   account is rejected with `404` and the message "Owner must be an active IT
   Staff or Administrator user". This is Lab 3 BR-13 behavior, pinned unchanged;
@@ -405,8 +410,8 @@ is enforced by the backend.
 | Role | Actions Taken | Dashboard |
 | :--- | :--- | :--- |
 | **Requester** | Read only, and only on their own Ticket. Create and update return `403`. | `GET /api/dashboards/requester`, scoped by the backend to their own Tickets. `GET /api/dashboards/staff` returns `403`. |
-| **IT Staff** | Create and update on any accessible Ticket (BR-09). Read on any accessible Ticket. | `GET /api/dashboards/staff` across the whole queue. |
-| **Administrator** | Identical to IT Staff, so Administrators can support and test the workflow. | `GET /api/dashboards/staff`, plus `userCounts` in the same response. |
+| **IT Staff** | Create and update on any accessible Ticket (BR-09). Read on any accessible Ticket. | `GET /api/dashboards/staff` across the whole queue. May also read `GET /api/dashboards/requester`, but sees only their own data. |
+| **Administrator** | Identical to IT Staff, so Administrators can support and test the workflow. | `GET /api/dashboards/staff`, plus `userCounts` in the same response. May also read `GET /api/dashboards/requester`, but sees only their own data. |
 
 Supporting rules:
 
@@ -415,6 +420,12 @@ Supporting rules:
 - A Requester calling an Action Taken write endpoint receives `403` whether or
   not the Ticket is their own.
 - "Accessible Ticket" is defined by BR-09, not by ownership.
+- `GET /api/dashboards/requester` is **any authenticated role**, own data only. It
+  returns `401` when there is no session and never `403`, because the backend
+  scopes the query to the caller, so a staff member who has never raised a Ticket
+  correctly sees `0` and empty lists per BR-20 rather than a permission error.
+  `api-spec.md` section 3.2 and `ui-spec.md` section 4 already say this; this table
+  and section 8 now agree with them.
 - The inactive-owner rejection in BR-14 applies to `PUT
   /api/staff/tickets/:id/assign` and is unchanged from Lab 3.
 
@@ -545,13 +556,20 @@ choice would not qualify and is not counted.
   chosen so that dashboard metrics are non-zero across statuses, priorities,
   assigned and unassigned ownership, and both `itPriority` set and unset — the
   unset case is required to exercise BR-25's `IS NULL` branch.
-- Action Taken records spread across at least 4 of the new Tickets, including at
-  least one pair sharing the same `actionDate` to exercise the BR-06 tie-break,
-  at least one with `followUpRequired = true` and a note, and at least one
-  performed by a staff member who is **not** the Ticket Owner, to exercise BR-02.
+- Action Taken records must cover all three seed shapes handout section 5.3 names:
+  **zero** (a new Ticket with no actions), **exactly one** (a Ticket with a single
+  action and no follow-up), and **multiple** (at least 4 of the new Tickets carry
+  actions, including at least one pair sharing the same `actionDate` to exercise
+  the BR-06 tie-break). At least one carries `followUpRequired = true` with a note,
+  and at least one is performed by a staff member who is **not** the Ticket Owner,
+  to exercise BR-02.
 - At least one Ticket that has a resolution summary but no Action Taken, so the
   BR-11 gate can be observed rejecting it, and at least one that satisfies both
-  gate conditions.
+  gate conditions. **Exactly one** is not the same as zero: a Ticket carrying a
+  single action proves the read path renders one row without inventing an empty
+  block, which is the case a `0`-or-`≥2` seed cannot reach.
+- `MIG-05` in `tests.md` proves all three shapes exist, counting against
+  `server/src/lib/seedData.ts` rather than a literal ticket id.
 - Seed stays idempotent: upsert on `ticketNumber`, and replace the Lab 4 Action
   Taken rows by their own known ids rather than a content match.
 - Passwords are not part of Lab 4; no new accounts are seeded.
@@ -574,7 +592,7 @@ tables are in `api-spec.md`. Endpoint summary:
 
 | Method | Path | Purpose | Auth | Success | Errors |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| GET | `/api/dashboards/requester` | Requester metrics and lists | Session (REQUESTER scope) | 200 | 401, 403, 500 |
+| GET | `/api/dashboards/requester` | Requester metrics and lists, scoped to the caller | Session (any role; own data only) | 200 | 401, 500 |
 | GET | `/api/dashboards/staff` | Queue metrics and lists; `userCounts` for Administrator | IT_STAFF, ADMIN | 200 | 401, 403, 500 |
 
 ### Changed in Lab 4
@@ -757,7 +775,34 @@ response shape. `GET /api/health` continues to return exactly `{ "status": "ok",
   `reviewer.md`, `ai-use.md`, and any credential notes are produced at the Lab 4
   release, following the Lab 3 pattern where Issue 14 produced the four contract
   documents and the release issue produced the evidence documents.
+- **AD-20:** `version` is **mandatory** on `PUT /api/actions/:id` and
+  **optional** on `PUT /api/staff/tickets/:id/status`. Handout section 6.1 asks
+  that stale updates be detected "so that one user does not unknowingly overwrite
+  another user's recent workflow change". The Action Taken write is protected
+  completely because editing always happens on a form built from a loaded record,
+  so the version is free to supply and a genuine two-staff conflict is likely. The
+  status control is also reachable from the queue, a search result, and a
+  dashboard drill-down, where the client holds a row summary that carries no
+  `version`; requiring it would force a refetch before every transition and raise
+  a `409` the user cannot act on. The trade-off is accepted explicitly: a
+  transition sent with no `version` is last-write-wins, which is tolerable because
+  `currentStatus` is a single enum value that is immediately visible on the badge —
+  unlike a paragraph of follow-up prose. Every Lab 4 client screen sends `version`
+  when it holds one, and `API-25` asserts the escape hatch stays deliberate.
+
+---
+
+## 12. Amendment Log
+
+| Version | Date | Change | Approved by |
+| :--- | :--- | :--- | :--- |
+| v1.0 | 2026-10-04 | Initial Lab 4 specification. | Approved (student, 2026-10-04) |
+| v1.1 | 2026-10-04 | Section 2 no longer states a row count taken from one development database ("a full-screen table of 343 rows"); it describes the Requester's problem without a number that is only true of a particular snapshot. Section 7 seed requirements now name all three shapes handout section 5.3 requires — zero, **exactly one**, and multiple — and point at `MIG-05`, which had no "exactly one" case to assert. Section 8's `GET /api/dashboards/requester` row read `Session (REQUESTER scope)` with a `403` in its error list, which contradicted `api-spec.md` section 3.2 and `ui-spec.md` section 4; it is now any authenticated role, own data only, `401` and `500`, and the Authorization Matrix agrees. Added **AD-20** recording the meaningful choice handout section 9 asks for: `version` mandatory on `PUT /api/actions/:id`, optional on the status endpoint. Added a note under BR-13 that Lab 4 BR numbering is independent of Lab 3, so BR-13 (advisory indication) is not read as Lab 3 BR-13 (inactive-assignee, here BR-14). | Approved (student, 2026-10-04) |
 
 ---
 
 *End of specification. Changes require student approval and a version bump.*
+
+**Approval:** v1.1 approved by the student on 2026-10-04. This approves the
+contract only — no FR, BR, AC, endpoint, screen, or checklist row is verified by
+it, because nothing has been built or run yet.

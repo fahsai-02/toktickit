@@ -4,7 +4,7 @@
 | :--- | :--- |
 | **Project** | Tok TickIT — IT Service Desk |
 | **Sprint** | Lab 4: Actions Taken, Ticket Workflow, and Role Dashboards |
-| **Version** | v1.0 (Draft 2026-10-04 — awaiting student approval) |
+| **Version** | v1.1 (Approved 2026-10-04) |
 | **Date** | 2026-10-04 |
 | **Contract source** | `specification.md` v1.0; request and response shapes in `api-spec.md` |
 | **Predecessor** | `docs/lab-03/ui-spec.md` — Lab 4 inherits its tokens, states, and accessibility rules unchanged |
@@ -126,8 +126,15 @@ independently refuses the route (BR-19).
 +------------------------------------------------------------------+
 ```
 
-**Cards.** Six count cards in one row at desktop. The field behind each card is
-named, so a reviewer can tie a card to the response without guessing:
+**Cards.** The grid is named here so Issue 26 and Issue 28 build the same thing:
+the **five plain count cards** run 5 per row at ≥1200px, 3 per row at 992–1199px,
+2 per row at 768–991px, and full-width below 768px. `attentionRequired` is
+**full-width on its own row at every size**, because it is styled as an attention
+card rather than a plain count card, and a `Create Ticket` button sits beside it
+where the viewport allows. That is why the desktop wireframe above draws five
+cards in the first row and the attention card in the second — and it is why the
+wireframe shows no six-across row. The field behind each card is named, so a
+reviewer can tie a card to the response without guessing:
 
 | Card label | Response field | Meaning |
 | :--- | :--- | :--- |
@@ -353,8 +360,9 @@ not change.
 
 | Viewport | Rules |
 | :--- | :--- |
-| Desktop ≥992px | Six count cards in one row at desktop, three per row from 1200px down; two-column dashboard lists; Actions Taken as a six-column table; create/edit form in a right-side drawer; container max 1200px |
-| Tablet 768–991px | Count cards 3 per row; dashboard lists stack full-width; Actions Taken table hides the Notes column into a second line per row; form drawer becomes a bottom sheet |
+| Desktop ≥1200px | Five plain count cards in one row; `Needs your attention` full-width beneath, with the `Create Ticket` button beside it; two-column dashboard lists; Actions Taken as a six-column table; create/edit form in a right-side drawer; container max 1200px |
+| Small desktop 992–1199px | Three plain count cards per row, attention card still full-width; two-column dashboard lists |
+| Tablet 768–991px | Two plain count cards per row, attention card still full-width; dashboard lists stack full-width; Actions Taken table hides the Notes column into a second line per row; form drawer becomes a bottom sheet |
 | Mobile <768px | Everything stacks vertically; cards full-width; **Actions Taken table becomes one card per action** keeping all six fields, because a six-column table cannot be read at 375px; form becomes a full-screen overlay; tap targets ≥44px; **zero horizontal page scrolling** |
 | All sizes | No clipped labels, overlapping messages, hidden buttons, or truncated-unreadable text |
 
@@ -429,10 +437,10 @@ artifacts/lab-04/screenshots/requester-dashboard/{desktop,tablet,mobile}.png
 artifacts/lab-04/screenshots/requester-dashboard-empty/{desktop,tablet,mobile}.png
 artifacts/lab-04/screenshots/staff-dashboard/{desktop,tablet,mobile}.png
 artifacts/lab-04/screenshots/staff-dashboard-admin/{desktop,tablet,mobile}.png
-artifacts/lab-04/screenshots/staff-ticket-actions/{desktop,tablet,mobile}.png
-artifacts/lab-04/screenshots/staff-ticket-action-form/{desktop,tablet,mobile}.png
-artifacts/lab-04/screenshots/requester-ticket-actions/{desktop,tablet,mobile}.png
-artifacts/lab-04/screenshots/staff-ticket-actions-empty/{desktop,tablet,mobile}.png
+artifacts/lab-04/screenshots/actions-taken/staff-ticket-actions/{desktop,tablet,mobile}.png
+artifacts/lab-04/screenshots/actions-taken/staff-ticket-action-form/{desktop,tablet,mobile}.png
+artifacts/lab-04/screenshots/actions-taken/requester-ticket-actions/{desktop,tablet,mobile}.png
+artifacts/lab-04/screenshots/actions-taken/staff-ticket-actions-empty/{desktop,tablet,mobile}.png
 artifacts/lab-04/screenshots/workflow-gate-blocked/{desktop,tablet,mobile}.png
 artifacts/lab-04/screenshots/workflow-confirm-dialog/{desktop,tablet,mobile}.png
 ```
@@ -448,6 +456,18 @@ artifacts/lab-04/screenshots/states/dashboard-zero-metrics/{desktop,tablet,mobil
 artifacts/lab-04/screenshots/states/dashboard-error-retry/{desktop,tablet,mobile}.png
 artifacts/lab-04/screenshots/states/action-tab-keyboard-focus/{desktop,tablet,mobile}.png
 ```
+
+`actions-taken/` is the parent folder handout section 12 names. The four
+sub-folders under it stay separate because the **staff list**, the **action form**,
+the **Requester read-only view**, and the **empty state** are four different
+screens, and merging them into one folder would make the capture names stop
+describing what is in the picture. The parent folder exists to satisfy handout
+section 12, not to replace the per-screen split.
+
+The four directories exist on disk but hold no files yet — Lab 4 has no captures
+at this point, and git does not track an empty directory, so there is no
+placeholder file to commit. They become real in the repository the moment the
+visual specs write their first PNG, exactly as the Lab 3 folders did.
 
 The responsive, state, and measured-audit specs together produce
 **artifacts/lab-04/screenshots/** — that path is a committed deliverable and is
@@ -501,7 +521,7 @@ reviewer can re-run it instead of trusting the table.
 | 31 | Status and priority are legible without color (text present in every badge) | STYLE-02 | Pending |
 | 32 | No uncaught error in the browser console on any new screen, happy path or failure | E2E-06, UI-29 | Pending |
 | 33 | Loading, empty, no-results, and error states each have a real screenshot, not a description | STATE-01..27 | Pending |
-| 34 | All Lab 3 screens still render correctly after the Lab 4 changes | REG-01, REG-02, MIG-01 | Pending |
+| 34 | All Lab 3 screens still render correctly after the Lab 4 changes | REG-01 | Pending |
 
 **Completion rule.** A row is marked `Pass` only when its `Auto` test passes
 **and** a human has looked at the corresponding capture or driven the keyboard.
@@ -510,6 +530,31 @@ An automated pass alone leaves the row `Pending`; a human looking alone leaves i
 a failed visual row that is not explained gets re-run until it looks right rather
 than until it is right.
 
+**One caveat on row 34, stated here so the column is not over-read.** Row 34's
+`Auto` entry is `REG-01`, and `REG-01` runs the Lab 1–3 unit and component suites.
+It proves Lab 3 **behaviour** survived the Lab 4 changes; it does not prove the Lab
+3 screens still *render* the same way. `REG-02` (health shape) and `MIG-01` (row
+counts) were previously cited here and were removed, because neither renders a
+screen either. The visual half of row 34 — the Lab 3 screens still rendering
+correctly, which is what handout section 8.5 asks for — is done by running **Lab
+3's own** `e2e/lab-03/responsive.visual.spec.ts`, and it is recorded in
+`tests.md` section 6 as part of the AC-17 run rather than as a Lab 4 capture.
+Lab 4 does not re-capture Lab 3 screens, so a Lab 4 screenshot would be evidence
+of a Lab 4 test rig, not of the Lab 3 screens.
+
+---
+
+## 10. Amendment Log
+
+| Version | Date | Change | Approved by |
+| :--- | :--- | :--- | :--- |
+| v1.0 | 2026-10-04 | Initial Lab 4 UI contract. | Approved (student, 2026-10-04) |
+| v1.1 | 2026-10-04 | Section 4 card layout and section 6 responsive rules said three different things — a five-card wireframe, "Six count cards in one row", and "three per row from 1200px down". All three now describe one named grid: five plain cards 5/3/2/full-width per row, `Needs your attention` full-width at every size, with the `Create Ticket` button beside it. Added the `actions-taken/` parent folder handout section 12 requires, keeping the four per-screen sub-folders. Checklist row 34 now cites `REG-01` only, with a note on where its visual half is proven. | Approved (student, 2026-10-04) |
+
 ---
 
 *End of UI specification. Changes require student approval and a version bump.*
+
+**Approval:** v1.1 approved by the student on 2026-10-04. This approves the
+contract only — no FR, BR, AC, endpoint, screen, or checklist row is verified by
+it, because nothing has been built or run yet.

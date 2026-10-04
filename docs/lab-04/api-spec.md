@@ -4,7 +4,7 @@
 | :--- | :--- |
 | **Project** | Tok TickIT — IT Service Desk |
 | **Sprint** | Lab 4: Actions Taken, Ticket Workflow, and Role Dashboards |
-| **Version** | v1.0 (Draft 2026-10-04 — awaiting student approval) |
+| **Version** | v1.1 (Approved 2026-10-04) |
 | **Date** | 2026-10-04 |
 | **Contract source** | `specification.md` v1.0 (FR/BR/AC references below trace to it) |
 | **Predecessor** | `docs/lab-03/api-spec.md` v1.2 — every endpoint not listed in sections 2–5 keeps its Lab 3 shape verbatim |
@@ -241,7 +241,8 @@ differs.
 **Ordering:** `actionDate` ascending, tie-broken by `createdAt` ascending
 (BR-06). Two actions sharing an `actionDate` keep their insertion order. No
 pagination in Lab 4: a Ticket's action history is expected to be short enough to
-return whole, and section 3.4 of the handout asks for one place.
+return whole, and handout section 8.3 asks for one place to review a
+Ticket's actions.
 
 **Errors:** `400` (malformed id), `401`, `403` (Requester, foreign Ticket),
 `404` (no such Ticket), `500`.
@@ -781,26 +782,43 @@ reused for the gate, matching how a disallowed transition is already reported.
 
 ## 8. Acceptance Criteria Traceability
 
+`tests.md` owns the test-ID system, so every ID below is one that actually
+appears in its section 2 tables. `tests.md` section 3 carries the same mapping
+from the other direction, with the AC as the key.
+
 | AC | Endpoint / mechanism | Test IDs in `tests.md` |
 | :--- | :--- | :--- |
-| AC-01 | `POST /api/tickets/:id/actions` (2.1) | `API-action-create`, `AUTH-action-performer` |
-| AC-02 | `POST` follow-up validation (2.1) | `API-action-followup-validation` |
-| AC-03 | `GET /api/tickets/:id/actions` ordering (2.2) | `API-action-ordering` |
-| AC-04 | `actionDate` future limit (2.1) | `API-action-date-validation` |
-| AC-05 | Requester read-only access (2.2) | `AUTH-action-requester-readonly` |
-| AC-06 | `PUT /api/actions/:id` `409` (2.3) | `CONC-action-version-conflict` |
-| AC-07 | Resolution gate (5.1) | `WF-resolution-gate` |
-| AC-08 | Transition matrix (5.1) | `WF-transition-matrix` |
-| AC-09 | Advisory indication (5.1, section 6) | `WF-advisory-indication` |
-| AC-10 | `GET /api/dashboards/requester` (3.1) | `API-dash-requester`, `DASH-requester-calculation` |
-| AC-11 | `GET /api/dashboards/staff` (3.2, 3.3) | `API-dash-staff`, `DASH-staff-calculation`, `DASH-urgent-rule` |
-| AC-12 | Drill-downs (3.2, 4.1) | `DASH-drilldown` |
-| AC-13 | Ignored `assigneeId`; inactive owner `404` (2.5, section 6) | `API-action-ignored-keys`, `AUTH-assign-inactive-owner` |
-| AC-14 | Ignored `status`; Ticket lifecycle (2.5, 5.1) | `API-action-ignored-keys`, `WF-transition-matrix` |
-| AC-15 | Form retains values after a failure | `UI-action-form-retention` |
-| AC-16 | Duplicate submission (2.1, AD-05) | `UI-action-single-flight` |
-| AC-17 | Labs 1–3 regression, health shape (section 6) | `MIG-02`, `REG-health-endpoint`, `REG-labs-1-3` |
-| AC-18 | Visual checklist at 3 viewports | `RESP-lab4-viewports`, `STYLE-lab4-zen-green` |
+| AC-01 | `POST /api/tickets/:id/actions` (2.1) | `API-01`, `API-02`, `UI-01`, `E2E-01` |
+| AC-02 | `POST` follow-up validation (2.1) | `API-09`, `API-10`, `UI-02`, `E2E-01` |
+| AC-03 | `GET /api/tickets/:id/actions` ordering (2.2) | `API-06`, `UI-09` |
+| AC-04 | `actionDate` future limit (2.1) | `API-12`, `UI-08` |
+| AC-05 | Requester read-only access (2.2) | `API-03`, `API-04`, `AUTH-02`, `AUTH-03`, `API-07`, `UI-15`, `E2E-02` |
+| AC-06 | `PUT /api/actions/:id` `409` (2.3) | `API-16`, `API-17`, `API-18`, `API-24`, `UI-07`, `E2E-01` |
+| AC-07 | Resolution gate (5.1) | `UNIT-01`, `UNIT-02`, `API-19`, `API-20`, `API-21`, `API-22`, `UI-17`, `E2E-03` |
+| AC-08 | Transition matrix (5.1) | `UNIT-04`, `API-23`, `UI-18`, `UI-19`, `E2E-03` |
+| AC-09 | Advisory indication (5.1, section 6) | `UNIT-02`, `API-28`, `UI-20`, `E2E-03` |
+| AC-10 | `GET /api/dashboards/requester` (3.1) | `API-36`, `API-37`, `API-38`, `AUTH-04`, `UI-21`, `UI-22`, `UI-23`, `STYLE-04`, `E2E-04` |
+| AC-11 | `GET /api/dashboards/staff` (3.2, 3.3) | `UNIT-03`, `API-29`, `API-30`, `API-31`, `API-32`, `API-33`, `API-34`, `API-39`, `UI-25`, `UI-26`, `UI-27`, `E2E-04` |
+| AC-12 | Drill-downs (3.2, 4.1) | `API-35`, `API-42`, `UI-24`, `E2E-04` |
+| AC-13 | Ignored `assigneeId`; inactive owner `404` (2.5, section 6) | `API-14`, `AUTH-01`, `UI-12`, `UI-14`, `E2E-05` |
+| AC-14 | Ignored `status`; Ticket lifecycle (2.5, 5.1) | `API-13`, `API-15`, `UI-13`, `E2E-05` |
+| AC-15 | Form retains values after a failure | `UI-05`, `UI-06` |
+| AC-16 | Duplicate submission (2.1, AD-05) | `UI-04` |
+| AC-17 | Labs 1–3 regression, health shape (section 6) | `MIG-01`, `MIG-02`, `MIG-03`, `MIG-04`, `MIG-05`, `AUTH-05`, `REG-01`, `REG-02` |
+| AC-18 | Visual checklist at 3 viewports | `RESP-01..30`, `STATE-01..27`, `STYLE-08`, `STYLE-09`, `STYLE-10` |
+
+### 8.1 Tests that are not AC-bound
+
+Four groups answer a handout requirement rather than an acceptance criterion, so
+they are not in the table above. They are still real rows in `tests.md` with a
+recorded status, which is what handout section 10 asks for.
+
+| Group | Tests | Requirement it answers |
+| :--- | :--- | :--- |
+| Performance smoke | `PERF-01`..`PERF-04` | Handout section 10, performance-smoke category. Section 10 states no millisecond figure, so the thresholds are project-chosen, and `tests.md` says so at the row. |
+| Accessibility | `A11Y-01`..`A11Y-05` | Handout section 10, accessibility category, plus section 7's four named rules. |
+| Authorization | `AUTH-01`..`AUTH-06` | Handout section 10, authorization category. `AUTH-01`..`AUTH-05` are cited in the AC table above because they land on an AC; `AUTH-06` enforces the "enforced on the backend" supporting rule in `specification.md` section 5 and belongs to no single AC. |
+| Seed and rollback | `MIG-04`, `MIG-05` | Handout sections 5.2 (the rollback or recovery approach documented **and tested**) and 5.3 (zero, one, and multiple Actions Taken). |
 
 ---
 
@@ -808,8 +826,13 @@ reused for the gate, matching how a disallowed transition is already reported.
 
 | Version | Date | Change | Approved by |
 | :--- | :--- | :--- | :--- |
-| v1.0 | 2026-10-04 | Initial Lab 4 contract. Adds Actions Taken endpoints, dashboard endpoints, the `statusGroup` filter, and the resolution gate and `409` concurrency behavior to the staff status endpoint. Records that `GET /api/health` and all other Lab 1–3 endpoints are unchanged. | Pending student approval |
+| v1.0 | 2026-10-04 | Initial Lab 4 contract. Adds Actions Taken endpoints, dashboard endpoints, the `statusGroup` filter, and the resolution gate and `409` concurrency behavior to the staff status endpoint. Records that `GET /api/health` and all other Lab 1–3 endpoints are unchanged. | Approved (student, 2026-10-04) |
+| v1.1 | 2026-10-04 | Section 8's third column named 24 semantic IDs that exist nowhere in `tests.md`; it now cites the real numeric IDs, adding `AUTH-01..05` and `API-42`. Added section 8.1 for the four groups that answer a handout requirement rather than an AC. Fixed the section 2.2 citation: it pointed at a handout subsection number that does not exist — the one-place requirement is handout section 8.3. | Approved (student, 2026-10-04) |
 
 ---
 
 *End of API specification. Changes require student approval and a version bump.*
+
+**Approval:** v1.1 approved by the student on 2026-10-04. This approves the
+contract only — no FR, BR, AC, endpoint, screen, or checklist row is verified by
+it, because nothing has been built or run yet.
