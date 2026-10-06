@@ -789,6 +789,8 @@ response shape. `GET /api/health` continues to return exactly `{ "status": "ok",
   `currentStatus` is a single enum value that is immediately visible on the badge —
   unlike a paragraph of follow-up prose. Every Lab 4 client screen sends `version`
   when it holds one, and `API-25` asserts the escape hatch stays deliberate.
+- **AD-21:** **IT Staff dashboard status breakdown completeness (section 3.2).** The staff dashboard `counts` object focuses on operational/queue state (active statuses plus ownership and urgency). Terminal statuses (`RESOLVED`, `CLOSED`, `CANCELLED`) and `REOPENED` are surfaced via filters/drill-downs (notably `statusGroup` in section 4.1) and via list views rather than duplicating all eight statuses as separate top-level count cards; this matches the operational emphasis of AC-11/FR-14 while still supporting drill-down by status groups.
+- **AD-22:** **Scope hygiene — merged Lab 3 documentation.** Minor Lab 3 documentation clarifications and traceability reference adjustments are included in this Lab 4 contract PR because `lab3-staging` was closed/merged at the time of this contract work. These edits are limited strictly to non-behavioral documentation (clarifications, mapping notes, and traceability) to preserve alignment across labs without reopening a Lab 3 PR.
 
 ---
 

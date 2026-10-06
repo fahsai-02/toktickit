@@ -505,16 +505,20 @@ client can distinguish "not applicable to this role" from "there are no users"
 | `counts.new` / `counts.open` / `counts.inProgress` / `counts.waitingForRequester` | Queue-wide count of that single status | — | `0` |
 | `counts.unassigned` | `ownerId IS NULL` | — | `0` |
 | `counts.myAssigned` | `ownerId` = session user | — | `0` |
-| `counts.urgentTickets` | Per the urgent rule in section 3.3 | — | `0` |
+| `counts.urgentTickets` | Authoritative COUNT(*) of Tickets matching the urgent rule in section 3.3 (BR-25), independent of the preview list below | — | `0` |
 | `byItPriority` | Always exactly five entries, see section 3.3 | — | bucket present with `count: 0` |
 | `recentTickets` | Whole queue, `updatedAt` descending | 5 | `[]` |
 | `urgentTickets` | The urgent Tickets themselves, `updatedAt` descending | 10 | `[]` |
 | `myRecentActions` | Caller's own Action Taken across **all** Tickets, `actionDate` descending | 5 | `[]` |
 | `userCounts` | Administrator only: `total`, `active`, `inactive` | — | key absent for IT Staff |
 
-**`counts.urgentTickets` always equals `urgentTickets.length`** in the same
-response. The card shows the count and the list sits below it; a mismatch would
-mean they disagree, so `tests.md` asserts the invariant directly.
+**`counts.urgentTickets` is an authoritative aggregate count** computed by the
+urgent rule in section 3.3 (BR-25), independent of the `urgentTickets` preview
+array (limited to 10). The preview lists the most recently updated urgent
+Tickets (up to 10); the count is `COUNT(*)` over all Tickets matching BR-25.
+Tests assert the count against that predicate rather than assuming equality to
+`urgentTickets.length`. When there are ≤ 10 urgent Tickets, the two values may
+coincide, but they must not be assumed equal in general.
 
 **`myRecentActions` scope:** every Action Taken whose `performedById` is the
 caller, across all Tickets — not limited to Tickets they own (AD-08, BR-02). Each

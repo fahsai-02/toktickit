@@ -80,6 +80,8 @@ no handout counterpart: handout section 10 requires responsive coverage and grad
 Part 9 requires completed screenshots for "all major Lab 4 screens", which cannot
 come out of a single functional spec.
 
+**Test ID mapping note (handout alignment).** To satisfy handout section 10’s category split (Authorization and Workflow listed separately), the negative/role-based cases for Actions Taken are collected under the Authorization category while keeping their test IDs unchanged. Specifically: **API-03** corresponds to the Requester prohibition case (“Requester cannot create Action Taken (403)”) under Authorization (BR-08/AC-05) with the positive creation recorded as **API-01** (AC-01); **E2E-02** corresponds to “Requester reads actions and cannot write” in the E2E table (AC-05). This preserves the canonical starter IDs from lab-04.pdf section 10 while following the category organization; section 3 provides full traceability.
+
 **Test-writing rules.** The rules in `AGENTS.md` apply unchanged and are the reason several rows below are phrased the way they are: no hard-coded seed values (seed facts come from `server/src/lib/seedData.ts` and `seedCredentials.ts`), no timing-based ordering, `fileParallelism: false` already set in `server/vitest.config.ts`, `await screen.findBy*` rather than sleeps in client tests, `await db.$disconnect()` in `afterAll`, and a traceability comment naming the spec anchor on each group.
 
 ## 2. Test Cases and Status
@@ -133,7 +135,7 @@ ID keeps its original number and its place in the section 3 traceability table.
 | API-31 | FR-14, AC-11 | `byItPriority` always has 5 buckets | Includes a null/not-set bucket; bucket counts sum to the queue total | `staff-dashboard.api.test.ts` | Planned |
 | API-32 | FR-15, AC-11 | `userCounts` role-conditional | Present for Administrator, **absent** for IT Staff | `staff-dashboard.api.test.ts` | Planned |
 | API-33 | BR-25, AC-11 | `counts.urgentTickets` matches the predicate | Includes the itPriority-URGENT and requestedPriority-URGENT groups; excludes staff-de-escalated and terminal statuses | `staff-dashboard.api.test.ts` | Planned |
-| API-34 | BR-25 | `counts.urgentTickets === urgentTickets.length` | Invariant on a seeded DB and on an empty DB | `staff-dashboard.api.test.ts` | Planned |
+| API-34 | BR-25 | `counts.urgentTickets` equals COUNT(*) matching BR-25 (preview limited to 10; count independent of preview length) | Asserts predicate-based count against BR-25; list length may equal count only when ≤ 10 urgent Tickets exist | `staff-dashboard.api.test.ts` | Planned |
 | API-35 | FR-16, AC-12 | Every drill-down returns exactly the counted set | Each `drillDown` query from `api-spec.md` section 3, followed and compared to the count | `staff-dashboard.api.test.ts` | Planned |
 | API-36 | BR-19, AC-10 | Requester dashboard counts own Tickets only | Each `counts` value equals a direct query over the caller's Tickets; another user's Tickets excluded | `requester-dashboard.api.test.ts` | Planned |
 | API-37 | BR-23, AC-10 | Requester with zero Tickets | All counts `0`, arrays `[]`, `200` — not an error, not `null` | `requester-dashboard.api.test.ts` | Planned |
