@@ -92,8 +92,15 @@ describe("API-68 — user list (FR-40)", () => {
   it("returns every seeded user without the password hash and without mustChangePassword", async () => {
     const res = await adminAgent.get("/api/admin/users");
     expect(res.status).toBe(200);
-    expect(res.body.data).toHaveLength(SEED_USERS.length);
+    // AGENTS.md test rule 1: this must pass on ANY seeded DB, including a
+    // long-lived dev one that holds accounts created by hand. So the list is
+    // asserted to contain every seeded account, not to be exactly that many rows
+    // (the old `toHaveLength(SEED_USERS.length)` failed 12 rows vs 11 seeded).
+    expect(res.body.data.length).toBeGreaterThanOrEqual(SEED_USERS.length);
     const emails = res.body.data.map((u: { email: string }) => u.email);
+    for (const seedUser of SEED_USERS) {
+      expect(emails).toContain(seedUser.email);
+    }
     expect(emails).toContain(adminAccount.email);
     expect(emails).toContain(requesterAccount.email);
     expect(emails).toContain(inactiveRequester.email);

@@ -58,6 +58,21 @@ export type SeedInternalNote = {
   ticketNumber: string;
 };
 
+
+export type SeedActionTaken = {
+  // Stable id the seed owns: re-seeding deletes exactly these rows and
+  // recreates them, never a whole-Ticket sweep (specification.md section 7
+  // "replace the Lab 4 Action Taken rows by their own known ids").
+  id: number;
+  ticketNumber: string;
+  performedBy: string; // email of IT Staff/Admin
+  actionDate: string;
+  description: string;
+  result: string;
+  followUpRequired?: boolean;
+  followUpNote?: string | null;
+  attachmentNotes?: string | null;
+};
 export const SEED_CATEGORIES: SeedCategory[] = [
   { name: "Account and Access" },
   { name: "Hardware" },
@@ -322,6 +337,225 @@ export const SEED_TICKETS: SeedTicket[] = [
     requesterIndicatedResolved: true,
     indicatedResolvedAt: "2026-09-11T16:30:00.000Z",
   },
+  // =====================================================================
+  // Lab 4 seed block TKT-2026-000903 .. 000917 (BR-24, specification.md
+  // section 7 "Seed Data Requirements"). These numbers are reserved for Lab 4
+  // and must never be reused by a real Ticket (the seed upserts on
+  // ticketNumber). The block deliberately mixes statuses, priorities,
+  // assigned/unassigned ownership, and itPriority set AND unset (the unset
+  // case exercises BR-25's IS NULL branch). Action Taken coverage is handled by
+  // SEED_ACTIONS_TAKEN below: zero/one/many across this block only.
+  // =====================================================================
+  {
+    ticketNumber: "TKT-2026-000903",
+    summary: "Laptop will not start after BIOS update",
+    description: "The corporate laptop hangs at the vendor logo after a scheduled BIOS update and will not reach Windows.",
+    requestedPriority: "HIGH",
+    itPriority: "HIGH",
+    currentStatus: TicketStatus.OPEN,
+    requester: "jennifer.anderson@toktickit.dev",
+    owner: "itstaff.kevin@toktickit.dev",
+    relatedSystem: "Corporate Laptop",
+    category: "Hardware",
+    ticketDate: "2026-09-20T07:45:00.000Z",
+    resolutionSummary: null,
+  },
+  {
+    ticketNumber: "TKT-2026-000904",
+    summary: "Unable to log into LEB2 App after password reset",
+    description: "The user reset their password but the LEB2 App still rejects the new credentials at login.",
+    requestedPriority: "MEDIUM",
+    itPriority: null,
+    currentStatus: TicketStatus.NEW,
+    requester: "david.lee@toktickit.dev",
+    owner: null,
+    relatedSystem: "LEB2 App",
+    category: "Software",
+    ticketDate: "2026-09-20T13:30:00.000Z",
+    resolutionSummary: null,
+  },
+  {
+    ticketNumber: "TKT-2026-000905",
+    summary: "Printer in Room 305 offline",
+    description: "The shared printer in Room 305 shows offline in the print queue and no jobs are processing.",
+    requestedPriority: "LOW",
+    itPriority: "LOW",
+    currentStatus: TicketStatus.WAITING_FOR_REQUESTER,
+    requester: "sarah.johnson@toktickit.dev",
+    owner: "itstaff.sara@toktickit.dev",
+    relatedSystem: "Printer",
+    category: "Hardware",
+    ticketDate: "2026-09-22T08:00:00.000Z",
+    resolutionSummary: null,
+  },
+  {
+    ticketNumber: "TKT-2026-000906",
+    summary: "Grade submission app rejects CSV upload",
+    description: "Uploading the semester grades as a CSV fails with a generic error after the first column.",
+    requestedPriority: "HIGH",
+    itPriority: "HIGH",
+    currentStatus: TicketStatus.IN_PROGRESS,
+    requester: "michael.brown@toktickit.dev",
+    owner: "itstaff.james@toktickit.dev",
+    relatedSystem: "Grade Submission App",
+    category: "Software",
+    ticketDate: "2026-09-21T09:15:00.000Z",
+    resolutionSummary: null,
+  },
+  {
+    ticketNumber: "TKT-2026-000907",
+    summary: "Email not syncing on mobile after travel",
+    description: "After returning from travel, the user's mailbox no longer syncs on the mobile mail app.",
+    requestedPriority: "URGENT",
+    itPriority: null,
+    currentStatus: TicketStatus.REOPENED,
+    requester: "napat.chaiwong@toktickit.dev",
+    owner: null,
+    relatedSystem: "Email",
+    category: "Account and Access",
+    ticketDate: "2026-09-22T17:20:00.000Z",
+    resolutionSummary: null,
+  },
+  {
+    ticketNumber: "TKT-2026-000908",
+    summary: "New hire laptop imaging request",
+    description: "A new staff member starts next week and needs a corporate laptop imaged with the standard software set.",
+    requestedPriority: "MEDIUM",
+    itPriority: null,
+    currentStatus: TicketStatus.NEW,
+    requester: "jennifer.anderson@toktickit.dev",
+    owner: null,
+    relatedSystem: "Corporate Laptop",
+    category: "Hardware",
+    ticketDate: "2026-09-23T10:05:00.000Z",
+    resolutionSummary: null,
+  },
+  {
+    ticketNumber: "TKT-2026-000909",
+    summary: "Campus Wi-Fi very slow in Building 2",
+    description: "Wi-Fi in Building 2 is nearly unusable during office hours; the signal bar shows full strength.",
+    requestedPriority: "MEDIUM",
+    itPriority: "MEDIUM",
+    currentStatus: TicketStatus.IN_PROGRESS,
+    requester: "david.lee@toktickit.dev",
+    owner: "itstaff.kevin@toktickit.dev",
+    relatedSystem: "Campus Wi-Fi",
+    category: "Network",
+    ticketDate: "2026-09-23T08:30:00.000Z",
+    resolutionSummary: null,
+  },
+  {
+    ticketNumber: "TKT-2026-000910",
+    summary: "VPN keeps disconnecting on campus network",
+    description: "The VPN tunnel drops every few minutes for one user while the laptop is on the campus LAN.",
+    requestedPriority: "HIGH",
+    itPriority: "HIGH",
+    currentStatus: TicketStatus.OPEN,
+    requester: "sarah.johnson@toktickit.dev",
+    owner: "itstaff.sara@toktickit.dev",
+    relatedSystem: "VPN",
+    category: "Network",
+    ticketDate: "2026-09-23T14:40:00.000Z",
+    resolutionSummary: null,
+  },
+  {
+    ticketNumber: "TKT-2026-000911",
+    summary: "Request admin rights for lab software install",
+    description: "A lab assistant needs temporary local admin rights to install a package for classroom exercises.",
+    requestedPriority: "LOW",
+    itPriority: null,
+    currentStatus: TicketStatus.NEW,
+    requester: "michael.brown@toktickit.dev",
+    owner: null,
+    relatedSystem: "Corporate Laptop",
+    category: "Account and Access",
+    ticketDate: "2026-09-24T09:00:00.000Z",
+    resolutionSummary: null,
+  },
+  {
+    ticketNumber: "TKT-2026-000912",
+    summary: "No audio output on video calls",
+    description: "The laptop plays system sounds but produces no audio during Zoom and Teams calls.",
+    requestedPriority: "LOW",
+    itPriority: null,
+    currentStatus: TicketStatus.OPEN,
+    requester: "napat.chaiwong@toktickit.dev",
+    owner: "itstaff.james@toktickit.dev",
+    relatedSystem: "Corporate Laptop",
+    category: "Hardware",
+    ticketDate: "2026-09-24T11:25:00.000Z",
+    resolutionSummary: null,
+  },
+  {
+    ticketNumber: "TKT-2026-000913",
+    summary: "Printer tray jam in Room 210",
+    description: "Tray 2 keeps jamming when paper is loaded, disrupting printing for the whole floor.",
+    requestedPriority: "URGENT",
+    itPriority: "HIGH",
+    currentStatus: TicketStatus.WAITING_FOR_REQUESTER,
+    requester: "jennifer.anderson@toktickit.dev",
+    owner: "itstaff.sara@toktickit.dev",
+    relatedSystem: "Printer",
+    category: "Hardware",
+    ticketDate: "2026-09-25T08:10:00.000Z",
+    resolutionSummary: null,
+  },
+  {
+    ticketNumber: "TKT-2026-000914",
+    summary: "Shared drive very slow on marketing folder",
+    description: "Opening the marketing shared drive takes over a minute and file copies stall.",
+    requestedPriority: "HIGH",
+    itPriority: "HIGH",
+    currentStatus: TicketStatus.OPEN,
+    requester: "david.lee@toktickit.dev",
+    owner: "itstaff.kevin@toktickit.dev",
+    relatedSystem: "Email",
+    category: "Account and Access",
+    ticketDate: "2026-09-25T13:50:00.000Z",
+    resolutionSummary: null,
+  },
+  {
+    ticketNumber: "TKT-2026-000915",
+    summary: "Outlook crashes when opening the calendar",
+    description: "Outlook closes without warning every time the user opens the shared calendar view.",
+    requestedPriority: "MEDIUM",
+    itPriority: null,
+    currentStatus: TicketStatus.NEW,
+    requester: "sarah.johnson@toktickit.dev",
+    owner: null,
+    relatedSystem: "Email",
+    category: "Account and Access",
+    ticketDate: "2026-09-26T09:35:00.000Z",
+    resolutionSummary: null,
+  },
+  {
+    ticketNumber: "TKT-2026-000916",
+    summary: "Grade submission app server crash on final upload",
+    description: "The upload service crashed twice under concurrent final submissions; grades were not persisted.",
+    requestedPriority: "URGENT",
+    itPriority: "URGENT",
+    currentStatus: TicketStatus.IN_PROGRESS,
+    requester: "michael.brown@toktickit.dev",
+    owner: "itstaff.kevin@toktickit.dev",
+    relatedSystem: "Grade Submission App",
+    category: "Software",
+    ticketDate: "2026-09-24T08:20:00.000Z",
+    resolutionSummary: "Raised the upload worker memory limit and verified uploads succeed at full load.",
+  },
+  {
+    ticketNumber: "TKT-2026-000917",
+    summary: "Downloaded campus app shows stale course list",
+    description: "The campus app keeps showing last semester's course list even after the data refresh.",
+    requestedPriority: "MEDIUM",
+    itPriority: "MEDIUM",
+    currentStatus: TicketStatus.IN_PROGRESS,
+    requester: "napat.chaiwong@toktickit.dev",
+    owner: "itstaff.james@toktickit.dev",
+    relatedSystem: "LEB2 App",
+    category: "Software",
+    ticketDate: "2026-09-26T14:10:00.000Z",
+    resolutionSummary: "Waiting for the backend cache flush; summary written but work is not yet complete.",
+  },
 ];
 
 // Seed Public Comments (at least 2 different tickets, no sensitive info).
@@ -402,3 +636,168 @@ export const SEED_BASELINE_COUNTS = {
   ticket: SEED_TICKETS.length,
   attachment: 0,
 } as const;
+
+// Lab 4 seed block (BR-24): TKT-2026-000903 .. TKT-2026-000917. Derived from
+// SEED_TICKETS so the block definition and the tickets can never drift.
+export const SEED_LAB4_TICKET_NUMBERS: string[] = SEED_TICKETS.map(
+  (t) => t.ticketNumber,
+).filter((n) => /^TKT-2026-0009(?:0[3-9]|1[0-7])$/.test(n));
+
+// Seed Actions Taken (Lab 4, handout section 5.3). Only tickets in the Lab 4
+// block carry seeded actions — historical Tickets keep zero Action Taken
+// (BR-21), so all three shapes are demonstrable:
+//   zero     TKT-2026-000904, 000907, 000908, 000910, 000911, 000912, 000913,
+//            000914, 000915 and 000917 carry NO actions (000917 has a
+//            resolution summary but no action, exercising the BR-11 gate
+//            reject side).
+//   one      TKT-2026-000905 carries exactly one action, no follow-up.
+//   many     TKT-2026-000903, 000906, 000909 and 000916 carry 2-3 actions;
+//            000906 has a pair sharing one actionDate to exercise the BR-06
+//            tie-break; 000906 and 000909 include a performer who is NOT the
+//            Ticket Owner (BR-02); 000903 and 000906 include a
+//            followUpRequired = true action with a note (BR-04).
+export const SEED_ACTIONS_TAKEN: SeedActionTaken[] = [
+  // TKT-2026-000903: many actions (3) — Kevin then Sara
+  {
+    id: 1,
+    ticketNumber: "TKT-2026-000903",
+    performedBy: "itstaff.kevin@toktickit.dev",
+    actionDate: "2026-09-20T09:00:00.000Z",
+    description: "Reviewed the BIOS update logs from the boot partition.",
+    result: "Failed update detected; recovery image available.",
+    followUpRequired: false,
+    followUpNote: null,
+    attachmentNotes: "See bios-update-log.png in the ticket attachments.",
+  },
+  {
+    id: 2,
+    ticketNumber: "TKT-2026-000903",
+    performedBy: "itstaff.kevin@toktickit.dev",
+    actionDate: "2026-09-20T09:40:00.000Z",
+    description: "Reapplied the previous BIOS version from the recovery image.",
+    result: "The laptop boots normally again.",
+    followUpRequired: false,
+    followUpNote: null,
+    attachmentNotes: null,
+  },
+  {
+    id: 3,
+    ticketNumber: "TKT-2026-000903",
+    performedBy: "itstaff.sara@toktickit.dev",
+    actionDate: "2026-09-20T11:00:00.000Z",
+    description: "Checked that all drivers reloaded after the BIOS restore.",
+    result: "No further boot errors reported by the user.",
+    followUpRequired: true,
+    followUpNote: "Monitor the laptop for 48 hours; advise pausing BIOS updates until IT approves.",
+    attachmentNotes: null,
+  },
+  // TKT-2026-000905: exactly one action, no follow-up
+  {
+    id: 4,
+    ticketNumber: "TKT-2026-000905",
+    performedBy: "itstaff.sara@toktickit.dev",
+    actionDate: "2026-09-22T08:30:00.000Z",
+    description: "Inspected the printer's network connection and print queue.",
+    result: "Printer was paused on the print server; queue resumed.",
+    followUpRequired: false,
+    followUpNote: null,
+    attachmentNotes: null,
+  },
+  // TKT-2026-000906: many actions (3), incl. a same-actionDate pair (BR-06
+  // tie-break) and a performer (Sara) who is not the Owner (James, BR-02)
+  {
+    id: 5,
+    ticketNumber: "TKT-2026-000906",
+    performedBy: "itstaff.james@toktickit.dev",
+    actionDate: "2026-09-21T10:00:00.000Z",
+    description: "Reproduced the CSV parse failure with the upload sample.",
+    result: "Confirmed a UTF-8 BOM handling bug in the import parser.",
+    followUpRequired: false,
+    followUpNote: null,
+    attachmentNotes: null,
+  },
+  {
+    id: 6,
+    ticketNumber: "TKT-2026-000906",
+    performedBy: "itstaff.sara@toktickit.dev",
+    actionDate: "2026-09-21T10:00:00.000Z",
+    description: "Patched the parser to strip the BOM before header mapping.",
+    result: "The sample CSV now imports cleanly.",
+    followUpRequired: false,
+    followUpNote: null,
+    attachmentNotes: null,
+  },
+  {
+    id: 7,
+    ticketNumber: "TKT-2026-000906",
+    performedBy: "itstaff.james@toktickit.dev",
+    actionDate: "2026-09-21T14:00:00.000Z",
+    description: "Deployed the parser patch to the staging environment.",
+    result: "Staging import passes the full regression suite.",
+    followUpRequired: true,
+    followUpNote: "Schedule the production deploy after the requester confirms the sample output.",
+    attachmentNotes: "See import-fix-report.png in the ticket attachments.",
+  },
+  // TKT-2026-000909: many actions (2) — both by Sara, who is not the Owner
+  // (Kevin, BR-02)
+  {
+    id: 8,
+    ticketNumber: "TKT-2026-000909",
+    performedBy: "itstaff.sara@toktickit.dev",
+    actionDate: "2026-09-23T08:00:00.000Z",
+    description: "Ran a site survey in Building 2 near the reported access point.",
+    result: "Found radio interference from a newly installed lab device.",
+    followUpRequired: false,
+    followUpNote: null,
+    attachmentNotes: null,
+  },
+  {
+    id: 9,
+    ticketNumber: "TKT-2026-000909",
+    performedBy: "itstaff.sara@toktickit.dev",
+    actionDate: "2026-09-23T10:30:00.000Z",
+    description: "Reconfigured the nearest access point's channel plan.",
+    result: "Signal strength measured stable across the whole floor.",
+    followUpRequired: false,
+    followUpNote: null,
+    attachmentNotes: null,
+  },
+  // TKT-2026-000916: many actions (2) — meets BOTH resolution-gate conditions
+  // (resolutionSummary + at least one Action Taken)
+  {
+    id: 10,
+    ticketNumber: "TKT-2026-000916",
+    performedBy: "itstaff.kevin@toktickit.dev",
+    actionDate: "2026-09-24T09:00:00.000Z",
+    description: "Diagnosed the application server crash during final upload.",
+    result: "Out-of-memory condition under concurrent uploads.",
+    followUpRequired: false,
+    followUpNote: null,
+    attachmentNotes: null,
+  },
+  {
+    id: 11,
+    ticketNumber: "TKT-2026-000916",
+    performedBy: "itstaff.sara@toktickit.dev",
+    actionDate: "2026-09-24T09:45:00.000Z",
+    description: "Raised the upload worker memory limit and restarted the service.",
+    result: "Uploads succeed at full load.",
+    followUpRequired: false,
+    followUpNote: null,
+    attachmentNotes: null,
+  },
+];
+
+// The ids the seed owns — the only Action Taken rows a re-seed may delete.
+export const SEED_ACTION_IDS: number[] = SEED_ACTIONS_TAKEN.map((a) => a.id);
+
+// Derived view for the MIG-02 / MIG-05 regression suite: which Lab 4 block
+// tickets carry actions and how many (grouping the single source of truth
+// above). A ticket in the block that is absent from this record has zero.
+export const SEED_ACTION_COUNTS_BY_TICKET: ReadonlyMap<string, number> = (() => {
+  const counts = new Map<string, number>();
+  for (const a of SEED_ACTIONS_TAKEN) {
+    counts.set(a.ticketNumber, (counts.get(a.ticketNumber) ?? 0) + 1);
+  }
+  return counts;
+})();
