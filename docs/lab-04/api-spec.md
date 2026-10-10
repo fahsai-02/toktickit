@@ -4,8 +4,8 @@
 | :--- | :--- |
 | **Project** | Tok TickIT — IT Service Desk |
 | **Sprint** | Lab 4: Actions Taken, Ticket Workflow, and Role Dashboards |
-| **Version** | v1.1 (Approved 2026-10-04) |
-| **Date** | 2026-10-04 |
+| **Version** | v1.2 (Approved 2026-10-10) |
+| **Date** | 2026-10-10 |
 | **Contract source** | `specification.md` v1.0 (FR/BR/AC references below trace to it) |
 | **Predecessor** | `docs/lab-03/api-spec.md` v1.2 — every endpoint not listed in sections 2–5 keeps its Lab 3 shape verbatim |
 
@@ -151,7 +151,7 @@ accessible (BR-09); ownership is not required.
 | `actionDate` | ISO 8601 string | No | Defaults to server now when omitted. Must parse to a valid date, and must not be later than **server now + 5 minutes** (BR-07, AD-11). |
 | `description` | string | **Yes** | Non-blank after trim; 1–2000 chars (BR-05) |
 | `result` | string | **Yes** | Non-blank after trim; 1–2000 chars (BR-05) |
-| `followUpRequired` | boolean | No | Defaults to `false` |
+| `followUpRequired` | boolean | No | Defaults to `false`. Must be a JSON `true`/`false` when sent — any other type (`"true"`, `1`, `null`) is `400` with `fields.followUpRequired` rather than a silent `false`, because a coerced `false` on update would drop the BR-04 note requirement without telling anyone |
 | `followUpNote` | string | Conditional | Required non-blank when `followUpRequired` is `true` (BR-04); ≤2000 chars; nullable otherwise |
 | `attachmentNotes` | string | No | Free text, ≤2000 chars. Does **not** create, link, or validate an `Attachment` (FR-06, AD-14) |
 
@@ -186,6 +186,7 @@ Any other key is ignored (see Ignored body keys above).
 | Status | Code | Condition |
 | :--- | :--- | :--- |
 | 400 | VALIDATION_ERROR | Missing/blank `description` or `result`; over 2000 chars; `followUpRequired: true` with blank `followUpNote`; unparseable `actionDate` |
+| 400 | VALIDATION_ERROR | `fields.followUpRequired`: a non-boolean `followUpRequired` (for example `"true"` or `1`) |
 | 400 | VALIDATION_ERROR | `fields.actionDate`: "actionDate cannot be more than 5 minutes in the future." |
 | 400 | VALIDATION_ERROR | Malformed `:id` |
 | 401 | UNAUTHORIZED | No session |
@@ -832,11 +833,12 @@ recorded status, which is what handout section 10 asks for.
 | :--- | :--- | :--- | :--- |
 | v1.0 | 2026-10-04 | Initial Lab 4 contract. Adds Actions Taken endpoints, dashboard endpoints, the `statusGroup` filter, and the resolution gate and `409` concurrency behavior to the staff status endpoint. Records that `GET /api/health` and all other Lab 1–3 endpoints are unchanged. | Approved (student, 2026-10-04) |
 | v1.1 | 2026-10-04 | Section 8's third column named 24 semantic IDs that exist nowhere in `tests.md`; it now cites the real numeric IDs, adding `AUTH-01..05` and `API-42`. Added section 8.1 for the four groups that answer a handout requirement rather than an AC. Fixed the section 2.2 citation: it pointed at a handout subsection number that does not exist — the one-place requirement is handout section 8.3. | Approved (student, 2026-10-04) |
+| v1.2 | 2026-10-10 | Section 2.1's `followUpRequired` field now states that a non-boolean value is `400 fields.followUpRequired` rather than a silent `false` — a coerced `false` on `PUT` would lift the BR-04 note requirement without any signal — and the create error table gains that case (the update table already inherits it via "any field rule above"). Contract change approved with Issue 25 (#78); the API enforces it and `API-09` asserts it. | Approved (student, 2026-10-10) |
 
 ---
 
 *End of API specification. Changes require student approval and a version bump.*
 
-**Approval:** v1.1 approved by the student on 2026-10-04. This approves the
+**Approval:** v1.2 approved by the student on 2026-10-10. This approves the
 contract only — no FR, BR, AC, endpoint, screen, or checklist row is verified by
 it, because nothing has been built or run yet.

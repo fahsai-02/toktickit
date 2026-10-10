@@ -12,6 +12,7 @@ import { buildNextTicketNumber } from './lib/ticketNumber.js';
 import { validateAttachmentType } from './lib/attachmentValidation.js';
 import { sendError, validationError } from './lib/httpErrors.js';
 import { requireAuth, requireRole } from './middleware/auth.js';
+import { ownerUserIdFor, parsePositiveInt } from './lib/requestHelpers.js';
 import { runTicketListQuery, STAFF_SORT_WHITELIST } from './lib/ticketListQuery.js';
 import {
   canTransition,
@@ -19,6 +20,7 @@ import {
   isTicketStatus,
 } from './lib/statusTransitions.js';
 import authRouter from './routes/auth.js';
+import actionsTakenRouter from './routes/actionsTaken.js';
 import bcrypt from 'bcryptjs';
 import { validateNewPassword } from './lib/passwordValidation.js';
 import { BCRYPT_ROUNDS } from './lib/seedCredentials.js';
@@ -184,17 +186,6 @@ const PRIORITIES = ["LOW", "MEDIUM", "HIGH", "URGENT"];
 
 const COMMENT_MAX_LENGTH = 2000;
 
-function parsePositiveInt(value: unknown): number | null {
-  if (typeof value === "number") {
-    return Number.isInteger(value) && value > 0 ? value : null;
-  }
-  if (typeof value === "string" && /^\d+$/.test(value)) {
-    const n = Number(value);
-    return Number.isSafeInteger(n) && n > 0 ? n : null;
-  }
-  return null;
-}
-
 // ── Session-identity helper (Issue 18) ─────────────────────────────────────
 // `requesterId` (legacy FK → Requester) is no longer the identity transport:
 // the authenticated User is. A helper resolves the legacy row so the non-null
@@ -217,22 +208,8 @@ async function resolveLegacyRequesterIdForUser(name: string, email: string): Pro
 
 /** Effective owning User.id for a ticket. Backfills the legacy link by email
  *  when `requesterUserId` is still NULL (rows created pre-Issue 18). */
-async function ownerUserIdFor(ticket: {
-  requesterUserId: number | null;
-  requesterId: number;
-}): Promise<number | null> {
-  if (ticket.requesterUserId !== null) return ticket.requesterUserId;
-  const requester = await db.requester.findUnique({
-    where: { id: ticket.requesterId },
-    select: { email: true },
-  });
-  if (!requester) return null;
-  const user = await db.user.findUnique({
-    where: { email: requester.email },
-    select: { id: true },
-  });
-  return user?.id ?? null;
-}
+// ownerUserIdFor now lives in ./lib/requestHelpers.ts (shared with the Lab 4
+// actionsTaken router). See the import at the top of this file.
 
 /** Ownership `where` clause for list queries: session user owns the ticket
  *  via `requesterUserId`, or (pre-backfill rows) via their mapped email. */
@@ -2227,6 +2204,8 @@ app.post(
     }
   }
 );
+
+app.use("/api", actionsTakenRouter);
 
 app.use((_req: Request, res: Response) => {
   res.status(404).json({
