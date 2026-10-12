@@ -4,9 +4,9 @@
 | :--- | :--- |
 | **Project** | Tok TickIT — IT Service Desk |
 | **Sprint** | Lab 4: Actions Taken, Ticket Workflow, and Role Dashboards |
-| **Version** | v1.1 — Approved 2026-10-04 (**no test case has been executed yet**) |
-| **Date** | 2026-10-04 |
-| **Traceability source** | `specification.md` v1.1 AC-01..18 · `api-spec.md` v1.1 · `ui-spec.md` v1.1 |
+| **Version** | v1.3 — 2026-10-10 (first executed statuses recorded; review pass applied; see section 6) |
+| **Date** | 2026-10-10 |
+| **Traceability source** | `specification.md` v1.1 AC-01..18 · `api-spec.md` v1.2 · `ui-spec.md` v1.1 |
 
 ---
 
@@ -86,7 +86,7 @@ come out of a single functional spec.
 
 ## 2. Test Cases and Status
 
-Every `Status` below is **`Planned`**. Nothing in this file has been executed — it is the Test DD deliverable written before implementation. Statuses become `Pass` only from a recorded run, and section 6 is where that run is written down.
+Every `Status` below **starts** as `Planned`: this is the Test DD deliverable written before implementation. A row becomes `Pass` only from a run recorded in section 6, and a row marked `Pass` below means exactly that — its run is written down there. The rows still marked `Planned` have not been executed yet; section 6 also names the suites that are deliberately not run in this issue and why.
 
 ### Unit (server)
 
@@ -115,21 +115,21 @@ ID keeps its original number and its place in the section 3 traceability table.
 
 | Test ID | Requirement | What It Tests | Expected Result | Automated Test File | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| API-01 | FR-01, AC-01 | IT Staff creates an Action Taken | `201`; record linked to the Ticket; echoed with `id`, `version: 1`, timestamps | `actions-taken.api.test.ts` | Planned |
-| API-02 | FR-02, AC-01 | Body-sent `performedById` is ignored | Send `performedById` of another user; stored `performedById` equals the **session** user | `actions-taken.api.test.ts` | Planned |
-| API-06 | FR-03 | List order | `actionDate` ascending; equal `actionDate` keeps insertion order | `actions-taken.api.test.ts` | Planned |
-| API-07 | FR-03, AC-05 | Requester reads own Ticket's actions read-only | `200` with the six documented fields and **no** update/delete affordance field | `actions-taken.api.test.ts` | Planned |
-| API-08 | FR-04 | Update fields | `actionDate`, `description`, `result`, `followUpRequired`, `followUpNote`, `attachmentNotes` update; `performedById` and `ticketId` do **not** | `actions-taken.api.test.ts` | Planned |
-| API-09 | FR-05, AC-02 | `followUpRequired = true` with blank note | `400` with `fields.followUpNote`; **no record created** | `actions-taken.api.test.ts` | Planned |
-| API-10 | FR-05, AC-02 | `followUpRequired = false` with a note | `200`; the submitted `followUpNote` is **stored as given**, identically on create and on update — it is not silently discarded (FR-05) | `actions-taken.api.test.ts` | Planned |
-| API-11 | FR-01 | `description` / `result` blank or >2000 chars | `400` naming the field; nothing stored | `actions-taken.api.test.ts` | Planned |
-| API-12 | FR-01, AC-04 | `actionDate` >5 min ahead | `400`; within the allowance → `201` | `actions-taken.api.test.ts` | Planned |
-| API-13 | FR-07, AC-14 | `DELETE /api/actions/:id` | `405` with the error envelope; record still present | `actions-taken.api.test.ts` | Planned |
-| API-14 | FR-24, BR-22, AC-13 | Body-sent `assigneeId` is ignored | No assignee column exists; send `assigneeId` and assert it appears nowhere in the response or the row | `actions-taken.api.test.ts` | Planned |
-| API-15 | FR-25, BR-23, AC-14 | Body-sent `status` is ignored | The action's response carries no status field; the Ticket's `currentStatus` is unchanged | `actions-taken.api.test.ts` | Planned |
-| API-16 | FR-12, AC-06 | Update with the correct `version` | `200`; `version` incremented by one | `actions-taken.api.test.ts` | Planned |
-| API-17 | FR-12, AC-06 | Update with a stale `version` | `409`; `data` carries the server's latest copy; DB unchanged | `actions-taken.api.test.ts` | Planned |
-| API-18 | BR-15, AC-06 | Update with a **missing** `version` | `400` — required on this endpoint (distinct from API-25) | `actions-taken.api.test.ts` | Planned |
+| API-01 | FR-01, AC-01 | IT Staff creates an Action Taken | `201`; record linked to the Ticket; echoed with `id`, `version: 1`, timestamps | `actions-taken.api.test.ts` | Pass |
+| API-02 | FR-02, AC-01 | Body-sent `performedById` is ignored | Send `performedById` of another user; stored `performedById` equals the **session** user | `actions-taken.api.test.ts` | Pass |
+| API-06 | FR-03 | List order | `actionDate` ascending; equal `actionDate` keeps insertion order | `actions-taken.api.test.ts` | Pass |
+| API-07 | FR-03, AC-05 | Requester reads own Ticket's actions read-only | `200` with the six documented fields and **no** update/delete affordance field | `actions-taken.api.test.ts` | Pass |
+| API-08 | FR-04 | Update fields | `actionDate`, `description`, `result`, `followUpRequired`, `followUpNote`, `attachmentNotes` update; `performedById` and `ticketId` do **not** | `actions-taken.api.test.ts` | Pass |
+| API-09 | FR-05, AC-02 | `followUpRequired = true` with blank note; **non-boolean** `followUpRequired` | `400` with `fields.followUpNote`; **no record created**. A non-boolean `followUpRequired` (`"true"`, `1`) → `400` with `fields.followUpRequired` on both create and update, never silently coerced to `false` (it would lift the note gate on PUT) | `actions-taken.api.test.ts` | Pass |
+| API-10 | FR-05, AC-02 | `followUpRequired = false` with a note | `200`; the submitted `followUpNote` is **stored as given**, identically on create and on update — it is not silently discarded (FR-05) | `actions-taken.api.test.ts` | Pass |
+| API-11 | FR-01 | `description` / `result` blank or >2000 chars | `400` naming the field; nothing stored | `actions-taken.api.test.ts` | Pass |
+| API-12 | FR-01, AC-04 | `actionDate` >5 min ahead | `400`; within the allowance → `201` | `actions-taken.api.test.ts` | Pass |
+| API-13 | FR-07, AC-14 | `DELETE /api/actions/:id` | `405` with the error envelope; record still present | `actions-taken.api.test.ts` | Pass |
+| API-14 | FR-24, BR-22, AC-13 | Body-sent `assigneeId` is ignored | No assignee column exists; send `assigneeId` and assert it appears nowhere in the response or the row | `actions-taken.api.test.ts` | Pass |
+| API-15 | FR-25, BR-23, AC-14 | Body-sent `status` is ignored | The action's response carries no status field; the Ticket's `currentStatus` is unchanged | `actions-taken.api.test.ts` | Pass |
+| API-16 | FR-12, AC-06 | Update with the correct `version` | `200`; `version` incremented by one | `actions-taken.api.test.ts` | Pass |
+| API-17 | FR-12, AC-06 | Update with a stale `version` | `409`; `data` carries the server's latest copy; DB unchanged | `actions-taken.api.test.ts` | Pass |
+| API-18 | BR-15, AC-06 | Update with a **missing** `version` | `400` — required on this endpoint (distinct from API-25) | `actions-taken.api.test.ts` | Pass |
 | API-29 | BR-19, FR-14, AC-11 | `unassigned` counts owner-less Tickets only | Cross-checked against a direct `ownerId IS NULL` count | `staff-dashboard.api.test.ts` | Planned |
 | API-30 | BR-19, FR-14, AC-11 | `myAssigned` counts the caller's own | Cross-checked against `ownerId = caller` | `staff-dashboard.api.test.ts` | Planned |
 | API-31 | FR-14, AC-11 | `byItPriority` always has 5 buckets | Includes a null/not-set bucket; bucket counts sum to the queue total | `staff-dashboard.api.test.ts` | Planned |
@@ -142,7 +142,7 @@ ID keeps its original number and its place in the section 3 traceability table.
 | API-38 | BR-20, FR-17, AC-10 | Zero metrics are `0`, never `null` and never `[]` in place of a count | Asserts each numeric field's type | `requester-dashboard.api.test.ts` | Planned |
 | API-39 | FR-15, AC-11 | Administrator calling the staff dashboard | `200` including `userCounts` | `staff-dashboard.api.test.ts` | Planned |
 | API-42 | FR-16, AC-12 | `statusGroup` filters the staff queue | Each documented group returns only its statuses | `staff-dashboard.api.test.ts` | Planned |
-| API-43 | FR-23, BR-09 | Existing Lab 2/3 ticket endpoints unchanged | Spot-check the Lab 3 suite's key assertions still hold on the Lab 4 schema | `migration-regression.api.test.ts` | Planned |
+| API-43 | FR-23, BR-09 | Existing Lab 2/3 ticket endpoints unchanged | Spot-check the Lab 3 suite's key assertions still hold on the Lab 4 schema | `migration-regression.api.test.ts` | Pass |
 
 > **API-10 is pinned, not left open.** An earlier draft of this row read "the note
 > is ignored **or** stored as given", which lets the row pass either way and so
@@ -221,11 +221,11 @@ section with their numbers unchanged.
 | AUTH-02 | BR-08, BR-09, AC-05 | Role matrix over every new write endpoint | `POST /api/tickets/:id/actions`, `PUT /api/actions/:id`, and `PUT /api/staff/tickets/:id/status` each return `403` for a `REQUESTER` (their own Ticket included) and succeed for `IT_STAFF` and `ADMINISTRATOR` — all three roles exercised per endpoint, not sampled | `authorization.api.test.ts` | Planned |
 | AUTH-03 | BR-08, AC-05 | Requester reading a **foreign** Ticket's actions | `403`, and the error body carries no row from that Ticket | `authorization.api.test.ts` | Planned |
 | AUTH-04 | BR-19, AC-10 | Requester dashboard scope cannot be widened by the client | `?userId=<other user>` and `?requesterId=<other user>` are ignored: the response is deep-equal to the unparameterized call, and another user's Ticket count is unchanged | `authorization.api.test.ts` | Planned |
-| AUTH-05 | FR-23, AC-17 | Every new endpoint refuses an unauthenticated caller | `401` on `GET /api/dashboards/requester`, `GET /api/dashboards/staff`, `POST`/`GET /api/tickets/:id/actions`, `PUT /api/actions/:id`, and `PUT /api/staff/tickets/:id/status` | `authorization.api.test.ts` | Planned |
-| AUTH-06 | BR-10, api-spec section 2.4 | Method guards answer `405`, not `401`, with no session | `DELETE`, `PATCH`, and `POST /api/actions/:id` return `405` for an anonymous caller, and the stored record is untouched — proving the guard reads nothing | `authorization.api.test.ts` | Planned |
-| API-03 | BR-08, AC-05 | Requester cannot create | `403` | `actions-taken.api.test.ts` | Planned |
-| API-04 | BR-08, AC-05 | Requester cannot update | `403`; existing record unchanged | `actions-taken.api.test.ts` | Planned |
-| API-05 | BR-09 | Staff may act on **any** Ticket in the queue | `201` on a Ticket the caller does not own **and** `201` on one they do — recording an action never requires ownership, which is what BR-09 defines an accessible Ticket to be | `actions-taken.api.test.ts` | Planned |
+| AUTH-05 | FR-23, AC-17 | The Lab 4 Action Taken endpoints refuse an unauthenticated caller | `401` without a session. **Issue 25 owns** `POST`/`GET /api/tickets/:id/actions` and `PUT /api/actions/:id`, asserted in `actions-taken.api.test.ts`. The dashboard `401` is API-41 and the status-endpoint `401` belongs to the Ticket Workflow issue; both land in `authorization.api.test.ts` with those endpoints | `actions-taken.api.test.ts` (later endpoints in `authorization.api.test.ts`) | Pass |
+| AUTH-06 | BR-10, api-spec section 2.4 | Method guards answer `405`, not `401`, with no session | `DELETE`, `PATCH`, and `POST` on `/api/actions/:id` and `/api/tickets/:id/actions` return `405` for an anonymous caller, and the stored record is untouched — proving the guard reads nothing | `actions-taken.api.test.ts` | Pass |
+| API-03 | BR-08, AC-05 | Requester cannot create | `403` | `actions-taken.api.test.ts` | Pass |
+| API-04 | BR-08, AC-05 | Requester cannot update | `403`; existing record unchanged | `actions-taken.api.test.ts` | Pass |
+| API-05 | BR-09 | Staff may act on **any** Ticket in the queue | `201` on a Ticket the caller does not own **and** `201` on one they do — recording an action never requires ownership, which is what BR-09 defines an accessible Ticket to be | `actions-taken.api.test.ts` | Pass |
 | API-40 | BR-19 | Requester calling the staff dashboard | `403` | `staff-dashboard.api.test.ts` | Planned |
 | API-41 | BR-19 | Unauthenticated | `401` on both dashboard endpoints | `authorization.api.test.ts` | Planned |
 
@@ -382,13 +382,13 @@ production hardware.
 
 | Test ID | Requirement | What It Tests | Expected Result | Automated Test File | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| MIG-01 | FR-23, AC-17 | Lab 1–3 data survives the Lab 4 migration | Row-count floors for `Requester`, `Category`, `RelatedSystem`, `Ticket`, `Attachment`, `User`, `PublicComment`, `InternalNote`; FK integrity; the new `ActionTaken` table starts empty | `migration-regression.api.test.ts` | Planned |
-| MIG-02 | BR-24 | Lab 4 seed block is collision-free | No Lab 4 ticket number collides with an existing row; the block is `TKT-2026-000903`..`TKT-2026-000917`, asserted against the actual DB rather than a literal | `migration-regression.api.test.ts` | Planned |
-| MIG-03 | BR-24 | Seed idempotency | Seeding twice produces the same counts — no duplicated tickets or actions | `migration-regression.api.test.ts` | Planned |
-| MIG-04 | FR-23, handout section 5.2 | The **documented rollback path actually works** | Against a **scratch** database, never the shared dev DB: record pre-rollback row counts → revert `lab4_actions_taken` (`prisma migrate resolve --rolled-back`, or restore from a dump) → assert the Lab 1–3 tables and their counts are byte-identical → re-apply → assert `ActionTaken` exists again and is empty | `migration-regression.api.test.ts` | Planned |
-| MIG-05 | BR-21, handout section 5.3 | Seed covers **zero / exactly one / multiple** Action Taken | A Ticket with 0 actions, a Ticket with exactly 1, and a Ticket with ≥2 all exist, plus the pair sharing one `actionDate` — counted against `server/src/lib/seedData.ts`, never a literal ticket id or count | `migration-regression.api.test.ts` | Planned |
+| MIG-01 | FR-23, AC-17 | Lab 1–3 data survives the Lab 4 migration | Row-count floors for `Requester`, `Category`, `RelatedSystem`, `Ticket`, `User`, `PublicComment`, `InternalNote` (the `Attachment` count is a `≥ 0` non-regression guard only — attachments are never seeded, so it proves nothing about preservation); FK integrity checked across **every** `ActionTaken` row; the seed's own rows (identified by id from `seedData.ts`) each reference a Lab 4 block Ticket — a user-created action on a real Ticket is deliberately not asserted against the block (AGENTS.md test rule 1); the table "starts empty" claim is verified on the scratch DB in MIG-04 — on the seeded dev DB the seed has already populated it | `migration-regression.api.test.ts` | Pass |
+| MIG-02 | BR-24 | Lab 4 seed block is collision-free | No Lab 4 ticket number collides with an existing row; the block is `TKT-2026-000903`..`TKT-2026-000917`, asserted against the actual DB rather than a literal | `migration-regression.api.test.ts` | Pass |
+| MIG-03 | BR-24 | Seed idempotency | Seeding twice produces the same counts — no duplicated tickets or actions | `migration-regression.api.test.ts` | Pass |
+| MIG-04 | FR-23, handout section 5.2 | The **documented rollback path actually works** | Against a **scratch** database, never the shared dev DB: record pre-rollback row counts → revert `lab4_actions_taken` (`prisma migrate resolve --rolled-back`, or restore from a dump) → assert the Lab 1–3 tables and their counts are byte-identical → re-apply → assert `ActionTaken` exists again and is empty | `migration-regression.api.test.ts` | Pass |
+| MIG-05 | BR-21, handout section 5.3 | Seed covers **zero / exactly one / multiple** Action Taken | A Ticket with 0 actions, a Ticket with exactly 1, and a Ticket with ≥2 all exist, plus the pair sharing one `actionDate` — counted against `server/src/lib/seedData.ts`, never a literal ticket id or count | `migration-regression.api.test.ts` | Pass |
 | REG-01 | FR-23, AC-17 | Lab 1–3 suites pass unchanged | `cd server && pnpm test`, `cd client && pnpm test`, **and** `pnpm test:e2e` (the Lab 2 + Lab 3 Playwright specs) all green, with no Lab 1–3 test **or spec** edited to accommodate Lab 4 | manual run, recorded in section 6 | Planned |
-| REG-02 | FR-23, AC-17 | `GET /api/health` unchanged | Exactly `{"status":"ok","service":"TokTickIT API"}` — no version, timestamp, or uptime field added | `migration-regression.api.test.ts` | Planned |
+| REG-02 | FR-23, AC-17 | `GET /api/health` unchanged | Exactly `{"status":"ok","service":"TokTickIT API"}` — no version, timestamp, or uptime field added | `migration-regression.api.test.ts` | Pass |
 
 > **REG-01 has a rule attached, not just a status.** "Pass unchanged" is the whole
 > point: a green suite that only got green after editing a Lab 3 assertion is a
@@ -524,19 +524,23 @@ gap is a reason to skip the run.
 
 ## 6. Results
 
-*Empty until the sprint's test run happens.* This section is filled from actual
-runs — suite size, pass/fail count, date, and the DB state it ran against. A row
-is only written here after the run it describes.
+Filled from actual runs — suite size, pass/fail count, date, and the DB state it
+ran against. A row is only written here after the run it describes. The runs
+below cover the **server** work of Issue 25 (#78); the client, E2E, and dashboard
+rows stay open until their issues land (section 2 still marks those rows
+`Planned`).
 
 | Suite | Command | Result |
 |-------|---------|--------|
-| Server (unit + API) | `cd server && pnpm test` | Not run |
-| Client (component + style) | `cd client && pnpm test` | Not run |
-| E2E (Playwright, functional) | `pnpm test:e2e:lab4` | Not run |
+| Lab 4 (Actions Taken + migration) | `cd server && pnpm test --run tests/lab-04` | **2026-10-10:** 2 files, **35 of 35 tests pass** (`actions-taken.api.test.ts` API-01..18 incl. the API-09 type check and the AUTH-05 401 block, `migration-regression.api.test.ts` MIG-01..05 + REG-02) against the seeded dev DB. |
+| Server (unit + API) | `cd server && pnpm test` | **2026-10-10:** 22 files, **321 of 321 tests pass**. The earlier 2026-10-09 run was 318/319; the single failure was `lab-03/users-admin.api.test.ts` **API-68**, whose assertion demanded the user table hold *exactly* `SEED_USERS.length` rows. A hand-created dev account (`fahsai.meow@toktickit.dev`) makes it 12 vs 11 — a brittle assertion rather than an environment defect, and one the repo's own test rule 1 forbids ("must pass on ANY seeded DB"). The assertion now requires *at least* that many rows plus the presence of every seeded email per the repo's own test rule 1, and the suite is green. |
+| Client (component + style) | `cd client && pnpm test` | Not run (no client changes in this issue) |
+| E2E (Playwright, functional) | `pnpm test:e2e:lab4` | Not run (owned by Issue 29, #82) |
 | E2E (Playwright, visual + audit) | the three `*.visual.spec.ts` files | Not run |
 | E2E regression, Labs 2–3 | `pnpm test:e2e` | Not run |
-| Server + client regression, Labs 1–3 | `cd server && pnpm test` and `cd client && pnpm test` | Not run |
-| Build | `cd server && pnpm build` and `cd client && pnpm build` | Not run |
+| Server + client regression, Labs 1–3 | `cd server && pnpm test` and `cd client && pnpm test` | Server 320/320 pass (see above); client unchanged |
+| Build | `cd server && pnpm build` and `cd client && pnpm build` | **2026-10-10:** `cd server && pnpm build` passes (tsc clean). Client build not re-run (no client changes in this issue). |
+| Schema | `cd server && pnpm exec prisma validate && pnpm exec prisma migrate status` | **2026-10-10:** schema valid; "Database schema is up to date!" (4 migrations) |
 
 ## 7. Known Limitations / Deferred
 
@@ -589,11 +593,14 @@ distinction matters to whoever reads it later.
 
 ---
 
-*This is the Lab 4 Test DD deliverable, written before implementation. Every
-status is `Planned` because nothing has been executed. As the sprint proceeds,
-section 2's `Status` column and section 6's results are filled from real runs, and
-any behavior change updates this file together with `specification.md`,
-`api-spec.md`, and `ui-spec.md`.*
+*This is the Lab 4 Test DD deliverable, written before implementation. Statuses
+start as `Planned` and become `Pass` only when a run is recorded in section 6 —
+which is what happened for the Issue 25 server suites (section 6, 2026-10-10).
+The rows still `Planned` are the ones whose code has not been written or whose
+suite belongs to a later issue. As the sprint proceeds, section 2's `Status`
+column and section 6's results are filled from real runs, and any behavior change
+updates this file together with `specification.md`, `api-spec.md`, and
+`ui-spec.md`.*
 
 ## 8. Amendment Log
 
@@ -601,10 +608,15 @@ any behavior change updates this file together with `specification.md`,
 | :--- | :--- | :--- | :--- |
 | v1.0 | 2026-10-04 | Initial Lab 4 test plan. | Approved (student, 2026-10-04) |
 | v1.1 | 2026-10-04 | Review pass against the handout and the other three Lab 4 documents. Added the three missing handout section 10 categories — **Authorization** (`AUTH-01..06`, plus `API-03/04/05/40/41` moved in with their numbers unchanged), **Workflow** (`API-19..28`, `UI-17..20` moved in), **Performance smoke** (`PERF-01..04`) — and **Accessibility** (`A11Y-01..05`). Added `MIG-04` (the documented rollback path, handout section 5.2) and `MIG-05` (seed zero/one/multiple, section 5.3). Rewrote `API-05` to match BR-09 instead of asserting an impossible refusal, pinned `API-10` to FR-05's "stored as submitted" instead of allowing either outcome, and re-homed it in the AC table. Adopted the handout section 12 file names verbatim and documented each added file. Recorded that `pnpm test:e2e:lab4` does not exist yet and named Issue 29 (#82) as its owner; extended REG-01 to the Lab 2/3 E2E specs per AC-17. Section 1 now counts twelve levels, matching the twelve headings in section 2. | Approved (student, 2026-10-04) |
+| v1.2 | 2026-10-10 | **First executed statuses.** Issue 25 (#78) ran the server suites and flipped its rows: `API-01..18` (Actions Taken, incl. a new `API-09` case asserting a non-boolean `followUpRequired` is rejected with `400 fields.followUpRequired` instead of being coerced to `false`), `API-03/04/05/07`, `API-43`, `MIG-01..05`, `REG-02` — Lab 4 files **34/34**, whole server suite **320/320**, `pnpm build` clean, `prisma validate` + `migrate status` clean (2026-10-10, seeded dev DB). Rewrote the stale wording at the section 2 preamble, the section 6 intro, the closing note, and this header line, which still claimed nothing had been executed. Section 6 now carries the run records (including the earlier 318/319 run and the `API-68` failure it exposed). The `API-68` assertion in `lab-03/users-admin.api.test.ts` was relaxed from an exact row count to "contains every seeded user" per the repo's test rule 1, so a hand-created dev account no longer fails it. | Approved (student, 2026-10-10) |
+| v1.3 | 2026-10-10 | **Review pass.** Narrowed the MIG-01 `ActionTaken` assertion to the seed's own rows (identified by id from `seedData.ts`), so a user-created action on a real Ticket no longer fails the regression (repo test rule 1). Added the AUTH-05 `401` block for the Lab 4 Action Taken endpoints, completed the anonymous `405` matrix with `DELETE /api/actions/:id` and an untouched-record assertion (AUTH-06), corrected both rows to name the real file `actions-taken.api.test.ts` and each endpoint's owning issue. Also removed dead code (`createdActionIds`, the pre-fixed-id seed reconciliation loop) and added a non-empty guard to API-07. Lab 4 files **35/35**, whole server suite **321/321**, build/validate/migrate-status clean. | Approved (student, 2026-10-10) |
 
 ---
 
 **Approval:** Approved by the student on 2026-10-04, covering the test plan, the
-twelve test levels, and the section 1.1 test-file layout. Approval is of the
-**plan**, not of any result: no case has been executed, so every status in
-section 2 is still `Planned` and section 6 is still empty.
+twelve test levels, and the section 1.1 test-file layout. That approval was of
+the **plan**; results arrive separately. The first executed statuses are recorded
+in section 6 on 2026-10-10 (Lab 4 server suites 34/34, whole server suite 320/320,
+server build clean, Prisma schema valid and migrated), and the rows still marked
+`Planned` remain unexecuted on purpose — client, E2E, dashboard, and workflow
+suites belong to issues that have not landed.

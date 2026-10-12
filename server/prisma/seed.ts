@@ -12,6 +12,8 @@ import {
   SEED_TICKETS,
   SEED_PUBLIC_COMMENTS,
   SEED_INTERNAL_NOTES,
+  SEED_ACTIONS_TAKEN,
+  SEED_ACTION_IDS,
 } from "../src/lib/seedData.js";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
@@ -198,6 +200,52 @@ async function main() {
       data: { ticketId: ticket.id, authorId, content: seed.content },
     });
   }
+
+
+  // ---- Seed Actions Taken (idempotent, scoped to the seed's own row ids) ----
+  //  BR-21: seeded actions exist only on SEED_LAB4_TICKET_NUMBERS. On re-run we
+  //  delete exactly the rows the seed owns (their fixed ids) and recreate them,
+  //  never a whole-Ticket sweep — a user-created Action Taken on a Lab 4 ticket
+  //  survives `prisma db seed`. See specification.md section 7 (replace "by
+  //  their own known ids rather than a content match").
+  await prisma.actionTaken.deleteMany({
+    where: { id: { in: SEED_ACTION_IDS } },
+  });
+
+  for (const seed of SEED_ACTIONS_TAKEN) {
+    const ticket = await prisma.ticket.findUnique({
+      where: { ticketNumber: seed.ticketNumber },
+      select: { id: true },
+    });
+    const performedById = userIdByEmail.get(seed.performedBy);
+    if (!ticket || performedById === undefined) {
+      throw new Error(`ActionTaken references unknown ticket/user: ${seed.ticketNumber} / ${seed.performedBy}`);
+    }
+    await prisma.actionTaken.create({
+      data: {
+        id: seed.id,
+        ticketId: ticket.id,
+        performedById,
+        actionDate: new Date(seed.actionDate),
+        description: seed.description,
+        result: seed.result,
+        followUpRequired: seed.followUpRequired ?? false,
+        followUpNote: seed.followUpNote ?? null,
+        attachmentNotes: seed.attachmentNotes ?? null,
+      },
+    });
+  }
+
+  // Creating rows with explicit ids does not advance the auto-increment
+  // sequence, so realign it to MAX(id)+1; otherwise the next user-created
+  // Action Taken would collide with a seed id.
+  await prisma.$executeRaw`
+    SELECT setval(
+      pg_get_serial_sequence('"ActionTaken"', 'id'),
+      COALESCE((SELECT MAX("id") FROM "ActionTaken"), 0) + 1,
+      false
+    )
+  `;
 
   // ---- Summary ----
   const [

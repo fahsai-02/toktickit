@@ -49,20 +49,21 @@ model Requester {
 }
 
 model User {
-  id                Int              @id @default(autoincrement())
-  email             String           @unique
-  passwordHash      String
-  name              String
-  role              UserRole
-  isActive          Boolean          @default(true)
-  mustChangePassword Boolean         @default(true)
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
+  id                 Int      @id @default(autoincrement())
+  email              String   @unique
+  passwordHash       String
+  name               String
+  role               UserRole
+  isActive           Boolean  @default(true)
+  mustChangePassword Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
-  ticketsRequested Ticket[]          @relation("TicketRequester")
-  ownedTickets     Ticket[]          @relation("TicketOwner")
+  ticketsRequested Ticket[]        @relation("TicketRequester")
+  ownedTickets     Ticket[]        @relation("TicketOwner")
   publicComments   PublicComment[]
   internalNotes    InternalNote[]
+  performedActions ActionTaken[]
 }
 
 model PublicComment {
@@ -113,33 +114,34 @@ model RelatedSystem {
 }
 
 model Ticket {
-  id                          Int                @id @default(autoincrement())
-  ticketNumber                String             @unique
-  summary                     String
-  description                 String
-  requestedPriority           RequestedPriority
-  itPriority                  RequestedPriority?
-  currentStatus               TicketStatus       @default(NEW)
-  ticketDate                  DateTime           @default(now())
-  requesterId                 Int
-  requesterUserId             Int?
-  ownerId                     Int?
-  categoryId                  Int
-  relatedSystemId             Int
-  resolutionSummary           String?
-  requesterIndicatedResolved  Boolean            @default(false)
-  indicatedResolvedAt         DateTime?
-  createdAt                   DateTime           @default(now())
-  updatedAt                   DateTime           @updatedAt
+  id                         Int                @id @default(autoincrement())
+  ticketNumber               String             @unique
+  summary                    String
+  description                String
+  requestedPriority          RequestedPriority
+  itPriority                 RequestedPriority?
+  currentStatus              TicketStatus       @default(NEW)
+  ticketDate                 DateTime           @default(now())
+  requesterId                Int
+  requesterUserId            Int?
+  ownerId                    Int?
+  categoryId                 Int
+  relatedSystemId            Int
+  resolutionSummary          String?
+  requesterIndicatedResolved Boolean            @default(false)
+  indicatedResolvedAt        DateTime?
+  createdAt                  DateTime           @default(now())
+  updatedAt                  DateTime           @updatedAt
 
-  requester     Requester     @relation(fields: [requesterId], references: [id])
-  requesterUser User?         @relation("TicketRequester", fields: [requesterUserId], references: [id])
-  owner         User?         @relation("TicketOwner", fields: [ownerId], references: [id])
-  category      Category      @relation(fields: [categoryId], references: [id])
-  relatedSystem RelatedSystem @relation(fields: [relatedSystemId], references: [id])
+  requester     Requester       @relation(fields: [requesterId], references: [id])
+  requesterUser User?           @relation("TicketRequester", fields: [requesterUserId], references: [id])
+  owner         User?           @relation("TicketOwner", fields: [ownerId], references: [id])
+  category      Category        @relation(fields: [categoryId], references: [id])
+  relatedSystem RelatedSystem   @relation(fields: [relatedSystemId], references: [id])
   attachments   Attachment[]
   comments      PublicComment[]
   notes         InternalNote[]
+  actionsTaken  ActionTaken[]
 
   @@index([requesterId, updatedAt])
   @@index([categoryId])
@@ -165,4 +167,24 @@ model Attachment {
   uploadedBy Requester @relation(fields: [uploadedByRequesterId], references: [id])
 
   @@index([ticketId, isRemoved])
+}
+
+model ActionTaken {
+  id               Int      @id @default(autoincrement())
+  ticketId         Int
+  performedById    Int
+  actionDate       DateTime @db.Timestamptz(3)
+  description      String   @db.VarChar(2000)
+  result           String   @db.VarChar(2000)
+  followUpRequired Boolean  @default(false)
+  followUpNote     String?  @db.VarChar(2000)
+  attachmentNotes  String?  @db.VarChar(2000)
+  version          Int      @default(1)
+  createdAt        DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime @updatedAt @db.Timestamptz(3)
+
+  ticket      Ticket @relation(fields: [ticketId], references: [id], onDelete: Restrict)
+  performedBy User   @relation(fields: [performedById], references: [id], onDelete: Restrict)
+
+  @@index([ticketId, actionDate])
 }
