@@ -5,7 +5,9 @@ interface TextAreaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   required?: boolean;
   error?: string;
   errorTestId?: string;
-  counter?: { value: number; max: number };
+  // warnAt: optional threshold (in characters) at which the counter turns the
+  // warning color; the counter turns the error color once value exceeds max.
+  counter?: { value: number; max: number; warnAt?: number };
 }
 
 export default function TextArea({
@@ -46,7 +48,19 @@ export default function TextArea({
             </p>
           )}
           {counter && (
-            <span className="field-counter" data-testid={`field-counter-${id}`}>
+            <span
+              className={[
+                "field-counter",
+                counter.value > counter.max
+                  ? "field-counter-error"
+                  : counter.warnAt !== undefined && counter.value >= counter.warnAt
+                    ? "field-counter-warn"
+                    : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+              data-testid={`field-counter-${id}`}
+            >
               {counter.value}/{counter.max}
             </span>
           )}

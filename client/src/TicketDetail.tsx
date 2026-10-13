@@ -5,9 +5,11 @@ import {
   fetchTicketComments,
   postPublicComment,
   indicateResolved,
+  fetchTicketActions,
   type TicketDetail as TicketDetailType,
   type Attachment,
   type PublicComment,
+  type ActionTaken,
   ApiError,
 } from "./api.js";
 import Badge, {
@@ -21,12 +23,38 @@ import TextArea from "./components/TextArea.js";
 import Button from "./components/Button.js";
 import AttachmentSection from "./components/AttachmentSection.js";
 import { ArrowLeft, CheckCircle2 } from "lucide-react";
-import { formatDate } from "./lib/format.js";
+import { formatDate, formatActionDateTime, relativeDayHint } from "./lib/format.js";
 
 const COMMENT_MAX_LENGTH = 2000;
 
 type DetailState = "loading" | "error" | "not-found" | "access-denied" | "idle";
 type CommentsState = "loading" | "idle" | "error";
+
+/** Date/Time cell: absolute Asia/Bangkok wall clock plus an optional hint. */
+function ActionDate({ iso }: { iso: string }) {
+  const hint = relativeDayHint(iso);
+  return (
+    <span className="actions-date">
+      {formatActionDateTime(iso)}
+      {hint && <span className="actions-date-hint"> ({hint})</span>}
+    </span>
+  );
+}
+
+/** Read-only Follow-Up cell (ui-spec 5.4). */
+function ActionFollowUp({ action }: { action: ActionTaken }) {
+  if (!action.followUpRequired) {
+    return <span className="text-muted">—</span>;
+  }
+  return (
+    <span className="actions-followup">
+      <Badge variant="priority-high">Required</Badge>
+      {action.followUpNote && (
+        <span className="actions-followup-note">{action.followUpNote}</span>
+      )}
+    </span>
+  );
+}
 
 export default function TicketDetail() {
   const { ticketId } = useParams<{ ticketId: string }>();
@@ -43,6 +71,12 @@ export default function TicketDetail() {
   const [toggling, setToggling] = useState(false);
   const [toggleError, setToggleError] = useState("");
 
+  // Actions Taken (read-only for the Requester — ui-spec 5.4). No write path
+  // exists for this role, so the panel is rendered without any controls.
+  const [actions, setActions] = useState<ActionTaken[]>([]);
+  const [actionsState, setActionsState] = useState<CommentsState>("loading");
+  const [actionError, setActionError] = useState("");
+
   useEffect(() => {
     if (!ticketId) return;
     const id = Number(ticketId);
@@ -54,6 +88,9 @@ export default function TicketDetail() {
     let cancelled = false;
     setState("loading");
     setErrorMessage("");
+    setActions([]);
+    setActionsState("loading");
+    setActionError("");
 
     fetchTicket(id)
       .then((data) => {
@@ -97,11 +134,30 @@ export default function TicketDetail() {
         }
       });
 
+    // Actions Taken are read-only here; a 403 (foreign ticket) is treated as an
+    // empty area rather than an error banner.
+    fetchTicketActions(id)
+      .then((data) => {
+        if (cancelled) return;
+        setActions(data);
+        setActionsState("idle");
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        if (err instanceof ApiError && err.code === "FORBIDDEN") {
+          setActionsState("idle");
+        } else {
+          setActionError(
+            err instanceof Error ? err.message : "Could not load actions."
+          );
+          setActionsState("error");
+        }
+      });
+
     return () => {
       cancelled = true;
     };
   }, [ticketId]);
-
   if (state === "loading") {
     return (
       <div className="container ticket-detail">
@@ -321,6 +377,112 @@ export default function TicketDetail() {
         attachments={ticket.attachments}
         onUpdate={handleAttachmentsUpdate}
       />
+
+      {/* Actions Taken — read-only (ui-spec 5.4): below the details card and
+          above Public Comments. No Record/Edit/Delete control, no assignee,
+          no per-action status control (FR-03, BR-08, FR-24, FR-25). */}
+      <section className="actions-section" data-testid="requester-actions">
+        <h2 className="ticket-detail-section-title">
+          Actions Taken ({actions.length})
+        </h2>
+
+        {actionsState === "loading" && (
+          <ListState testId="actions-loading" loading message="Loading actions..." />
+        )}
+
+        {actionsState === "error" && (
+          <div className="list-state list-state--error" data-testid="actions-error">
+            <p className="error-banner">{actionError}</p>
+          </div>
+        )}
+
+        {actionsState === "idle" && actions.length === 0 && (
+          <ListState
+            testId="actions-empty"
+            message="No actions have been recorded yet."
+          />
+        )}
+
+        {actionsState === "idle" && actions.length > 0 && (
+          <>
+            <table
+              className="actions-table actions-table-desktop"
+              data-testid="actions-table"
+            >
+              <caption className="sr-only">
+                Actions recorded for this ticket
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Date/Time</th>
+                  <th scope="col">Description</th>
+                  <th scope="col">Result</th>
+                  <th scope="col">Performed By</th>
+                  <th scope="col">Follow-Up</th>
+                  <th scope="col">Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                {actions.map((action) => (
+                  <tr key={action.id} data-testid={`action-${action.id}`}>
+                    <td>
+                      <ActionDate iso={action.actionDate} />
+                    </td>
+                    <td>{action.description}</td>
+                    <td>{action.result}</td>
+                    <td>{action.performedBy.name}</td>
+                    <td>
+                      <ActionFollowUp action={action} />
+                    </td>
+                    <td>
+                      {action.attachmentNotes ? (
+                        action.attachmentNotes
+                      ) : (
+                        <span className="text-muted">—</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            <div className="actions-cards-mobile" data-testid="actions-cards">
+              {actions.map((action) => (
+                <article
+                  key={action.id}
+                  className="action-card"
+                  data-testid={`action-card-${action.id}`}
+                >
+                  <dl className="action-card-grid">
+                    <dt>Date/Time</dt>
+                    <dd>
+                      <ActionDate iso={action.actionDate} />
+                    </dd>
+                    <dt>Description</dt>
+                    <dd>{action.description}</dd>
+                    <dt>Result</dt>
+                    <dd>{action.result}</dd>
+                    <dt>Performed By</dt>
+                    <dd>{action.performedBy.name}</dd>
+                    <dt>Follow-Up</dt>
+                    <dd>
+                      <ActionFollowUp action={action} />
+                    </dd>
+                    <dt>Notes</dt>
+                    <dd>
+                      {action.attachmentNotes ? (
+                        action.attachmentNotes
+                      ) : (
+                        <span className="text-muted">—</span>
+                      )}
+                    </dd>
+                  </dl>
+                </article>
+              ))}
+            </div>
+          </>
+        )}
+      </section>
 
       {/* Public Comments (ui-spec 5.3, api-spec 4.7-4.8) */}
       <section className="comments-section" data-testid="public-comments">

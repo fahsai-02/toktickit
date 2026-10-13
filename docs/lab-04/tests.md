@@ -4,8 +4,8 @@
 | :--- | :--- |
 | **Project** | Tok TickIT — IT Service Desk |
 | **Sprint** | Lab 4: Actions Taken, Ticket Workflow, and Role Dashboards |
-| **Version** | v1.3 — 2026-10-10 (first executed statuses recorded; review pass applied; see section 6) |
-| **Date** | 2026-10-10 |
+| **Version** | v1.4 — 2026-10-14 (Issue 26 client Actions Taken suites executed; review pass applied; see section 6) |
+| **Date** | 2026-10-14 |
 | **Traceability source** | `specification.md` v1.1 AC-01..18 · `api-spec.md` v1.2 · `ui-spec.md` v1.1 |
 
 ---
@@ -157,22 +157,22 @@ ID keeps its original number and its place in the section 3 traceability table.
 
 | Test ID | Requirement | What It Tests | Expected Result | Automated Test File | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| UI-01 | FR-01, AC-01 | Create form happy path | Correct method, URL, headers, and body incl. the loaded `version`; the new record is rendered | `ActionsTaken.test.tsx` | Planned |
-| UI-02 | FR-05, AC-02 | Follow-Up on, note blank | Inline message under Follow-Up Note; **the API call is not made** | `ActionsTaken.test.tsx` | Planned |
-| UI-03 | FR-01 | Toggle on reveals and requires the note in the same render | No intermediate state where the field is visible but unvalidated | `ActionsTaken.test.tsx` | Planned |
-| UI-04 | FR-20, AC-16 | Single-flight guard | A second click while the first request is in flight produces exactly one network call; the button is disabled and busy | `ActionsTaken.test.tsx` | Planned |
-| UI-05 | FR-21, AC-15 | Retention after a `400` | Every entered field value still present; messages shown under their own fields | `ActionsTaken.test.tsx` | Planned |
-| UI-06 | FR-21, AC-15 | Retention after a `500` | Same, plus the safe failure callout; **no stack trace or raw error text exposed** | `ActionsTaken.test.tsx` | Planned |
-| UI-07 | FR-12, AC-06 | `409` conflict handling | Conflict callout, a Refresh action that loads the server copy, and the user's typing is **not** silently discarded | `ActionsTaken.test.tsx` | Planned |
-| UI-08 | FR-01 | `actionDate` >5 min ahead | Inline message naming the 5-minute limit; no request sent | `ActionsTaken.test.tsx` | Planned |
-| UI-09 | FR-03 | Panel list order and rendering | Six columns/fields; dates rendered via the Asia/Bangkok formatter | `ActionsTaken.test.tsx` | Planned |
-| UI-10 | FR-08, BR-18 | Time-zone formatting | A known UTC timestamp renders as the expected Asia/Bangkok wall-clock time in both dashboards and both action views | `ActionsTaken.test.tsx` | Planned |
-| UI-11 | BR-03 | "Performed By" is read-only | Rendered as text; no input, no picker, no editable affordance | `ActionsTaken.test.tsx` | Planned |
-| UI-12 | FR-24, BR-22, AC-13 | **No assignee control exists** | Query the rendered panel and form for an assignee field: `queryByLabelText(/assign/i)` is null | `ActionsTaken.test.tsx` | Planned |
-| UI-13 | FR-25, BR-23, AC-14 | **No per-action status control exists** | `queryByLabelText(/status/i)` within the action area is null; `queryByLabelText(/complete/i)` and `/cancel/i` are null | `ActionsTaken.test.tsx` | Planned |
-| UI-14 | FR-24 | Assign control lives at Ticket level | The owner control is present **on the Ticket**, not on the action | `ActionsTaken.test.tsx` | Planned |
-| UI-15 | BR-08, AC-05 | Requester read-only view | No Record, Edit, or Delete control; the six fields still render | `ActionsTaken.test.tsx` | Planned |
-| UI-16 | FR-03 | Empty Actions Taken state | A helpful empty block, not a headers-only table | `ActionsTaken.test.tsx` | Planned |
+| UI-01 | FR-01, AC-01 | Create form happy path | Correct method, URL, headers, and body incl. the loaded `version`; the new record is rendered | `ActionsTaken.test.tsx` | Pass |
+| UI-02 | FR-05, AC-02 | Follow-Up on, note blank | Inline message under Follow-Up Note; **the API call is not made** | `ActionsTaken.test.tsx` | Pass |
+| UI-03 | FR-01 | Toggle on reveals and requires the note in the same render | No intermediate state where the field is visible but unvalidated | `ActionsTaken.test.tsx` | Pass |
+| UI-04 | FR-20, AC-16 | Single-flight guard | A second click while the first request is in flight produces exactly one network call; the button is disabled and busy | `ActionsTaken.test.tsx` | Pass |
+| UI-05 | FR-21, AC-15 | Retention after a `400` | Every entered field value still present; messages shown under their own fields | `ActionsTaken.test.tsx` | Pass |
+| UI-06 | FR-21, AC-15 | Retention after a `500` | Same, plus the safe failure callout; **no stack trace or raw error text exposed** | `ActionsTaken.test.tsx` | Pass |
+| UI-07 | FR-12, AC-06 | `409` conflict handling | Conflict callout, a Refresh action that loads the server copy, and the user's typing is **not** silently discarded | `ActionsTaken.test.tsx` | Pass |
+| UI-08 | FR-01 | `actionDate` >5 min ahead | Inline message naming the 5-minute limit; no request sent | `ActionsTaken.test.tsx` | Pass |
+| UI-09 | FR-03 | Panel list order and rendering | Six columns/fields; dates rendered via the Asia/Bangkok formatter | `ActionsTaken.test.tsx` | Pass |
+| UI-10 | FR-08, BR-18 | Time-zone formatting | A known UTC timestamp renders as the expected Asia/Bangkok wall-clock time in both action views | `ActionsTaken.test.tsx` | Pass |
+| UI-11 | BR-03 | "Performed By" is read-only | Rendered as text; no input, no picker, no editable affordance | `ActionsTaken.test.tsx` | Pass |
+| UI-12 | FR-24, BR-22, AC-13 | **No assignee control exists** | Query the rendered panel and form for an assignee field: `queryByLabelText(/assign/i)` is null | `ActionsTaken.test.tsx` | Pass |
+| UI-13 | FR-25, BR-23, AC-14 | **No per-action status control exists** | `queryByLabelText(/status/i)` within the action area is null; `queryByLabelText(/complete/i)` and `/cancel/i` are null | `ActionsTaken.test.tsx` | Pass |
+| UI-14 | FR-24 | Assign control lives at Ticket level | The owner control is present **on the Ticket**, not on the action | `ActionsTaken.test.tsx` | Pass |
+| UI-15 | BR-08, AC-05 | Requester read-only view | No Record, Edit, or Delete control; the six fields still render | `ActionsTaken.test.tsx` | Pass |
+| UI-16 | FR-03 | Empty Actions Taken state | A helpful empty block, not a headers-only table | `ActionsTaken.test.tsx` | Pass |
 | UI-21 | FR-13, AC-10 | Requester dashboard cards | All six cards render with the server's numbers; the client recomputes none of them | `RequesterDashboard.test.tsx` | Planned |
 | UI-22 | FR-17, AC-10 | Zero cards | A `0` card is still rendered with `0` | `RequesterDashboard.test.tsx` | Planned |
 | UI-23 | FR-13 | Attention card wording | Reads "Needs your attention", not the raw field name | `RequesterDashboard.test.tsx` | Planned |
@@ -281,11 +281,11 @@ non-color status cues.
 
 | Test ID | Requirement | What It Tests | Expected Result | Automated Test File | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| A11Y-01 | ui-spec section 7 | Semantic labels on every Action Taken form control | `getByLabelText` resolves Action Date/Time, Description, Result, Follow-Up Required, Follow-Up Note, and Attachment Notes; no control is identifiable only by placeholder, and the conditionally required note is labelled as required | `ActionsTaken.test.tsx` | Planned |
+| A11Y-01 | ui-spec section 7 | Semantic labels on every Action Taken form control | `getByLabelText` resolves Action Date/Time, Description, Result, Follow-Up Required, Follow-Up Note, and Attachment Notes; no control is identifiable only by placeholder, and the conditionally required note is labelled as required | `ActionsTaken.test.tsx` | Pass |
 | A11Y-02 | ui-spec section 7 | Dashboard cards are real links carrying their number | Each card renders an anchor whose accessible name includes both its label and its count (e.g. "Open tickets, 7"); a `div` with `onClick` fails the query | `DashboardCards.test.tsx` | Planned |
 | A11Y-03 | ui-spec section 7 | Status and priority are never conveyed by color alone | Every rendered status and priority badge has non-empty text content equal to its value, in the Actions Taken table, both dashboards, and the urgent list | `zen-green-lab4-style.test.tsx` | Planned |
-| A11Y-04 | ui-spec section 7 | Save outcome, conflict, and gate failure are announced | The result region is `aria-live="polite"` and a save success populates it; the `409` callout and the gate callout are `role="alert"` | `ActionsTaken.test.tsx`, `TicketWorkflow.test.tsx` | Planned |
-| A11Y-05 | ui-spec section 7 | The Actions Taken table and its form are keyboard-operable | Tab reaches the Actions Taken tab, then each row's Edit button, in reading order with no positive `tabindex`; Enter opens Edit; the form dialog traps focus, closes on Escape, and returns focus to the trigger | `ActionsTaken.test.tsx` | Planned |
+| A11Y-04 | ui-spec section 7 | Save outcome, conflict, and gate failure are announced | The result region is `aria-live="polite"` and a save success populates it; the `409` callout and the gate callout are `role="alert"` | `ActionsTaken.test.tsx`, `TicketWorkflow.test.tsx` | Pass |
+| A11Y-05 | ui-spec section 7 | The Actions Taken table and its form are keyboard-operable | Tab reaches the Actions Taken tab, then each row's Edit button, in reading order with no positive `tabindex`; Enter opens Edit; the form dialog traps focus, closes on Escape, and returns focus to the trigger | `ActionsTaken.test.tsx` | Pass |
 
 > **Accessibility evidence that lives outside this group.** `STYLE-08` measures
 > that the 2px focus ring is present and visible at all three viewports,
@@ -307,7 +307,7 @@ Screens × viewports. Each screen is three consecutive IDs in the order
 | RESP-07..09 | IT Staff dashboard (IT Staff role) | AC-11, AC-18 | Layout integrity | Four status cards, two ownership cards, the five-bucket strip, urgent list, My Recent Actions; **no `userCounts` card** | `responsive.visual.spec.ts` | Planned |
 | RESP-10..12 | IT Staff dashboard (Administrator role) | AC-11, AC-18 | Role-conditional layout | Same, plus the Users card | `responsive.visual.spec.ts` | Planned |
 | RESP-13..15 | Staff Ticket Actions Taken, list | AC-18 | Six-column table | All six columns legible; Notes wraps to a second line on tablet | `responsive.visual.spec.ts` | Planned |
-| RESP-16..18 | Staff Ticket Action form | AC-18 | Drawer at desktop, bottom sheet on tablet, full-screen on mobile | Every field reachable; Save reachable without scrolling the form off-screen | `responsive.visual.spec.ts` | Planned |
+| RESP-16..18 | Staff Ticket Action form | AC-18 | Drawer at desktop, full-width drawer on tablet (bottom-sheet deviation noted in `ui-spec.md` section 6), full-screen on mobile | Every field reachable; Save reachable without scrolling the form off-screen | `responsive.visual.spec.ts` | Planned |
 | RESP-19..21 | Requester Ticket Actions Taken | AC-05, AC-18 | Read-only layout | Six fields render; no Record/Edit/Delete control at any width | `responsive.visual.spec.ts` | Planned |
 | RESP-22..24 | Workflow gate blocked | AC-07, AC-18 | Gate message layout | The message sits at the status control and does not overlap it; the badge is visibly unchanged | `responsive.visual.spec.ts` | Planned |
 | RESP-25..27 | Confirmation dialog | AC-08, AC-18 | Dialog layout | Names the exact transition; both actions reachable at 375px | `responsive.visual.spec.ts` | Planned |
@@ -526,20 +526,20 @@ gap is a reason to skip the run.
 
 Filled from actual runs — suite size, pass/fail count, date, and the DB state it
 ran against. A row is only written here after the run it describes. The runs
-below cover the **server** work of Issue 25 (#78); the client, E2E, and dashboard
-rows stay open until their issues land (section 2 still marks those rows
-`Planned`).
+below cover the **server** work of Issue 25 (#78) and the **client** Actions
+Taken UI of Issue 26 (#79); the E2E and dashboard rows stay open until their
+issues land (section 2 still marks those rows `Planned`).
 
 | Suite | Command | Result |
 |-------|---------|--------|
 | Lab 4 (Actions Taken + migration) | `cd server && pnpm test --run tests/lab-04` | **2026-10-10:** 2 files, **35 of 35 tests pass** (`actions-taken.api.test.ts` API-01..18 incl. the API-09 type check and the AUTH-05 401 block, `migration-regression.api.test.ts` MIG-01..05 + REG-02) against the seeded dev DB. |
 | Server (unit + API) | `cd server && pnpm test` | **2026-10-10:** 22 files, **321 of 321 tests pass**. The earlier 2026-10-09 run was 318/319; the single failure was `lab-03/users-admin.api.test.ts` **API-68**, whose assertion demanded the user table hold *exactly* `SEED_USERS.length` rows. A hand-created dev account (`fahsai.meow@toktickit.dev`) makes it 12 vs 11 — a brittle assertion rather than an environment defect, and one the repo's own test rule 1 forbids ("must pass on ANY seeded DB"). The assertion now requires *at least* that many rows plus the presence of every seeded email per the repo's own test rule 1, and the suite is green. |
-| Client (component + style) | `cd client && pnpm test` | Not run (no client changes in this issue) |
+| Client (component + style) | `cd client && pnpm test` | **2026-10-14:** 19 files, **227 of 227 tests pass**. `ActionsTaken.test.tsx` adds 26 tests covering UI-01..16 + A11Y-01/04/05 (request shapes incl. the `409` `ActionConflictError`, Bangkok formatting incl. the calendar-day hint, retention, single-flight, the over-limit counter colour, the absent assignee/status controls, and keyboard focus). The four Lab 2/3 suites that mount a Ticket Detail (`RequesterTicketDetail`, `RequesterTicketComments`, `StaffTicketDetail`) now stub `fetchTicketActions`. |
 | E2E (Playwright, functional) | `pnpm test:e2e:lab4` | Not run (owned by Issue 29, #82) |
 | E2E (Playwright, visual + audit) | the three `*.visual.spec.ts` files | Not run |
 | E2E regression, Labs 2–3 | `pnpm test:e2e` | Not run |
-| Server + client regression, Labs 1–3 | `cd server && pnpm test` and `cd client && pnpm test` | Server 320/320 pass (see above); client unchanged |
-| Build | `cd server && pnpm build` and `cd client && pnpm build` | **2026-10-10:** `cd server && pnpm build` passes (tsc clean). Client build not re-run (no client changes in this issue). |
+| Server + client regression, Labs 1–3 | `cd server && pnpm test` and `cd client && pnpm test` | Server 321/321 pass (see above); client 227/227 pass (see above) |
+| Build | `cd server && pnpm build` and `cd client && pnpm build` | **2026-10-14:** `cd client && pnpm build` passes (tsc + vite clean); server build unchanged from Issue 25. |
 | Schema | `cd server && pnpm exec prisma validate && pnpm exec prisma migrate status` | **2026-10-10:** schema valid; "Database schema is up to date!" (4 migrations) |
 
 ## 7. Known Limitations / Deferred
@@ -575,6 +575,11 @@ Deferred **within** Lab 4:
   cannot grow unnoticed.
 - Deep pagination on dashboards is not implemented; the lists are capped (5
   recent, 10 urgent) rather than paginated.
+- Tablet form drawer is full-width from the right, not a bottom sheet
+  (ui-spec section 6 "Known deviation" note). The form uses the shared Lab 3
+  `Drawer`; changing it to a bottom sheet at 768–991px would alter every Lab 3
+  screen that reuses the component. `RESP-16..18` (Issue 29, #82) will capture
+  the actual tablet rendering.
 
 Two states will need **deliberate help** to photograph, the same pattern Lab 3
 used, and it should be recorded here before the run rather than discovered during
@@ -610,6 +615,7 @@ updates this file together with `specification.md`, `api-spec.md`, and
 | v1.1 | 2026-10-04 | Review pass against the handout and the other three Lab 4 documents. Added the three missing handout section 10 categories — **Authorization** (`AUTH-01..06`, plus `API-03/04/05/40/41` moved in with their numbers unchanged), **Workflow** (`API-19..28`, `UI-17..20` moved in), **Performance smoke** (`PERF-01..04`) — and **Accessibility** (`A11Y-01..05`). Added `MIG-04` (the documented rollback path, handout section 5.2) and `MIG-05` (seed zero/one/multiple, section 5.3). Rewrote `API-05` to match BR-09 instead of asserting an impossible refusal, pinned `API-10` to FR-05's "stored as submitted" instead of allowing either outcome, and re-homed it in the AC table. Adopted the handout section 12 file names verbatim and documented each added file. Recorded that `pnpm test:e2e:lab4` does not exist yet and named Issue 29 (#82) as its owner; extended REG-01 to the Lab 2/3 E2E specs per AC-17. Section 1 now counts twelve levels, matching the twelve headings in section 2. | Approved (student, 2026-10-04) |
 | v1.2 | 2026-10-10 | **First executed statuses.** Issue 25 (#78) ran the server suites and flipped its rows: `API-01..18` (Actions Taken, incl. a new `API-09` case asserting a non-boolean `followUpRequired` is rejected with `400 fields.followUpRequired` instead of being coerced to `false`), `API-03/04/05/07`, `API-43`, `MIG-01..05`, `REG-02` — Lab 4 files **34/34**, whole server suite **320/320**, `pnpm build` clean, `prisma validate` + `migrate status` clean (2026-10-10, seeded dev DB). Rewrote the stale wording at the section 2 preamble, the section 6 intro, the closing note, and this header line, which still claimed nothing had been executed. Section 6 now carries the run records (including the earlier 318/319 run and the `API-68` failure it exposed). The `API-68` assertion in `lab-03/users-admin.api.test.ts` was relaxed from an exact row count to "contains every seeded user" per the repo's test rule 1, so a hand-created dev account no longer fails it. | Approved (student, 2026-10-10) |
 | v1.3 | 2026-10-10 | **Review pass.** Narrowed the MIG-01 `ActionTaken` assertion to the seed's own rows (identified by id from `seedData.ts`), so a user-created action on a real Ticket no longer fails the regression (repo test rule 1). Added the AUTH-05 `401` block for the Lab 4 Action Taken endpoints, completed the anonymous `405` matrix with `DELETE /api/actions/:id` and an untouched-record assertion (AUTH-06), corrected both rows to name the real file `actions-taken.api.test.ts` and each endpoint's owning issue. Also removed dead code (`createdActionIds`, the pre-fixed-id seed reconciliation loop) and added a non-empty guard to API-07. Lab 4 files **35/35**, whole server suite **321/321**, build/validate/migrate-status clean. | Approved (student, 2026-10-10) |
+| v1.4 | 2026-10-14 | **Issue 26 (#79) client suites executed + review pass.** Recorded the client run: `cd client && pnpm test` **19 files, 227/227** (issue-26 `ActionsTaken.test.tsx` now 26 tests) and `pnpm build` clean. Applied the local fix-list review: merged `className` in the shared `Callout` so the conflict/failure callouts keep `callout`/`callout-error` (with class assertions added to UI-06/UI-07); gave `TextArea` an optional `warnAt` so its counter warns near and turns the error colour over the 2000-char limit (S4, and the action fields are no longer hard-capped so the existing over-limit validation is reachable); renamed the duplicated `.field-hint` in `App.css` to `.action-field-hint` so it no longer leaks into User Management (S5); made `relativeDayHint` count Asia/Bangkok calendar days instead of raw 24-hour spans (N6). Trimmed UI-10's expected result to the two action views (dashboard rendering stays with `STYLE-09`, Issue 29). Aligned the "count badge" wording in `ui-spec.md`/`specification.md` with the parenthesised count the tabs actually render (N7), and recorded the tablet-drawer bottom-sheet deviation in `ui-spec.md` section 6 and section 7 here, and aligned `RESP-16..18` with it (N8). Header, this log, and the closing note no longer claim the client suite has not landed. | Approved (student, 2026-10-14) |
 
 ---
 
@@ -617,6 +623,7 @@ updates this file together with `specification.md`, `api-spec.md`, and
 twelve test levels, and the section 1.1 test-file layout. That approval was of
 the **plan**; results arrive separately. The first executed statuses are recorded
 in section 6 on 2026-10-10 (Lab 4 server suites 34/34, whole server suite 320/320,
-server build clean, Prisma schema valid and migrated), and the rows still marked
-`Planned` remain unexecuted on purpose — client, E2E, dashboard, and workflow
-suites belong to issues that have not landed.
+server build clean, Prisma schema valid and migrated), followed by the Issue 26
+client Actions Taken suites on 2026-10-14 (client 227/227, client build clean).
+The rows still marked `Planned` remain unexecuted on purpose — E2E, dashboard,
+and workflow suites belong to issues that have not landed.

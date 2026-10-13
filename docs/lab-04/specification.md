@@ -446,10 +446,10 @@ Summary:
   queue list; and a "My Recent Actions" list showing ticket number, date, and
   description for the caller's own recorded work. Administrators additionally
   see a user-count card linking to `/admin/users`.
-- **Actions Taken area on IT Staff Ticket Detail:** a count badge on the tab,
-  and a table with Date/Time, Description, Result, Performed By, Follow-Up, and
-  Notes. Staff have create and edit controls; the edit form carries the record's
-  `version`.
+- **Actions Taken area on IT Staff Ticket Detail:** the count in parentheses on
+  the tab label, and a table with Date/Time, Description, Result, Performed By,
+  Follow-Up, and Notes. Staff have create and edit controls; the edit form
+  carries the record's `version`.
 - **Actions Taken area on Requester Ticket Detail:** the same fields, read-only,
   with no create or edit control and no assignee or status control. The Ticket's
   own Owner and Status controls, where present, are Ticket-level controls and are

@@ -264,7 +264,8 @@ Recent Actions" — that is data, not an error.
 ### 5.3 Actions Taken Area — IT Staff Ticket Detail
 
 Rendered as a fourth tab beside Public Comments, Internal Notes, and
-Attachments, with a count badge on the tab label.
+Attachments, with its count in parentheses on the tab label (the same convention
+the other three tabs already use).
 
 **Read mode (default)**
 
@@ -362,7 +363,7 @@ not change.
 | :--- | :--- |
 | Desktop ≥1200px | Five plain count cards in one row; `Needs your attention` full-width beneath, with the `Create Ticket` button beside it; two-column dashboard lists; Actions Taken as a six-column table; create/edit form in a right-side drawer; container max 1200px |
 | Small desktop 992–1199px | Three plain count cards per row, attention card still full-width; two-column dashboard lists |
-| Tablet 768–991px | Two plain count cards per row, attention card still full-width; dashboard lists stack full-width; Actions Taken table hides the Notes column into a second line per row; form drawer becomes a bottom sheet |
+| Tablet 768–991px | Two plain count cards per row, attention card still full-width; dashboard lists stack full-width; Actions Taken table hides the Notes column into a second line per row; form drawer goes full-width from the right (see the deviation note below) |
 | Mobile <768px | Everything stacks vertically; cards full-width; **Actions Taken table becomes one card per action** keeping all six fields, because a six-column table cannot be read at 375px; form becomes a full-screen overlay; tap targets ≥44px; **zero horizontal page scrolling** |
 | All sizes | No clipped labels, overlapping messages, hidden buttons, or truncated-unreadable text |
 
@@ -370,6 +371,14 @@ not change.
 mobile layout at `max-width: 768px`, so a capture at exactly 768px would render
 the mobile layout and produce a duplicate of the mobile evidence instead of
 tablet evidence. 820px sits inside the tablet band. Mobile is 375×844.
+
+**Known deviation — tablet form drawer (Issue 26).** The create/edit form uses
+the shared `Drawer` component inherited from Lab 3. At 768–991px it widens to
+`max-width: 100%` (a full-width panel anchored to the right) rather than the
+bottom sheet described above, because turning this one drawer into a bottom
+sheet would change the same component for every Lab 3 screen that reuses it.
+Mobile (`<768px`) is unaffected: the panel covers the full screen and reads as
+the intended full-screen overlay. Recorded rather than silently accepted.
 
 ## 7. Accessibility
 
