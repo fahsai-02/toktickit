@@ -93,6 +93,8 @@ describe("StaffTicketDetail — ticket info rendering and editability", () => {
     vi.spyOn(api, "fetchInternalNotes").mockResolvedValue(notes);
     vi.spyOn(api, "fetchCategories").mockResolvedValue(categories);
     vi.spyOn(api, "fetchStaffUsers").mockResolvedValue(staffUsers);
+    // Issue 26: the screen now also loads Actions Taken (empty here).
+    vi.spyOn(api, "fetchTicketActions").mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -318,6 +320,8 @@ describe("StaffTicketDetail — status dropdown shows only permitted next states
     vi.spyOn(api, "fetchInternalNotes").mockResolvedValue(notes);
     vi.spyOn(api, "fetchCategories").mockResolvedValue(categories);
     vi.spyOn(api, "fetchStaffUsers").mockResolvedValue(staffUsers);
+    // Issue 26: the screen now also loads Actions Taken (empty here).
+    vi.spyOn(api, "fetchTicketActions").mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -421,6 +425,8 @@ describe("StaffTicketDetail — comments/notes tabs", () => {
     vi.spyOn(api, "fetchInternalNotes").mockResolvedValue(notes);
     vi.spyOn(api, "fetchCategories").mockResolvedValue(categories);
     vi.spyOn(api, "fetchStaffUsers").mockResolvedValue(staffUsers);
+    // Issue 26: the screen now also loads Actions Taken (empty here).
+    vi.spyOn(api, "fetchTicketActions").mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -604,6 +610,8 @@ describe("StaffTicketDetail — error states", () => {
     vi.spyOn(api, "fetchInternalNotes").mockResolvedValue(notes);
     vi.spyOn(api, "fetchCategories").mockResolvedValue(categories);
     vi.spyOn(api, "fetchStaffUsers").mockResolvedValue(staffUsers);
+    // Issue 26: the screen now also loads Actions Taken (empty here).
+    vi.spyOn(api, "fetchTicketActions").mockResolvedValue([]);
   });
 
   afterEach(() => {
