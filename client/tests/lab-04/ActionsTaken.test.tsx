@@ -269,6 +269,30 @@ describe("Actions Taken — IT Staff Ticket Detail", () => {
     expect(within(table).getByText("See charger-after.png")).toBeInTheDocument();
   });
 
+  // FR-22 / ui-spec section 5.1, 5.3 — a forbidden list is visible feedback,
+  // never an empty list, and the failure state offers Retry.
+  it("shows the error block with Retry when actions are forbidden", async () => {
+    mockStaffScreen([baseAction]);
+    const actionsSpy = vi.spyOn(api, "fetchTicketActions");
+    actionsSpy.mockRejectedValueOnce(
+      new api.ApiError(
+        "You do not have permission to access this resource.",
+        "FORBIDDEN"
+      )
+    );
+
+    await openStaffActions();
+
+    const error = await screen.findByTestId("actions-error");
+    expect(error).toHaveTextContent("You do not have permission");
+    expect(within(error).getByTestId("actions-retry-btn")).toBeInTheDocument();
+    expect(screen.queryByTestId("actions-empty")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId("actions-retry-btn"));
+    await screen.findByTestId("actions-table");
+    expect(actionsSpy).toHaveBeenCalledTimes(2);
+  });
+
   // UI-16 — FR-03: an empty area is a helpful block, not a headers-only table.
   it("shows a helpful empty block instead of a headers-only table", async () => {
     mockStaffScreen([]);
@@ -704,10 +728,41 @@ describe("Actions Taken — Requester read-only view (UI-15)", () => {
       expect(within(table).getByRole("columnheader", { name: label })).toBeInTheDocument();
     }
     expect(within(table).getByText(/09:15 \(Asia\/Bangkok\)/)).toBeInTheDocument();
+    // Tablet layout: the Notes column carries the same width class as staff.
+    expect(
+      within(table).getByRole("columnheader", { name: "Notes" })
+    ).toHaveClass("actions-cell-notes");
+    expect(table.querySelectorAll("td.actions-cell-notes")).toHaveLength(1);
 
     // No write affordances anywhere in the section.
     expect(within(section).queryByRole("button")).toBeNull();
     expect(within(section).queryByTestId("actions-table")).not.toBeNull();
+  });
+
+  // FR-22 / ui-spec section 5.1, 5.3 — a forbidden read is visible feedback,
+  // never an empty list, and the failure state offers Retry.
+  it("shows the error block with Retry when the list is forbidden", async () => {
+    const actionsSpy = vi.spyOn(api, "fetchTicketActions");
+    actionsSpy
+      .mockRejectedValueOnce(
+        new api.ApiError(
+          "You do not have permission to access this resource.",
+          "FORBIDDEN"
+        )
+      )
+      .mockResolvedValueOnce([baseAction]);
+
+    renderRequester();
+
+    const section = await screen.findByTestId("requester-actions");
+    const error = await within(section).findByTestId("actions-error");
+    expect(error).toHaveTextContent("You do not have permission");
+    expect(within(error).getByTestId("actions-retry-btn")).toBeInTheDocument();
+    expect(within(section).queryByTestId("actions-empty")).not.toBeInTheDocument();
+
+    fireEvent.click(within(error).getByTestId("actions-retry-btn"));
+    await within(section).findByTestId("actions-table");
+    expect(actionsSpy).toHaveBeenCalledTimes(2);
   });
 
   it("shows the empty block when the ticket has no recorded actions", async () => {

@@ -1777,7 +1777,6 @@
       display: none;
     }
   }
-}
 
 /* ── Drawer (ui-spec section 8) ─────────────────────────────────────── */
 
@@ -2275,4 +2274,5 @@
     flex-direction: column;
     align-items: stretch;
   }
+}
 }

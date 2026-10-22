@@ -76,6 +76,9 @@ export default function TicketDetail() {
   const [actions, setActions] = useState<ActionTaken[]>([]);
   const [actionsState, setActionsState] = useState<CommentsState>("loading");
   const [actionError, setActionError] = useState("");
+  // Bumped by the error block's Retry button so the read-only list reloads
+  // without refetching the Ticket and comments (ui-spec 5.1/5.3).
+  const [actionsReloadKey, setActionsReloadKey] = useState(0);
 
   useEffect(() => {
     if (!ticketId) return;
@@ -88,9 +91,6 @@ export default function TicketDetail() {
     let cancelled = false;
     setState("loading");
     setErrorMessage("");
-    setActions([]);
-    setActionsState("loading");
-    setActionError("");
 
     fetchTicket(id)
       .then((data) => {
@@ -134,8 +134,25 @@ export default function TicketDetail() {
         }
       });
 
-    // Actions Taken are read-only here; a 403 (foreign ticket) is treated as an
-    // empty area rather than an error banner.
+    return () => {
+      cancelled = true;
+    };
+  }, [ticketId]);
+
+  // Actions Taken load independently so Retry can refetch only this read-only
+  // list without reloading the Ticket and comments (ui-spec 5.1, 5.3).
+  // A 403 is an expected failure and must render the visible error block
+  // (FR-22); it must never be mistaken for "no actions have been recorded".
+  useEffect(() => {
+    if (!ticketId) return;
+    const id = Number(ticketId);
+    if (!Number.isFinite(id) || id <= 0) return;
+
+    let cancelled = false;
+    setActions([]);
+    setActionsState("loading");
+    setActionError("");
+
     fetchTicketActions(id)
       .then((data) => {
         if (cancelled) return;
@@ -144,20 +161,16 @@ export default function TicketDetail() {
       })
       .catch((err) => {
         if (cancelled) return;
-        if (err instanceof ApiError && err.code === "FORBIDDEN") {
-          setActionsState("idle");
-        } else {
-          setActionError(
-            err instanceof Error ? err.message : "Could not load actions."
-          );
-          setActionsState("error");
-        }
+        setActionError(
+          err instanceof Error ? err.message : "Could not load actions."
+        );
+        setActionsState("error");
       });
 
     return () => {
       cancelled = true;
     };
-  }, [ticketId]);
+  }, [ticketId, actionsReloadKey]);
   if (state === "loading") {
     return (
       <div className="container ticket-detail">
@@ -391,9 +404,19 @@ export default function TicketDetail() {
         )}
 
         {actionsState === "error" && (
-          <div className="list-state list-state--error" data-testid="actions-error">
-            <p className="error-banner">{actionError}</p>
-          </div>
+          <ListState
+            testId="actions-error"
+            variant="error"
+            message={<p className="error-banner">{actionError}</p>}
+          >
+            <Button
+              variant="secondary"
+              onClick={() => setActionsReloadKey((key) => key + 1)}
+              data-testid="actions-retry-btn"
+            >
+              Retry
+            </Button>
+          </ListState>
         )}
 
         {actionsState === "idle" && actions.length === 0 && (
@@ -419,7 +442,9 @@ export default function TicketDetail() {
                   <th scope="col">Result</th>
                   <th scope="col">Performed By</th>
                   <th scope="col">Follow-Up</th>
-                  <th scope="col">Notes</th>
+                  <th scope="col" className="actions-cell-notes">
+                    Notes
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -434,7 +459,7 @@ export default function TicketDetail() {
                     <td>
                       <ActionFollowUp action={action} />
                     </td>
-                    <td>
+                    <td className="actions-cell-notes">
                       {action.attachmentNotes ? (
                         action.attachmentNotes
                       ) : (

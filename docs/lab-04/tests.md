@@ -4,8 +4,8 @@
 | :--- | :--- |
 | **Project** | Tok TickIT — IT Service Desk |
 | **Sprint** | Lab 4: Actions Taken, Ticket Workflow, and Role Dashboards |
-| **Version** | v1.4 — 2026-10-14 (Issue 26 client Actions Taken suites executed; review pass applied; see section 6) |
-| **Date** | 2026-10-14 |
+| **Version** | v1.5 — 2026-10-23 (Issue 26 follow-up: list failure feedback, Retry, Notes class, CSS layer; see section 6) |
+| **Date** | 2026-10-23 |
 | **Traceability source** | `specification.md` v1.1 AC-01..18 · `api-spec.md` v1.2 · `ui-spec.md` v1.1 |
 
 ---
@@ -527,19 +527,20 @@ gap is a reason to skip the run.
 Filled from actual runs — suite size, pass/fail count, date, and the DB state it
 ran against. A row is only written here after the run it describes. The runs
 below cover the **server** work of Issue 25 (#78) and the **client** Actions
-Taken UI of Issue 26 (#79); the E2E and dashboard rows stay open until their
-issues land (section 2 still marks those rows `Planned`).
+Taken UI of Issue 26 (#79), including the Issue 26 follow-up fixes reviewed on
+2026-10-23; the E2E and dashboard rows stay open until their issues land
+(section 2 still marks those rows `Planned`).
 
 | Suite | Command | Result |
 |-------|---------|--------|
 | Lab 4 (Actions Taken + migration) | `cd server && pnpm test --run tests/lab-04` | **2026-10-10:** 2 files, **35 of 35 tests pass** (`actions-taken.api.test.ts` API-01..18 incl. the API-09 type check and the AUTH-05 401 block, `migration-regression.api.test.ts` MIG-01..05 + REG-02) against the seeded dev DB. |
 | Server (unit + API) | `cd server && pnpm test` | **2026-10-10:** 22 files, **321 of 321 tests pass**. The earlier 2026-10-09 run was 318/319; the single failure was `lab-03/users-admin.api.test.ts` **API-68**, whose assertion demanded the user table hold *exactly* `SEED_USERS.length` rows. A hand-created dev account (`fahsai.meow@toktickit.dev`) makes it 12 vs 11 — a brittle assertion rather than an environment defect, and one the repo's own test rule 1 forbids ("must pass on ANY seeded DB"). The assertion now requires *at least* that many rows plus the presence of every seeded email per the repo's own test rule 1, and the suite is green. |
-| Client (component + style) | `cd client && pnpm test` | **2026-10-14:** 19 files, **227 of 227 tests pass**. `ActionsTaken.test.tsx` adds 26 tests covering UI-01..16 + A11Y-01/04/05 (request shapes incl. the `409` `ActionConflictError`, Bangkok formatting incl. the calendar-day hint, retention, single-flight, the over-limit counter colour, the absent assignee/status controls, and keyboard focus). The four Lab 2/3 suites that mount a Ticket Detail (`RequesterTicketDetail`, `RequesterTicketComments`, `StaffTicketDetail`) now stub `fetchTicketActions`. |
+| Client (component + style) | `cd client && pnpm test` | **2026-10-23:** 19 files, **229 of 229 tests pass**. `ActionsTaken.test.tsx` is now 28 tests: the original 26 cover UI-01..16 + A11Y-01/04/05, and the two follow-up tests assert that a `403` on the Actions Taken list renders the visible `actions-error` block with a working Retry instead of the empty state (FR-22, ui-spec section 5.1/5.3). The requester read-only test also asserts the Notes header and cell carry `actions-cell-notes`. The three Lab 2/3 suites that mount a Ticket Detail (`RequesterTicketDetail`, `RequesterTicketComments`, `StaffTicketDetail`) stub `fetchTicketActions`. |
 | E2E (Playwright, functional) | `pnpm test:e2e:lab4` | Not run (owned by Issue 29, #82) |
 | E2E (Playwright, visual + audit) | the three `*.visual.spec.ts` files | Not run |
 | E2E regression, Labs 2–3 | `pnpm test:e2e` | Not run |
-| Server + client regression, Labs 1–3 | `cd server && pnpm test` and `cd client && pnpm test` | Server 321/321 pass (see above); client 227/227 pass (see above) |
-| Build | `cd server && pnpm build` and `cd client && pnpm build` | **2026-10-14:** `cd client && pnpm build` passes (tsc + vite clean); server build unchanged from Issue 25. |
+| Server + client regression, Labs 1–3 | `cd server && pnpm test` and `cd client && pnpm test` | Server 321/321 pass (see above); client 229/229 pass (see above) |
+| Build | `cd server && pnpm build` and `cd client && pnpm build` | **2026-10-23:** `cd client && pnpm build` passes (tsc + vite clean, 1877 modules); server build unchanged from Issue 25. |
 | Schema | `cd server && pnpm exec prisma validate && pnpm exec prisma migrate status` | **2026-10-10:** schema valid; "Database schema is up to date!" (4 migrations) |
 
 ## 7. Known Limitations / Deferred
@@ -616,6 +617,7 @@ updates this file together with `specification.md`, `api-spec.md`, and
 | v1.2 | 2026-10-10 | **First executed statuses.** Issue 25 (#78) ran the server suites and flipped its rows: `API-01..18` (Actions Taken, incl. a new `API-09` case asserting a non-boolean `followUpRequired` is rejected with `400 fields.followUpRequired` instead of being coerced to `false`), `API-03/04/05/07`, `API-43`, `MIG-01..05`, `REG-02` — Lab 4 files **34/34**, whole server suite **320/320**, `pnpm build` clean, `prisma validate` + `migrate status` clean (2026-10-10, seeded dev DB). Rewrote the stale wording at the section 2 preamble, the section 6 intro, the closing note, and this header line, which still claimed nothing had been executed. Section 6 now carries the run records (including the earlier 318/319 run and the `API-68` failure it exposed). The `API-68` assertion in `lab-03/users-admin.api.test.ts` was relaxed from an exact row count to "contains every seeded user" per the repo's test rule 1, so a hand-created dev account no longer fails it. | Approved (student, 2026-10-10) |
 | v1.3 | 2026-10-10 | **Review pass.** Narrowed the MIG-01 `ActionTaken` assertion to the seed's own rows (identified by id from `seedData.ts`), so a user-created action on a real Ticket no longer fails the regression (repo test rule 1). Added the AUTH-05 `401` block for the Lab 4 Action Taken endpoints, completed the anonymous `405` matrix with `DELETE /api/actions/:id` and an untouched-record assertion (AUTH-06), corrected both rows to name the real file `actions-taken.api.test.ts` and each endpoint's owning issue. Also removed dead code (`createdActionIds`, the pre-fixed-id seed reconciliation loop) and added a non-empty guard to API-07. Lab 4 files **35/35**, whole server suite **321/321**, build/validate/migrate-status clean. | Approved (student, 2026-10-10) |
 | v1.4 | 2026-10-14 | **Issue 26 (#79) client suites executed + review pass.** Recorded the client run: `cd client && pnpm test` **19 files, 227/227** (issue-26 `ActionsTaken.test.tsx` now 26 tests) and `pnpm build` clean. Applied the local fix-list review: merged `className` in the shared `Callout` so the conflict/failure callouts keep `callout`/`callout-error` (with class assertions added to UI-06/UI-07); gave `TextArea` an optional `warnAt` so its counter warns near and turns the error colour over the 2000-char limit (S4, and the action fields are no longer hard-capped so the existing over-limit validation is reachable); renamed the duplicated `.field-hint` in `App.css` to `.action-field-hint` so it no longer leaks into User Management (S5); made `relativeDayHint` count Asia/Bangkok calendar days instead of raw 24-hour spans (N6). Trimmed UI-10's expected result to the two action views (dashboard rendering stays with `STYLE-09`, Issue 29). Aligned the "count badge" wording in `ui-spec.md`/`specification.md` with the parenthesised count the tabs actually render (N7), and recorded the tablet-drawer bottom-sheet deviation in `ui-spec.md` section 6 and section 7 here, and aligned `RESP-16..18` with it (N8). Header, this log, and the closing note no longer claim the client suite has not landed. | Approved (student, 2026-10-14) |
+| v1.5 | 2026-10-23 | **Issue 26 follow-up after peer review.** Moved the `@layer layout` closing brace in `client/src/App.css` to the end of the file so the Actions Taken rules (and the pre-existing drawer/access-denied block) sit inside the documented layout layer instead of overriding every layer as unlayered CSS. Removed the `FORBIDDEN → idle` special case from both Actions Taken list loaders, so a `403` now renders the visible `actions-error` block with a Retry action, as FR-22 and ui-spec section 5.1/5.3 require, instead of claiming no actions were recorded; the list now loads in its own `useEffect` so Retry refetches only that list. Added `actions-cell-notes` to the requester Actions Taken table so the tablet Notes width matches the staff table. Added two regression tests (staff and requester `403` + Retry) and a class assertion. `cd client && pnpm test` **19 files, 229/229**, `pnpm build` clean (2026-10-23). Did **not** add a Performed By field to the create/edit drawer: ui-spec section 5.3 enumerates the create-mode fields and Performed By is a read-mode cell; “auto-filled on create” is the server-side FR-02/BR-03 rule. | Approved (student, 2026-10-23) |
 
 ---
 
@@ -624,6 +626,8 @@ twelve test levels, and the section 1.1 test-file layout. That approval was of
 the **plan**; results arrive separately. The first executed statuses are recorded
 in section 6 on 2026-10-10 (Lab 4 server suites 34/34, whole server suite 320/320,
 server build clean, Prisma schema valid and migrated), followed by the Issue 26
-client Actions Taken suites on 2026-10-14 (client 227/227, client build clean).
-The rows still marked `Planned` remain unexecuted on purpose — E2E, dashboard,
-and workflow suites belong to issues that have not landed.
+client Actions Taken suites on 2026-10-14 (client 227/227, client build clean),
+followed by the Issue 26 follow-up on 2026-10-23 (client 229/229, client build
+clean, Actions Taken list failures now visible with Retry). The rows still
+marked `Planned` remain unexecuted on purpose — E2E, dashboard, and workflow
+suites belong to issues that have not landed.

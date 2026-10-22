@@ -178,6 +178,9 @@ export default function StaffTicketDetail() {
   const [actions, setActions] = useState<ActionTaken[]>([]);
   const [actionsState, setActionsState] = useState<CommsState>("loading");
   const [actionError, setActionError] = useState("");
+  // Bumped by the error block's Retry button so the actions list reloads
+  // without refetching the Ticket and the other tabs (ui-spec 5.1/5.3).
+  const [actionsReloadKey, setActionsReloadKey] = useState(0);
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingAction, setEditingAction] = useState<ActionTaken | null>(null);
@@ -231,9 +234,6 @@ export default function StaffTicketDetail() {
     setState("loading");
     setErrorMessage("");
     setTab("comments");
-    setActions([]);
-    setActionsState("loading");
-    setActionError("");
     setFormOpen(false);
     setEditingAction(null);
     setConflictLatest(null);
@@ -302,24 +302,6 @@ export default function StaffTicketDetail() {
         }
       });
 
-    fetchTicketActions(id)
-      .then((data) => {
-        if (cancelled) return;
-        setActions(sortActions(data));
-        setActionsState("idle");
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        if (err instanceof ApiError && err.code === "FORBIDDEN") {
-          setActionsState("idle");
-        } else {
-          setActionError(
-            err instanceof Error ? err.message : "Could not load actions."
-          );
-          setActionsState("error");
-        }
-      });
-
     Promise.all([fetchCategories(), fetchStaffUsers()])
       .then(([cat, users]) => {
         if (cancelled) return;
@@ -334,6 +316,39 @@ export default function StaffTicketDetail() {
       cancelled = true;
     };
   }, [ticketId]);
+
+  // Actions Taken load independently so Retry can refetch only this list
+  // without reloading the Ticket and the other tabs (ui-spec 5.1, 5.3).
+  // A 403 is an expected failure and must render the visible error block
+  // (FR-22); it must never be mistaken for "no actions have been recorded".
+  useEffect(() => {
+    if (!ticketId) return;
+    const id = Number(ticketId);
+    if (!Number.isFinite(id) || id <= 0) return;
+
+    let cancelled = false;
+    setActions([]);
+    setActionsState("loading");
+    setActionError("");
+
+    fetchTicketActions(id)
+      .then((data) => {
+        if (cancelled) return;
+        setActions(sortActions(data));
+        setActionsState("idle");
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setActionError(
+          err instanceof Error ? err.message : "Could not load actions."
+        );
+        setActionsState("error");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [ticketId, actionsReloadKey]);
 
   // Focus trap + Escape for the status-transition confirm dialog (ui-spec
   // section 8 dialog rules; same pattern as AttachmentSection's remove dialog).
@@ -1079,12 +1094,19 @@ export default function StaffTicketDetail() {
               )}
 
               {actionsState === "error" && (
-                <div
-                  className="list-state list-state--error"
-                  data-testid="actions-error"
+                <ListState
+                  testId="actions-error"
+                  variant="error"
+                  message={<p className="error-banner">{actionError}</p>}
                 >
-                  <p className="error-banner">{actionError}</p>
-                </div>
+                  <Button
+                    variant="secondary"
+                    onClick={() => setActionsReloadKey((key) => key + 1)}
+                    data-testid="actions-retry-btn"
+                  >
+                    Retry
+                  </Button>
+                </ListState>
               )}
 
               {actionsState === "idle" && actions.length === 0 && (
