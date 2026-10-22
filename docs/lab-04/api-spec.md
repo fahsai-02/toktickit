@@ -4,8 +4,8 @@
 | :--- | :--- |
 | **Project** | Tok TickIT — IT Service Desk |
 | **Sprint** | Lab 4: Actions Taken, Ticket Workflow, and Role Dashboards |
-| **Version** | v1.2 (Approved 2026-10-10) |
-| **Date** | 2026-10-10 |
+| **Version** | v1.3 (Approved 2026-10-14) |
+| **Date** | 2026-10-14 |
 | **Contract source** | `specification.md` v1.0 (FR/BR/AC references below trace to it) |
 | **Predecessor** | `docs/lab-03/api-spec.md` v1.2 — every endpoint not listed in sections 2–5 keeps its Lab 3 shape verbatim |
 
@@ -757,7 +757,7 @@ likely to disturb.
 | Attachments | `POST /api/tickets/:id/attachments`, `GET /api/attachments/:id/download`, `DELETE /api/attachments/:id` | `Attachment` model untouched (FR-06, AD-14) |
 | Requester comments | `POST`/`GET /api/tickets/:id/comments`, the `405` guards | |
 | Requester advisory | `PUT /api/tickets/:id/indicate-resolved`, `PUT /api/tickets/:id/resolution-summary` (always `403`) | BR-13 unchanged |
-| Staff queue and detail | `GET /api/staff/tickets`, `GET /api/staff/tickets/:id` | `GET /api/staff/tickets` gains `statusGroup` only |
+| Staff queue and detail | `GET /api/staff/tickets`, `GET /api/staff/tickets/:id` | `GET /api/staff/tickets` gains `statusGroup` only. `GET /api/staff/tickets/:id` additionally returns `version` (FR-12) so the screen can send it on a status transition; every other field is unchanged. The requester detail `GET /api/tickets/:id` does **not** gain `version` and keeps its Lab 3 shape exactly. |
 | Staff operations | `claim`, `assign`, `priority`, `resolution-summary`, `category` | `assign` keeps the `404` on an inactive owner (BR-14) |
 | Staff comments/notes | `POST`/`GET` comments, `POST`/`GET` notes, the `405` guards | Internal Notes stay staff-only |
 | Staff users | `GET /api/staff/users` | |
@@ -834,11 +834,12 @@ recorded status, which is what handout section 10 asks for.
 | v1.0 | 2026-10-04 | Initial Lab 4 contract. Adds Actions Taken endpoints, dashboard endpoints, the `statusGroup` filter, and the resolution gate and `409` concurrency behavior to the staff status endpoint. Records that `GET /api/health` and all other Lab 1–3 endpoints are unchanged. | Approved (student, 2026-10-04) |
 | v1.1 | 2026-10-04 | Section 8's third column named 24 semantic IDs that exist nowhere in `tests.md`; it now cites the real numeric IDs, adding `AUTH-01..05` and `API-42`. Added section 8.1 for the four groups that answer a handout requirement rather than an AC. Fixed the section 2.2 citation: it pointed at a handout subsection number that does not exist — the one-place requirement is handout section 8.3. | Approved (student, 2026-10-04) |
 | v1.2 | 2026-10-10 | Section 2.1's `followUpRequired` field now states that a non-boolean value is `400 fields.followUpRequired` rather than a silent `false` — a coerced `false` on `PUT` would lift the BR-04 note requirement without any signal — and the create error table gains that case (the update table already inherits it via "any field rule above"). Contract change approved with Issue 25 (#78); the API enforces it and `API-09` asserts it. | Approved (student, 2026-10-10) |
+| v1.3 | 2026-10-14 | Section 6 now records that `GET /api/staff/tickets/:id` returns `version` (FR-12) for the status transition, which the table previously implied was unchanged. `GET /api/tickets/:id` stays untouched: the `version` field was removed from the requester select so the requester detail keeps its Lab 3 shape exactly. Contract change approved with Issue 27 (#80). | Approved (student, 2026-10-14) |
 
 ---
 
 *End of API specification. Changes require student approval and a version bump.*
 
-**Approval:** v1.2 approved by the student on 2026-10-10. This approves the
+**Approval:** v1.3 approved by the student on 2026-10-14. This approves the
 contract only — no FR, BR, AC, endpoint, screen, or checklist row is verified by
 it, because nothing has been built or run yet.

@@ -130,14 +130,20 @@ describe("updateStaffTicketStatus", () => {
     vi.unstubAllGlobals();
   });
 
-  it("PUTs { currentStatus } to /api/staff/tickets/:id/status", async () => {
+  it("PUTs { currentStatus, version } to /api/staff/tickets/:id/status", async () => {
     const fetchMock = vi
       .fn()
-      .mockResolvedValue(okJson({ data: { currentStatus: "IN_PROGRESS" } }));
+      .mockResolvedValue(
+        okJson({ data: { currentStatus: "IN_PROGRESS", version: 2 } })
+      );
     vi.stubGlobal("fetch", fetchMock);
 
-    await expect(updateStaffTicketStatus(12, "IN_PROGRESS")).resolves.toEqual({
+    // Lab 4 FR-12: `version` travels with the transition.
+    await expect(
+      updateStaffTicketStatus(12, "IN_PROGRESS", 1)
+    ).resolves.toEqual({
       currentStatus: "IN_PROGRESS",
+      version: 2,
     });
 
     const [url, options] = fetchMock.mock.calls[0] as [
@@ -146,7 +152,10 @@ describe("updateStaffTicketStatus", () => {
     ];
     expect(url).toMatch(/\/api\/staff\/tickets\/12\/status$/);
     expect(options?.method).toBe("PUT");
-    expect(JSON.parse(options?.body as string)).toEqual({ currentStatus: "IN_PROGRESS" });
+    expect(JSON.parse(options?.body as string)).toEqual({
+      currentStatus: "IN_PROGRESS",
+      version: 1,
+    });
   });
 });
 

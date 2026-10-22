@@ -43,6 +43,7 @@ const baseTicket: api.StaffTicketDetail = {
   itPriority: "MEDIUM",
   currentStatus: "IN_PROGRESS",
   ticketDate: "2026-09-01T10:00:00.000Z",
+  version: 1,
   requester: { id: 1, name: "Jennifer Anderson" },
   category: { id: 2, name: "Hardware" },
   relatedSystem: { id: 7, name: "Corporate Laptop" },

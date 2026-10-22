@@ -19,6 +19,7 @@ import {
   transitionViolationMessage,
   isTicketStatus,
 } from './lib/statusTransitions.js';
+import { resolutionGateViolation } from './lib/resolutionGate.js';
 import authRouter from './routes/auth.js';
 import actionsTakenRouter from './routes/actionsTaken.js';
 import bcrypt from 'bcryptjs';
@@ -1213,6 +1214,7 @@ const staffDetailSelect = {
   itPriority: true,
   currentStatus: true,
   ticketDate: true,
+  version: true,
   resolutionSummary: true,
   requesterIndicatedResolved: true,
   indicatedResolvedAt: true,
@@ -1423,30 +1425,77 @@ app.put(
     const ticketId = parsePositiveInt(req.params.id);
     const raw =
       typeof req.body?.currentStatus === "string" ? req.body.currentStatus : "";
+    // BR-15, FR-12, AD-20: `version` is optional on this endpoint. When present
+    // it must be an integer matching the stored value, else 409. When absent the
+    // transition is last-write-wins — a documented escape hatch asserted by
+    // API-25.
+    const hasVersion =
+      req.body?.version !== undefined && req.body?.version !== null;
+    const version = hasVersion ? (req.body.version as number) : undefined;
 
     const fields: Record<string, string> = {};
     if (ticketId === null) {
       fields.id = "Ticket id must be a positive integer.";
-    }
-    if (!isTicketStatus(raw)) {
-      fields.currentStatus = "Invalid status value.";
     }
     if (Object.keys(fields).length > 0) {
       validationError(res, fields);
       return;
     }
 
+    // The 409 body carries the server's latest copy (AD-03, api-spec 5.1).
+    const conflictSelect = {
+      id: true,
+      currentStatus: true,
+      resolutionSummary: true,
+      version: true,
+    } as const;
+
     try {
       const to = raw as TicketStatus;
       const ticket = await db.ticket.findUnique({
         where: { id: ticketId! },
-        select: { id: true, currentStatus: true },
+        select: {
+          id: true,
+          currentStatus: true,
+          resolutionSummary: true,
+          version: true,
+        },
       });
       if (!ticket) {
         sendError(res, 404, "NOT_FOUND", "Ticket not found");
         return;
       }
 
+      // Order of checks per api-spec 5.1: the ticket is looked up first (404
+      // before any payload error), then the payload enum and version are
+      // validated (400), then concurrency (409), the matrix, and the gate.
+      const payloadFields: Record<string, string> = {};
+      if (!isTicketStatus(raw)) {
+        payloadFields.currentStatus = "Invalid status value.";
+      }
+      if (hasVersion && !Number.isInteger(version)) {
+        payloadFields.version = "version must be an integer.";
+      }
+      if (Object.keys(payloadFields).length > 0) {
+        validationError(res, payloadFields);
+        return;
+      }
+
+      // Order of checks per api-spec 5.1: concurrency before the matrix, the
+      // gate last. A stale version is 409 regardless of the transition.
+      if (hasVersion && version !== ticket.version) {
+        res.status(409).json({
+          error: {
+            code: "CONFLICT",
+            message:
+              "This ticket was updated by someone else. Refresh to load the latest version.",
+          },
+          data: ticket,
+        });
+        return;
+      }
+
+      // BR-12: transition matrix, unchanged from Lab 3.
       if (!canTransition(ticket.currentStatus, to)) {
         sendError(
           res,
@@ -1457,10 +1506,57 @@ app.put(
         return;
       }
 
-      const updated = await db.ticket.update({
-        where: { id: ticketId! },
-        data: { currentStatus: to },
-        select: { currentStatus: true },
+      // BR-11 / AD-01: the resolution gate, RESOLVED and CLOSED only. It reads
+      // the summary written by PUT /api/staff/tickets/:id/resolution-summary and
+      // counts the Ticket's Action Taken rows, so a raw request that bypasses
+      // the UI is rejected exactly like a UI-driven one (FR-10).
+      if (to === "RESOLVED" || to === "CLOSED") {
+        const actionCount = await db.actionTaken.count({
+          where: { ticketId: ticket.id },
+        });
+        const violation = resolutionGateViolation({
+          resolutionSummary: ticket.resolutionSummary,
+          actionCount,
+        });
+        if (violation) {
+          sendError(res, 400, "BUSINESS_RULE_VIOLATION", violation);
+          return;
+        }
+      }
+
+      // BR-15: apply and increment the version atomically. When a version was
+      // supplied it is part of the WHERE clause, so two concurrent writers
+      // cannot both win; count === 0 means the row changed under us.
+      const where = hasVersion
+        ? { id: ticket.id, version: version as number }
+        : { id: ticket.id };
+      const write = await db.ticket.updateMany({
+        where,
+        data: { currentStatus: to, version: { increment: 1 } },
+      });
+      if (write.count === 0) {
+        const latest = await db.ticket.findUnique({
+          where: { id: ticket.id },
+          select: conflictSelect,
+        });
+        if (!latest) {
+          sendError(res, 404, "NOT_FOUND", "Ticket not found");
+          return;
+        }
+        res.status(409).json({
+          error: {
+            code: "CONFLICT",
+            message:
+              "This ticket was updated by someone else. Refresh to load the latest version.",
+          },
+          data: latest,
+        });
+        return;
+      }
+
+      const updated = await db.ticket.findUnique({
+        where: { id: ticket.id },
+        select: { currentStatus: true, version: true },
       });
       res.json({ data: updated });
     } catch {

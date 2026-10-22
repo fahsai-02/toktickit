@@ -4,9 +4,9 @@
 | :--- | :--- |
 | **Project** | Tok TickIT — IT Service Desk |
 | **Sprint** | Lab 4: Actions Taken, Ticket Workflow, and Role Dashboards |
-| **Version** | v1.5 — 2026-10-23 (Issue 26 follow-up: list failure feedback, Retry, Notes class, CSS layer; see section 6) |
-| **Date** | 2026-10-23 |
-| **Traceability source** | `specification.md` v1.1 AC-01..18 · `api-spec.md` v1.2 · `ui-spec.md` v1.1 |
+| **Version** | v1.7 — 2026-10-29 (Issue 27 server workflow/gate + client TicketWorkflow suites executed on top of the Issue 26 follow-up; see section 6) |
+| **Date** | 2026-10-29 |
+| **Traceability source** | `specification.md` v1.2 AC-01..18 · `api-spec.md` v1.3 · `ui-spec.md` v1.2 |
 
 ---
 
@@ -92,10 +92,10 @@ Every `Status` below **starts** as `Planned`: this is the Test DD deliverable wr
 
 | Test ID | Requirement | What It Tests | Expected Result | Automated Test File | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| UNIT-01 | BR-11, AC-07 | Resolution-gate predicate, standalone | `false` unless a non-blank `resolutionSummary` **and** ≥1 Action Taken; whitespace-only summary counts as blank | `resolution-gate.unit.test.ts` | Planned |
-| UNIT-02 | BR-11, BR-13, AC-09 | Gate is unaffected by the requester-resolved indication | A Ticket with `requesterIndicatedResolved = true` and no summary/actions still fails the gate | `resolution-gate.unit.test.ts` | Planned |
+| UNIT-01 | BR-11, AC-07 | Resolution-gate predicate, standalone | `false` unless a non-blank `resolutionSummary` **and** ≥1 Action Taken; whitespace-only summary counts as blank | `resolution-gate.unit.test.ts` | Pass |
+| UNIT-02 | BR-11, BR-13, AC-09 | Gate is unaffected by the requester-resolved indication | A Ticket with `requesterIndicatedResolved = true` and no summary/actions still fails the gate | `resolution-gate.unit.test.ts` | Pass |
 | UNIT-03 | BR-25, AC-11 | Urgent predicate | `true` for `itPriority = URGENT`; `true` for `itPriority = null` + `requestedPriority = URGENT`; **`false`** for `itPriority = HIGH` + `requestedPriority = URGENT`; `false` for `RESOLVED`/`CLOSED`/`CANCELLED` at any priority | `dashboard-queries.unit.test.ts` | Planned |
-| UNIT-04 | BR-12, AC-08 | Lab 3 transition matrix unchanged | Every pair in the Lab 3 matrix still resolves to the same permitted/denied answer; `IN_PROGRESS → RESOLVED` and `OPEN → CANCELLED` are flagged confirmation-required | `ticket-workflow.api.test.ts` (unit block) | Planned |
+| UNIT-04 | BR-12, AC-08 | Lab 3 transition matrix unchanged | Every pair in the Lab 3 matrix still resolves to the same permitted/denied answer; `IN_PROGRESS → RESOLVED` and `OPEN → CANCELLED` are flagged confirmation-required | `ticket-workflow.api.test.ts` (unit block) | Pass |
 
 > **UNIT-03 is the row that would otherwise be silently wrong.** "Urgent" reads
 > naturally as *urgent by any signal*, which would make a Ticket that staff
@@ -248,20 +248,20 @@ subject.
 
 | Test ID | Requirement | What It Tests | Expected Result | Automated Test File | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| API-19 | BR-11, AC-07 | `IN_PROGRESS → RESOLVED` with no summary and no action | `400` naming the unmet condition; `currentStatus` unchanged | `ticket-workflow.api.test.ts` | Planned |
-| API-20 | BR-11, AC-07 | Same, with summary but no action | `400` naming the action condition only | `ticket-workflow.api.test.ts` | Planned |
-| API-21 | BR-11, AC-07 | Same, with an action but no summary | `400` naming the summary condition only | `ticket-workflow.api.test.ts` | Planned |
-| API-22 | BR-11, AC-07 | Gate met | `200`; `currentStatus = RESOLVED` | `ticket-workflow.api.test.ts` | Planned |
-| API-23 | BR-12, AC-08 | Transition outside the matrix | `400`; status unchanged | `ticket-workflow.api.test.ts` | Planned |
-| API-24 | FR-12, AC-06 | Status with a stale `version` | `409` with the Ticket's latest copy | `ticket-workflow.api.test.ts` | Planned |
-| API-25 | FR-12 | Status with **no** `version` | `200` — last-write-wins, documented and asserted so the escape hatch stays deliberate | `ticket-workflow.api.test.ts` | Planned |
-| API-26 | BR-11 | Gate applies to `CLOSED` too | `→ CLOSED` without summary/actions is `400` | `ticket-workflow.api.test.ts` | Planned |
-| API-27 | BR-11, BR-12 | Gate does **not** apply elsewhere | `→ CANCELLED` and `→ REOPENED` succeed with no summary and no actions | `ticket-workflow.api.test.ts` | Planned |
-| API-28 | FR-11, BR-13, AC-09 | `indicate-resolved` stays advisory | Sets the flag and timestamp; does not change `currentStatus`; does not satisfy the gate | `ticket-workflow.api.test.ts` | Planned |
-| UI-17 | BR-11, AC-07 | Gate failure feedback | The message renders **at the status control**, names the unmet condition, and the status badge does not change | `TicketWorkflow.test.tsx` | Planned |
-| UI-18 | BR-12, AC-08 | Only permitted targets are offered | The dropdown for `IN_PROGRESS` contains `RESOLVED` but not `CANCELLED` | `TicketWorkflow.test.tsx` | Planned |
-| UI-19 | BR-12 | Confirmation-required transitions | `OPEN → CANCELLED` and `IN_PROGRESS → RESOLVED` raise a dialog naming the exact transition; cancelling sends nothing | `TicketWorkflow.test.tsx` | Planned |
-| UI-20 | FR-11, BR-13, AC-09 | Requester-indicated-resolved badge | Rendered and visually distinct from the status badge | `TicketWorkflow.test.tsx` | Planned |
+| API-19 | BR-11, AC-07 | `IN_PROGRESS → RESOLVED` with no summary and no action | `400` naming the unmet condition; `currentStatus` unchanged | `ticket-workflow.api.test.ts` | Pass |
+| API-20 | BR-11, AC-07 | Same, with summary but no action | `400` naming the action condition only | `ticket-workflow.api.test.ts` | Pass |
+| API-21 | BR-11, AC-07 | Same, with an action but no summary | `400` naming the summary condition only | `ticket-workflow.api.test.ts` | Pass |
+| API-22 | BR-11, AC-07 | Gate met | `200`; `currentStatus = RESOLVED` | `ticket-workflow.api.test.ts` | Pass |
+| API-23 | BR-12, AC-08 | Transition outside the matrix | `400`; status unchanged | `ticket-workflow.api.test.ts` | Pass |
+| API-24 | FR-12, AC-06 | Status with a stale `version` | `409` with the Ticket's latest copy | `ticket-workflow.api.test.ts` | Pass |
+| API-25 | FR-12 | Status with **no** `version` | `200` — last-write-wins, documented and asserted so the escape hatch stays deliberate | `ticket-workflow.api.test.ts` | Pass |
+| API-26 | BR-11 | Gate applies to `CLOSED` too | `→ CLOSED` without summary/actions is `400` | `ticket-workflow.api.test.ts` | Pass |
+| API-27 | BR-11, BR-12 | Gate does **not** apply elsewhere | `→ CANCELLED` and `→ REOPENED` succeed with no summary and no actions | `ticket-workflow.api.test.ts` | Pass |
+| API-28 | FR-11, BR-13, AC-09 | `indicate-resolved` stays advisory | Sets the flag and timestamp; does not change `currentStatus`; does not satisfy the gate | `ticket-workflow.api.test.ts` | Pass |
+| UI-17 | BR-11, AC-07 | Gate failure feedback | The message renders **at the status control**, names the unmet condition, and the status badge does not change | `TicketWorkflow.test.tsx` | Pass |
+| UI-18 | BR-12, AC-08 | Only permitted targets are offered | The dropdown for `IN_PROGRESS` contains `RESOLVED` but not `CANCELLED` | `TicketWorkflow.test.tsx` | Pass |
+| UI-19 | BR-12 | Confirmation-required transitions | `OPEN → CANCELLED` and `IN_PROGRESS → RESOLVED` raise a dialog naming the exact transition; cancelling sends nothing | `TicketWorkflow.test.tsx` | Pass |
+| UI-20 | FR-11, BR-13, AC-09 | Requester-indicated-resolved badge | Rendered and visually distinct from the status badge | `TicketWorkflow.test.tsx` | Pass |
 
 > **The gate is tested at both levels on purpose.** API-19..API-22 prove the
 > backend refuses the transition no matter what sent the request, which is the
@@ -526,22 +526,25 @@ gap is a reason to skip the run.
 
 Filled from actual runs — suite size, pass/fail count, date, and the DB state it
 ran against. A row is only written here after the run it describes. The runs
-below cover the **server** work of Issue 25 (#78) and the **client** Actions
-Taken UI of Issue 26 (#79), including the Issue 26 follow-up fixes reviewed on
-2026-10-23; the E2E and dashboard rows stay open until their issues land
-(section 2 still marks those rows `Planned`).
+below cover the **server** work of Issue 25 (#78), the **client** Actions Taken
+UI of Issue 26 (#79) including its follow-up fixes reviewed on 2026-10-23, and the
+**server workflow/gate + client TicketWorkflow** suites of Issue 27 (#80); the E2E
+and dashboard rows stay open until their issues land (section 2 still marks those
+rows `Planned`).
 
 | Suite | Command | Result |
 |-------|---------|--------|
 | Lab 4 (Actions Taken + migration) | `cd server && pnpm test --run tests/lab-04` | **2026-10-10:** 2 files, **35 of 35 tests pass** (`actions-taken.api.test.ts` API-01..18 incl. the API-09 type check and the AUTH-05 401 block, `migration-regression.api.test.ts` MIG-01..05 + REG-02) against the seeded dev DB. |
-| Server (unit + API) | `cd server && pnpm test` | **2026-10-10:** 22 files, **321 of 321 tests pass**. The earlier 2026-10-09 run was 318/319; the single failure was `lab-03/users-admin.api.test.ts` **API-68**, whose assertion demanded the user table hold *exactly* `SEED_USERS.length` rows. A hand-created dev account (`fahsai.meow@toktickit.dev`) makes it 12 vs 11 — a brittle assertion rather than an environment defect, and one the repo's own test rule 1 forbids ("must pass on ANY seeded DB"). The assertion now requires *at least* that many rows plus the presence of every seeded email per the repo's own test rule 1, and the suite is green. |
-| Client (component + style) | `cd client && pnpm test` | **2026-10-23:** 19 files, **229 of 229 tests pass**. `ActionsTaken.test.tsx` is now 28 tests: the original 26 cover UI-01..16 + A11Y-01/04/05, and the two follow-up tests assert that a `403` on the Actions Taken list renders the visible `actions-error` block with a working Retry instead of the empty state (FR-22, ui-spec section 5.1/5.3). The requester read-only test also asserts the Notes header and cell carry `actions-cell-notes`. The three Lab 2/3 suites that mount a Ticket Detail (`RequesterTicketDetail`, `RequesterTicketComments`, `StaffTicketDetail`) stub `fetchTicketActions`. |
+| Lab 4 (workflow + gate) | `cd server && pnpm test --run tests/lab-04` | **2026-10-29:** 4 files, **57 of 57 tests pass** (`resolution-gate.unit.test.ts` 7, `ticket-workflow.api.test.ts` 15 — API-19..28, UNIT-04, plus the order-of-checks case, `actions-taken.api.test.ts` 28, `migration-regression.api.test.ts` 7) against the seeded dev DB. |
+| Lab 4 (client TicketWorkflow) | `cd client && pnpm test --run tests/lab-04/TicketWorkflow.test.tsx` | **2026-10-29:** 1 file, **5 of 5 tests pass** (UI-17..20 + the `409` conflict-refresh case). |
+| Server (unit + API) | `cd server && pnpm test` | **2026-10-29:** 24 files, **343 of 343 tests pass**. Issue 27 adds `resolution-gate.unit.test.ts` (7) and `ticket-workflow.api.test.ts` (15) on top of the 22 files / 321 tests recorded for Issue 25 on 2026-10-10. Run after `pnpm exec prisma generate`: the generated client is gitignored, and a stale copy makes the staff-detail suites answer `500` even though the database is migrated. The earlier 2026-10-09 run was 318/319; the single failure was `lab-03/users-admin.api.test.ts` **API-68**, whose assertion demanded the user table hold *exactly* `SEED_USERS.length` rows. A hand-created dev account (`fahsai.meow@toktickit.dev`) makes it 12 vs 11 — a brittle assertion rather than an environment defect, and one the repo's own test rule 1 forbids ("must pass on ANY seeded DB"). The assertion now requires *at least* that many rows plus the presence of every seeded email per the repo's own test rule 1, and the suite is green. |
+| Client (component + style) | `cd client && pnpm test` | **2026-10-29:** 20 files, **234 of 234 tests pass**. Issue 27 adds `TicketWorkflow.test.tsx` (5 tests: UI-17..20 + the `409` conflict-refresh case) on top of the 19 files / 229 tests recorded for the Issue 26 follow-up on 2026-10-23; `ActionsTaken.test.tsx` keeps its 28 tests and the requester `hidden`/Notes class assertions. The four Lab 2/3 suites that mount a Ticket Detail (`RequesterTicketDetail`, `RequesterTicketComments`, `StaffTicketDetail`) stub `fetchTicketActions`. |
 | E2E (Playwright, functional) | `pnpm test:e2e:lab4` | Not run (owned by Issue 29, #82) |
 | E2E (Playwright, visual + audit) | the three `*.visual.spec.ts` files | Not run |
 | E2E regression, Labs 2–3 | `pnpm test:e2e` | Not run |
-| Server + client regression, Labs 1–3 | `cd server && pnpm test` and `cd client && pnpm test` | Server 321/321 pass (see above); client 229/229 pass (see above) |
-| Build | `cd server && pnpm build` and `cd client && pnpm build` | **2026-10-23:** `cd client && pnpm build` passes (tsc + vite clean, 1877 modules); server build unchanged from Issue 25. |
-| Schema | `cd server && pnpm exec prisma validate && pnpm exec prisma migrate status` | **2026-10-10:** schema valid; "Database schema is up to date!" (4 migrations) |
+| Server + client regression, Labs 1–3 | `cd server && pnpm test` and `cd client && pnpm test` | Covered by the two "Server (unit + API)" and "Client (component + style)" rows above. |
+| Build | `cd server && pnpm build` and `cd client && pnpm build` | **2026-10-29:** both pass (`cd server` → `tsc` clean; `cd client` → `tsc && vite build` clean, 1878 modules). |
+| Schema | `cd server && pnpm exec prisma validate && pnpm exec prisma migrate status` | **2026-10-29:** schema valid; "Database schema is up to date!" (5 migrations, incl. `20261013193834_lab4_ticket_version`). |
 
 ## 7. Known Limitations / Deferred
 
@@ -619,6 +622,7 @@ updates this file together with `specification.md`, `api-spec.md`, and
 | v1.4 | 2026-10-14 | **Issue 26 (#79) client suites executed + review pass.** Recorded the client run: `cd client && pnpm test` **19 files, 227/227** (issue-26 `ActionsTaken.test.tsx` now 26 tests) and `pnpm build` clean. Applied the local fix-list review: merged `className` in the shared `Callout` so the conflict/failure callouts keep `callout`/`callout-error` (with class assertions added to UI-06/UI-07); gave `TextArea` an optional `warnAt` so its counter warns near and turns the error colour over the 2000-char limit (S4, and the action fields are no longer hard-capped so the existing over-limit validation is reachable); renamed the duplicated `.field-hint` in `App.css` to `.action-field-hint` so it no longer leaks into User Management (S5); made `relativeDayHint` count Asia/Bangkok calendar days instead of raw 24-hour spans (N6). Trimmed UI-10's expected result to the two action views (dashboard rendering stays with `STYLE-09`, Issue 29). Aligned the "count badge" wording in `ui-spec.md`/`specification.md` with the parenthesised count the tabs actually render (N7), and recorded the tablet-drawer bottom-sheet deviation in `ui-spec.md` section 6 and section 7 here, and aligned `RESP-16..18` with it (N8). Header, this log, and the closing note no longer claim the client suite has not landed. | Approved (student, 2026-10-14) |
 | v1.5 | 2026-10-23 | **Issue 26 follow-up after peer review.** Moved the `@layer layout` closing brace in `client/src/App.css` to the end of the file so the Actions Taken rules (and the pre-existing drawer/access-denied block) sit inside the documented layout layer instead of overriding every layer as unlayered CSS. Removed the `FORBIDDEN → idle` special case from both Actions Taken list loaders, so a `403` now renders the visible `actions-error` block with a Retry action, as FR-22 and ui-spec section 5.1/5.3 require, instead of claiming no actions were recorded; the list now loads in its own `useEffect` so Retry refetches only that list. Added `actions-cell-notes` to the requester Actions Taken table so the tablet Notes width matches the staff table. Added two regression tests (staff and requester `403` + Retry) and a class assertion. `cd client && pnpm test` **19 files, 229/229**, `pnpm build` clean (2026-10-23). Did **not** add a Performed By field to the create/edit drawer: ui-spec section 5.3 enumerates the create-mode fields and Performed By is a read-mode cell; “auto-filled on create” is the server-side FR-02/BR-03 rule. | Approved (student, 2026-10-23) |
 | v1.6 | 2026-10-24 | **Actions Taken list (Issue 26 polish).** Swapped the six-column table for one entry per action in the shared `ActionList` component (staff and requester) so the side column reads at 1440×900. Updated `specification.md` AD-16, `ui-spec.md` v1.2, `tests.md` rows UI-09/A11Y-03/A11Y-05/RESP-13..15, and `ActionsTaken.test.tsx` to list semantics. Client tests **19 files, 229/229**, build clean. | Approved (student, 2026-10-24) |
+| v1.7 | 2026-10-29 | **Issue 27 (#80) suites executed + review pass, rebased on the Issue 26 follow-up.** Flipped `UNIT-01/02/04`, `API-19..28`, `UI-17..20` to `Pass` and recorded **both** runs in section 6, which the transition from `Planned` had skipped: `cd server && pnpm test --run tests/lab-04` **4 files, 57/57** (`resolution-gate.unit.test.ts` 7, `ticket-workflow.api.test.ts` 15, `actions-taken.api.test.ts` 28, `migration-regression.api.test.ts` 7), whole server suite **24 files, 343/343**, client **20 files, 234/234** (`TicketWorkflow.test.tsx` 5 on top of the Issue 26 baseline of 19 files / 229), and both builds clean (seeded dev DB, 5 migrations). Applied the local fix-list review: added the order-of-checks assertion to the workflow suite so a nonexistent Ticket with an invalid enum is `404`, matching `api-spec.md` section 5.1 (S3 — the route now looks the Ticket up before validating the payload); removed the unintentional `version` field from the requester `GET /api/tickets/:id` response and kept it only on the staff detail via `StaffTicketDetail extends TicketDetail`, with `api-spec.md` section 6 updated to v1.3 (B2); dropped the dead `status-conflict-callout`/`status-error-callout` class names and the unreferenced `status-error` id (N4/N5); renamed the stale `updateStaffTicketStatus` test title to name `version` (N6). Traceability source bumped to `api-spec.md` v1.3. | Approved (student, 2026-10-29) |
 
 ---
 
@@ -629,6 +633,8 @@ in section 6 on 2026-10-10 (Lab 4 server suites 34/34, whole server suite 320/32
 server build clean, Prisma schema valid and migrated), followed by the Issue 26
 client Actions Taken suites on 2026-10-14 (client 227/227, client build clean),
 followed by the Issue 26 follow-up on 2026-10-23 (client 229/229, client build
-clean, Actions Taken list failures now visible with Retry). The rows still
-marked `Planned` remain unexecuted on purpose — E2E, dashboard, and workflow
-suites belong to issues that have not landed.
+clean, Actions Taken list failures now visible with Retry), and the Issue 27
+workflow/gate suites on 2026-10-29 (Lab 4 server 57/57, whole server suite
+343/343, client 234/234, both builds clean). The rows still marked `Planned`
+remain unexecuted on purpose — E2E and dashboard suites belong to issues that
+have not landed.

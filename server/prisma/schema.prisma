@@ -121,6 +121,7 @@ model Ticket {
   requestedPriority          RequestedPriority
   itPriority                 RequestedPriority?
   currentStatus              TicketStatus       @default(NEW)
+  version                    Int                @default(1)
   ticketDate                 DateTime           @default(now())
   requesterId                Int
   requesterUserId            Int?

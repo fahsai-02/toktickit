@@ -18,6 +18,7 @@ import {
   createActionTaken,
   updateActionTaken,
   ActionConflictError,
+  TicketConflictError,
   ApiError,
   type StaffTicketDetail as StaffTicketDetailType,
   type StaffUser,
@@ -184,6 +185,13 @@ export default function StaffTicketDetail() {
   const [priorityError, setPriorityError] = useState("");
   const [statusSaving, setStatusSaving] = useState(false);
   const [statusError, setStatusError] = useState("");
+  // Set when a status PUT returns 409: holds the server's latest copy so the
+  // user can refresh in place and retry with the correct `version` (AD-03).
+  const [statusConflict, setStatusConflict] = useState<{
+    currentStatus: TicketStatus;
+    resolutionSummary: string | null;
+    version: number;
+  } | null>(null);
   const [categorySaving, setCategorySaving] = useState(false);
   const [categoryError, setCategoryError] = useState("");
 
@@ -527,16 +535,40 @@ export default function StaffTicketDetail() {
     if (!ticket || statusSaving) return;
     setStatusSaving(true);
     setStatusError("");
+    setStatusConflict(null);
     try {
-      const { currentStatus } = await updateStaffTicketStatus(ticket.id, next);
-      setTicket({ ...ticket, currentStatus });
-    } catch (err) {
-      setStatusError(
-        err instanceof Error ? err.message : "Could not update status."
+      const { currentStatus, version } = await updateStaffTicketStatus(
+        ticket.id,
+        next,
+        ticket.version
       );
+      setTicket({ ...ticket, currentStatus, version });
+    } catch (err) {
+      if (err instanceof TicketConflictError) {
+        // Keep the screen as-is but tell the user it did not apply and offer
+        // the server's latest copy (ui-spec 5.5; never a silent revert).
+        setStatusConflict(err.latest);
+        setStatusError(err.message);
+      } else {
+        setStatusError(
+          err instanceof Error ? err.message : "Could not update status."
+        );
+      }
     } finally {
       setStatusSaving(false);
     }
+  };
+
+  const refreshStatusConflict = () => {
+    if (!ticket || !statusConflict) return;
+    setTicket({
+      ...ticket,
+      currentStatus: statusConflict.currentStatus,
+      resolutionSummary: statusConflict.resolutionSummary,
+      version: statusConflict.version,
+    });
+    setStatusConflict(null);
+    setStatusError("");
   };
 
   const handleStatusChange = (e: ChangeEvent<HTMLSelectElement>) => {
@@ -545,6 +577,10 @@ export default function StaffTicketDetail() {
     if (!value) return;
     if (requiresConfirmation(ticket.currentStatus, value)) {
       pendingTriggerRef.current = e.currentTarget;
+      // Clear any prior failure so the dialog and the callout never show the
+      // same message twice.
+      setStatusError("");
+      setStatusConflict(null);
       setPendingTransition(value);
       return;
     }
@@ -875,8 +911,6 @@ export default function StaffTicketDetail() {
                 value=""
                 onChange={(e) => handleStatusChange(e)}
                 disabled={statusSaving || statusOptions.length === 0}
-                error={statusError}
-                errorTestId="status-error"
                 data-testid="staff-status-select"
               />
               <SelectField
@@ -904,6 +938,31 @@ export default function StaffTicketDetail() {
                 data-testid="staff-it-priority-select"
               />
             </div>
+
+            {statusConflict && (
+              <Callout
+                variant="error"
+                data-testid="status-conflict-callout"
+              >
+                <p>{statusError}</p>
+                <Button
+                  variant="secondary"
+                  onClick={refreshStatusConflict}
+                  data-testid="status-conflict-refresh"
+                >
+                  Refresh
+                </Button>
+              </Callout>
+            )}
+
+            {statusError && !statusConflict && (
+              <Callout
+                variant="error"
+                data-testid="status-error"
+              >
+                {statusError}
+              </Callout>
+            )}
 
             {ticket.requesterIndicatedResolved && (
               <div
