@@ -4,8 +4,8 @@
 | :--- | :--- |
 | **Project** | Tok TickIT — IT Service Desk |
 | **Sprint** | Lab 4: Actions Taken, Ticket Workflow, and Role Dashboards |
-| **Version** | v1.1 (Approved 2026-10-04) |
-| **Date** | 2026-10-04 |
+| **Version** | v1.2 (Approved 2026-10-24) |
+| **Date** | 2026-10-24 |
 | **Sources** | Derived from the CPE 334 Lab 4 labsheet (course-provided handout), the Lab 3 approved increment, and the completed Lab 1–2 increments |
 | **Related docs** | `api-spec.md`, `ui-spec.md`, `tests.md` |
 | **Contract role** | This file is the single source of truth for Issues 25–30. Every FR, BR, and AC below is traceable from code and tests back to this document. |
@@ -763,9 +763,7 @@ response shape. `GET /api/health` continues to return exactly `{ "status": "ok",
   keys are not part of the contract, and rejecting them would make a client that
   sends harmless extra keys fail. This is what makes "assign" (FR-24) and
   "complete"/"cancel" (FR-25) resolve to Ticket-level controls.
-- **AD-16:** The Lab 4 Actions Taken area is a **table**, not a card list:
-  Date/Time, Description, Result, Performed By, Follow-Up, Notes. A Ticket can
-  accumulate many actions and the comparison across them is tabular.
+- **AD-16:** The Lab 4 Actions Taken area is a **compact list — one entry per action** — not a six-column table: Date/Time, Description, Result, Performed By, Follow-Up, Notes. The area shares the Ticket Detail side column with the conversation tabs, so a six-column table left each column too narrow to read; a list keeps all six fields legible at that width. Actions are compared down the fixed field order. Staff and Administrators get an Edit control per entry; Requesters get a read-only list.
 - **AD-17:** The dashboard screen paths are `/dashboard` for Requesters and
   `/staff/dashboard` for IT Staff and Administrators, following the existing
   `/my-tickets` and `/staff/queue` naming.
@@ -800,11 +798,12 @@ response shape. `GET /api/health` continues to return exactly `{ "status": "ok",
 | :--- | :--- | :--- | :--- |
 | v1.0 | 2026-10-04 | Initial Lab 4 specification. | Approved (student, 2026-10-04) |
 | v1.1 | 2026-10-04 | Section 2 no longer states a row count taken from one development database ("a full-screen table of 343 rows"); it describes the Requester's problem without a number that is only true of a particular snapshot. Section 7 seed requirements now name all three shapes handout section 5.3 requires — zero, **exactly one**, and multiple — and point at `MIG-05`, which had no "exactly one" case to assert. Section 8's `GET /api/dashboards/requester` row read `Session (REQUESTER scope)` with a `403` in its error list, which contradicted `api-spec.md` section 3.2 and `ui-spec.md` section 4; it is now any authenticated role, own data only, `401` and `500`, and the Authorization Matrix agrees. Added **AD-20** recording the meaningful choice handout section 9 asks for: `version` mandatory on `PUT /api/actions/:id`, optional on the status endpoint. Added a note under BR-13 that Lab 4 BR numbering is independent of Lab 3, so BR-13 (advisory indication) is not read as Lab 3 BR-13 (inactive-assignee, here BR-14). | Approved (student, 2026-10-04) |
+| v1.2 | 2026-10-24 | **AD-16:** Actions Taken is a compact list (one entry per action) rather than a six-column table because it shares the Ticket Detail side column with the conversation tabs; the same markup serves all viewports. Matches `ui-spec.md` v1.2 and the shared `ActionList` component. | Approved (student, 2026-10-24) |
 
 ---
 
 *End of specification. Changes require student approval and a version bump.*
 
-**Approval:** v1.1 approved by the student on 2026-10-04. This approves the
+**Approval:** v1.2 approved by the student on 2026-10-24. This approves the
 contract only — no FR, BR, AC, endpoint, screen, or checklist row is verified by
 it, because nothing has been built or run yet.

@@ -248,25 +248,25 @@ describe("Actions Taken — IT Staff Ticket Detail", () => {
   });
 
   // UI-09 — FR-03: the panel renders the six fields and Bangkok dates.
-  it("renders the actions table with six field headers and Bangkok dates", async () => {
+  it("renders the actions list with the six fields and Bangkok dates", async () => {
     mockStaffScreen([baseAction]);
     await openStaffActions();
 
     expect(screen.getByTestId("tab-actions")).toHaveTextContent("Actions Taken (1)");
-    const table = screen.getByTestId("actions-table");
-    for (const label of [
+    const list = screen.getByTestId("actions-list");
+    expect(
+      Array.from(list.querySelectorAll("dt")).map((dt) => dt.textContent)
+    ).toEqual([
       "Date/Time",
       "Description",
       "Result",
       "Performed By",
       "Follow-Up",
       "Notes",
-    ]) {
-      expect(within(table).getByRole("columnheader", { name: label })).toBeInTheDocument();
-    }
-    expect(within(table).getByText(/09:15 \(Asia\/Bangkok\)/)).toBeInTheDocument();
-    expect(within(table).getByText("Replaced the 65W charger")).toBeInTheDocument();
-    expect(within(table).getByText("See charger-after.png")).toBeInTheDocument();
+    ]);
+    expect(within(list).getByText(/09:15 \(Asia\/Bangkok\)/)).toBeInTheDocument();
+    expect(within(list).getByText("Replaced the 65W charger")).toBeInTheDocument();
+    expect(within(list).getByText("See charger-after.png")).toBeInTheDocument();
   });
 
   // FR-22 / ui-spec section 5.1, 5.3 — a forbidden list is visible feedback,
@@ -289,19 +289,19 @@ describe("Actions Taken — IT Staff Ticket Detail", () => {
     expect(screen.queryByTestId("actions-empty")).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByTestId("actions-retry-btn"));
-    await screen.findByTestId("actions-table");
+    await screen.findByTestId("actions-list");
     expect(actionsSpy).toHaveBeenCalledTimes(2);
   });
 
-  // UI-16 — FR-03: an empty area is a helpful block, not a headers-only table.
-  it("shows a helpful empty block instead of a headers-only table", async () => {
+  // UI-16 — FR-03: an empty area is a helpful block, not a headers-only list.
+  it("shows a helpful empty block instead of a headers-only list", async () => {
     mockStaffScreen([]);
     await openStaffActions();
 
     expect(screen.getByTestId("actions-empty")).toHaveTextContent(
       "No actions have been recorded yet."
     );
-    expect(screen.queryByTestId("actions-table")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("actions-list")).not.toBeInTheDocument();
     expect(screen.getByTestId("empty-record-action-btn")).toBeInTheDocument();
   });
 
@@ -650,15 +650,14 @@ describe("Actions Taken — IT Staff Ticket Detail", () => {
     await waitFor(() => expect(live).toHaveTextContent("Action saved."));
   });
 
-  // A11Y-05 — ui-spec section 7: table caption + per-row Edit naming.
-  it("captions the table and names each Edit button with its action date", async () => {
+  // A11Y-05 — ui-spec section 7: named list + per-entry Edit naming.
+  it("names the list and each Edit button with its action date", async () => {
     mockStaffScreen([baseAction]);
     await openStaffActions();
 
-    const table = screen.getByTestId("actions-table");
-    expect(table.querySelector("caption")).toHaveTextContent(
-      "Actions recorded for this ticket"
-    );
+    expect(
+      screen.getByRole("list", { name: "Actions recorded for this ticket" })
+    ).toBeInTheDocument();
     expect(screen.getByTestId("edit-action-42")).toHaveAttribute(
       "aria-label",
       expect.stringContaining("4 Oct")
@@ -716,27 +715,22 @@ describe("Actions Taken — Requester read-only view (UI-15)", () => {
     const section = await screen.findByTestId("requester-actions");
     expect(within(section).getByText(/Actions Taken \(1\)/)).toBeInTheDocument();
 
-    const table = within(section).getByTestId("actions-table");
-    for (const label of [
+    const list = within(section).getByTestId("actions-list");
+    expect(
+      Array.from(list.querySelectorAll("dt")).map((dt) => dt.textContent)
+    ).toEqual([
       "Date/Time",
       "Description",
       "Result",
       "Performed By",
       "Follow-Up",
       "Notes",
-    ]) {
-      expect(within(table).getByRole("columnheader", { name: label })).toBeInTheDocument();
-    }
-    expect(within(table).getByText(/09:15 \(Asia\/Bangkok\)/)).toBeInTheDocument();
-    // Tablet layout: the Notes column carries the same width class as staff.
-    expect(
-      within(table).getByRole("columnheader", { name: "Notes" })
-    ).toHaveClass("actions-cell-notes");
-    expect(table.querySelectorAll("td.actions-cell-notes")).toHaveLength(1);
+    ]);
+    expect(within(list).getByText(/09:15 \(Asia\/Bangkok\)/)).toBeInTheDocument();
 
     // No write affordances anywhere in the section.
     expect(within(section).queryByRole("button")).toBeNull();
-    expect(within(section).queryByTestId("actions-table")).not.toBeNull();
+    expect(within(section).queryByTestId("actions-list")).not.toBeNull();
   });
 
   // FR-22 / ui-spec section 5.1, 5.3 — a forbidden read is visible feedback,
@@ -761,7 +755,7 @@ describe("Actions Taken — Requester read-only view (UI-15)", () => {
     expect(within(section).queryByTestId("actions-empty")).not.toBeInTheDocument();
 
     fireEvent.click(within(error).getByTestId("actions-retry-btn"));
-    await within(section).findByTestId("actions-table");
+    await within(section).findByTestId("actions-list");
     expect(actionsSpy).toHaveBeenCalledTimes(2);
   });
 
@@ -773,7 +767,7 @@ describe("Actions Taken — Requester read-only view (UI-15)", () => {
     expect(within(section).getByTestId("actions-empty")).toHaveTextContent(
       "No actions have been recorded yet."
     );
-    expect(within(section).queryByTestId("actions-table")).not.toBeInTheDocument();
+    expect(within(section).queryByTestId("actions-list")).not.toBeInTheDocument();
     expect(within(section).queryByRole("button")).toBeNull();
   });
 });

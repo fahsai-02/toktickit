@@ -45,17 +45,17 @@ import Callout from "./components/Callout.js";
 import Drawer from "./components/Drawer.js";
 import Button from "./components/Button.js";
 import AttachmentSection from "./components/AttachmentSection.js";
+import ActionList from "./components/ActionList.js";
 import { useAuth } from "./AuthContext.js";
 import { transitionsFrom, requiresConfirmation, statusLabel } from "./lib/statusTransitions.js";
 import { PRIORITY_OPTIONS } from "./lib/options.js";
-import { formatDate, formatActionDateTime, relativeDayHint } from "./lib/format.js";
+import { formatDate } from "./lib/format.js";
 import {
   ArrowLeft,
   Lock,
   MessageSquare,
   CheckCircle2,
   UserCheck,
-  Pencil,
 } from "lucide-react";
 
 const TEXT_MAX_LENGTH = 2000;
@@ -119,32 +119,6 @@ function sortActions(list: ActionTaken[]): ActionTaken[] {
     if (byDate !== 0) return byDate;
     return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
   });
-}
-
-/** Date/Time cell: absolute Asia/Bangkok wall clock plus an optional hint. */
-function ActionDate({ iso }: { iso: string }) {
-  const hint = relativeDayHint(iso);
-  return (
-    <span className="actions-date">
-      {formatActionDateTime(iso)}
-      {hint && <span className="actions-date-hint"> ({hint})</span>}
-    </span>
-  );
-}
-
-/** Follow-Up cell (ui-spec 5.3): a Required badge plus the note, else an em dash. */
-function ActionFollowUp({ action }: { action: ActionTaken }) {
-  if (!action.followUpRequired) {
-    return <span className="text-muted">—</span>;
-  }
-  return (
-    <span className="actions-followup">
-      <Badge variant="priority-high">Required</Badge>
-      {action.followUpNote && (
-        <span className="actions-followup-note">{action.followUpNote}</span>
-      )}
-    </span>
-  );
 }
 
 export default function StaffTicketDetail() {
@@ -1125,121 +1099,7 @@ export default function StaffTicketDetail() {
               )}
 
               {actionsState === "idle" && actions.length > 0 && (
-                <>
-                  <table
-                    className="actions-table actions-table-desktop"
-                    data-testid="actions-table"
-                  >
-                    <caption className="sr-only">
-                      Actions recorded for this ticket
-                    </caption>
-                    <thead>
-                      <tr>
-                        <th scope="col">Date/Time</th>
-                        <th scope="col">Description</th>
-                        <th scope="col">Result</th>
-                        <th scope="col">Performed By</th>
-                        <th scope="col">Follow-Up</th>
-                        <th scope="col" className="actions-cell-notes">
-                          Notes
-                        </th>
-                        <th scope="col" className="actions-cell-edit">
-                          <span className="sr-only">Actions</span>
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {actions.map((action) => (
-                        <tr
-                          key={action.id}
-                          className="actions-row"
-                          data-testid={`action-${action.id}`}
-                        >
-                          <td>
-                            <ActionDate iso={action.actionDate} />
-                          </td>
-                          <td>{action.description}</td>
-                          <td>{action.result}</td>
-                          <td data-testid={`action-performed-by-${action.id}`}>
-                            {action.performedBy.name}
-                          </td>
-                          <td>
-                            <ActionFollowUp action={action} />
-                          </td>
-                          <td className="actions-cell-notes">
-                            {action.attachmentNotes ? (
-                              action.attachmentNotes
-                            ) : (
-                              <span className="text-muted">—</span>
-                            )}
-                          </td>
-                          <td className="actions-cell-edit">
-                            <Button
-                              variant="ghost"
-                              onClick={() => openEditForm(action)}
-                              aria-label={`Edit action from ${formatActionDateTime(
-                                action.actionDate
-                              )}`}
-                              data-testid={`edit-action-${action.id}`}
-                            >
-                              <Pencil size={14} aria-hidden="true" />
-                              Edit
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-
-                  <div
-                    className="actions-cards-mobile"
-                    data-testid="actions-cards"
-                  >
-                    {actions.map((action) => (
-                      <article
-                        key={action.id}
-                        className="action-card"
-                        data-testid={`action-card-${action.id}`}
-                      >
-                        <dl className="action-card-grid">
-                          <dt>Date/Time</dt>
-                          <dd>
-                            <ActionDate iso={action.actionDate} />
-                          </dd>
-                          <dt>Description</dt>
-                          <dd>{action.description}</dd>
-                          <dt>Result</dt>
-                          <dd>{action.result}</dd>
-                          <dt>Performed By</dt>
-                          <dd>{action.performedBy.name}</dd>
-                          <dt>Follow-Up</dt>
-                          <dd>
-                            <ActionFollowUp action={action} />
-                          </dd>
-                          <dt>Notes</dt>
-                          <dd>
-                            {action.attachmentNotes ? (
-                              action.attachmentNotes
-                            ) : (
-                              <span className="text-muted">—</span>
-                            )}
-                          </dd>
-                        </dl>
-                        <Button
-                          variant="ghost"
-                          onClick={() => openEditForm(action)}
-                          aria-label={`Edit action from ${formatActionDateTime(
-                            action.actionDate
-                          )}`}
-                          data-testid={`edit-action-card-${action.id}`}
-                        >
-                          <Pencil size={14} aria-hidden="true" />
-                          Edit
-                        </Button>
-                      </article>
-                    ))}
-                  </div>
-                </>
+                <ActionList actions={actions} onEdit={openEditForm} />
               )}
             </section>
           )}

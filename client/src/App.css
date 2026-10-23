@@ -985,11 +985,28 @@
     margin-bottom: 16px;
   }
 
+  /* The info grid wraps itself: each field claims at least 200px and grows to
+     fill its row, so the layout follows the width of whatever column encloses
+     it. A full-width desktop, the narrower staff split column and a 375px
+     phone all land on the right number of fields per row without a
+     width-specific breakpoint (issue 26 review). */
   .ticket-detail-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    display: flex;
+    flex-wrap: wrap;
     gap: 16px;
     margin-bottom: 16px;
+  }
+
+  .ticket-detail-grid > * {
+    /* 180px is the narrowest a field label plus its value stays readable, and
+       it keeps three fields per row in the desktop split column. `min-width: 0`
+       lets a field shrink to that basis: a native `<select>` reports a wider
+       min-content size and would otherwise force a wrap. */
+    flex: 1 1 180px;
+    min-width: 0;
+    /* Spacing between fields is the container `gap`, so the field's own
+       bottom margin would double it; reset it inside this grid only. */
+    margin-bottom: 0;
   }
 
   .ticket-detail-description {
@@ -1490,13 +1507,39 @@
 
   .detail-tabs {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 4px;
-    border-bottom: 2px solid var(--color-border);
     margin-bottom: 16px;
+    overflow-x: visible;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    position: relative;
+  }
+
+  .detail-tabs::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 2px;
+    background: var(--color-border);
+    z-index: 0;
+  }
+
+  .detail-tabs::-webkit-scrollbar {
+    display: none;
   }
 
   .detail-tab {
+    flex: 1 1 0;
+    min-width: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+    text-align: center;
     border: none;
     background: transparent;
     padding: 10px 14px;
@@ -1505,8 +1548,10 @@
     color: var(--color-text-muted);
     cursor: pointer;
     border-bottom: 2px solid transparent;
-    margin-bottom: -2px;
+    margin-bottom: 0;
     border-radius: var(--radius) var(--radius) 0 0;
+    position: relative;
+    z-index: 1;
   }
 
   .detail-tab:hover {
@@ -1515,7 +1560,10 @@
 
   .detail-tab--active {
     color: var(--color-primary);
-    border-bottom-color: var(--color-primary);
+    border-bottom: 2px solid var(--color-primary);
+    margin-bottom: 0;
+    position: relative;
+    z-index: 2;
     background: var(--color-pale);
   }
 
@@ -1611,10 +1659,6 @@
       font-size: 18px;
     }
 
-    .ticket-detail-grid {
-      grid-template-columns: 1fr;
-    }
-
     .ticket-detail-card {
       padding: 16px;
     }
@@ -1650,19 +1694,51 @@
       align-items: flex-start;
     }
 
-    /* Mobile: tabs stay one horizontal scrollable strip (ui-spec 5.5
-       "tabs as horizontal scrollable strip"); overflow stays contained so
-       the page itself never scrolls horizontally (section 6). */
+    /* Mobile: tabs fit full width without horizontal scroll */
     .detail-tabs {
       flex-wrap: nowrap;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
+      overflow-x: visible;
+      overflow-y: hidden;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      position: relative;
+    }
+
+    .detail-tabs::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 2px;
+      background: var(--color-border);
+      z-index: 0;
+    }
+
+    .detail-tabs::-webkit-scrollbar {
+      display: none;
     }
 
     .detail-tab {
-      flex: 0 0 auto;
+      flex: 1 1 0;
+      min-width: 0;
+      white-space: nowrap;
       text-align: center;
-      padding: 10px 8px;
+      padding: 10px 6px;
+      font-size: 12px;
+      border: none;
+      border-bottom: 2px solid transparent;
+      margin-bottom: 0;
+      position: relative;
+      z-index: 1;
+      border-radius: var(--radius) var(--radius) 0 0;
+    }
+
+    .detail-tab--active {
+      border-bottom: 2px solid var(--color-primary);
+      margin-bottom: 0;
+      position: relative;
+      z-index: 2;
     }
 
     .notes-section {
@@ -2116,36 +2192,16 @@
   margin-bottom: 12px;
 }
 
-.actions-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  overflow: hidden;
-}
-
-.actions-table th,
-.actions-table td {
-  text-align: left;
-  padding: 8px 10px;
-  border-bottom: 1px solid var(--color-border);
-  vertical-align: top;
-}
-
-.actions-table th {
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--color-text-muted);
-  background: var(--color-pale);
-  white-space: nowrap;
-}
-
-.actions-table tbody tr:last-child td {
-  border-bottom: none;
+/* One entry per action, stacked (ui-spec section 5.3, AD-16). The list fills
+   whatever column holds it, so the same markup reads correctly in the staff
+   side column and the full-width requester detail. */
+.action-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
 }
 
 .actions-date-hint {
@@ -2163,30 +2219,18 @@
   color: var(--color-text-muted);
 }
 
-.actions-cell-edit .btn {
-  height: 30px;
-  padding: 0 10px;
-  font-size: 12px;
-  gap: 4px;
-}
-
-.actions-cards-mobile {
-  display: none;
-}
-
 .action-card {
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
   padding: 12px;
-  margin-bottom: 12px;
   background: var(--color-surface);
 }
 
 .action-card-grid {
   display: grid;
-  grid-template-columns: minmax(84px, auto) 1fr;
+  grid-template-columns: minmax(96px, auto) 1fr;
   gap: 4px 12px;
-  margin: 0 0 8px;
+  margin: 0;
 }
 
 .action-card-grid dt {
@@ -2202,20 +2246,47 @@
   overflow-wrap: anywhere;
 }
 
+/* Edit sits bottom-right of the entry, aligned with the read-only text above
+   it rather than pushed to the far edge of the column (issue 26 review). */
+.action-card-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.action-card-actions .btn {
+  height: 32px;
+  padding: 0 12px;
+  font-size: 13px;
+  gap: 4px;
+}
+
 .action-field-hint {
   margin: 4px 0 0;
   font-size: 12px;
   color: var(--color-text-muted);
 }
 
+/* Date input and its "Set to now" shortcut share one row. A two-column grid
+   with the field-group's own bottom margin neutralised lines the two controls
+   up on the same bottom edge by construction, instead of compensating for that
+   margin afterwards (issue 26 review). The container carries the row spacing
+   the field group would normally provide. */
 .action-date-field {
-  display: flex;
-  align-items: flex-end;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
   gap: 8px;
+  margin-bottom: 16px;
 }
 
 .action-date-field .field-group {
-  flex: 1;
+  margin-bottom: 0;
+}
+
+.action-date-field .action-date-now {
+  height: 40px;
+  white-space: nowrap;
 }
 
 .action-form-actions {
@@ -2241,37 +2312,17 @@
   margin-bottom: 12px;
 }
 
-/* Tablet: the six-column table stays but wraps so the Notes column folds onto
-   a second line per row (ui-spec section 6). */
-@media (min-width: 769px) and (max-width: 991px) {
-  .actions-table {
-    table-layout: fixed;
-  }
-
-  .actions-table .actions-cell-notes {
-    width: 16%;
-  }
-
-  .actions-table th,
-  .actions-table td {
-    white-space: normal;
-    overflow-wrap: anywhere;
-  }
-}
-
-/* Mobile: the table becomes one card per action, keeping all six fields
-   (ui-spec section 6, AC-18). */
+/* Mobile: the same list, one column, with a tighter label column so the values
+   keep their reading width (ui-spec section 6, AC-18). */
 @media (max-width: 768px) {
-  .actions-table-desktop {
-    display: none;
+  .action-card-grid {
+    grid-template-columns: minmax(80px, auto) 1fr;
   }
 
-  .actions-cards-mobile {
-    display: block;
-  }
-
+  /* Mobile stacks the date input and its shortcut: one column, the button
+     full width under the input (issue 26 review). */
   .action-date-field {
-    flex-direction: column;
+    grid-template-columns: 1fr;
     align-items: stretch;
   }
 }
