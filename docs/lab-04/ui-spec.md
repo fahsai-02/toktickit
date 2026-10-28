@@ -4,8 +4,8 @@
 | :--- | :--- |
 | **Project** | Tok TickIT — IT Service Desk |
 | **Sprint** | Lab 4: Actions Taken, Ticket Workflow, and Role Dashboards |
-| **Version** | v1.1 (Approved 2026-10-04) |
-| **Date** | 2026-10-04 |
+| **Version** | v1.2 (Approved 2026-10-24) |
+| **Date** | 2026-10-24 |
 | **Contract source** | `specification.md` v1.0; request and response shapes in `api-spec.md` |
 | **Predecessor** | `docs/lab-03/ui-spec.md` — Lab 4 inherits its tokens, states, and accessibility rules unchanged |
 
@@ -33,7 +33,7 @@ addition to section 1 with a version bump, not a local choice in a component.
 ## 2. Typography and Spacing (inherited from Lab 2)
 
 Unchanged. Dashboard card numbers use the existing heading scale rather than a new
-size; the Actions Taken table uses the same cell typography as the Lab 3 queue
+size; the Actions Taken list uses the same body typography as the Lab 3 queue
 table so the two read as one system.
 
 ## 3. Control States (inherited from Lab 2)
@@ -264,22 +264,30 @@ Recent Actions" — that is data, not an error.
 ### 5.3 Actions Taken Area — IT Staff Ticket Detail
 
 Rendered as a fourth tab beside Public Comments, Internal Notes, and
-Attachments, with a count badge on the tab label.
+Attachments, with its count in parentheses on the tab label (the same convention
+the other three tabs already use).
 
 **Read mode (default)**
 
 ```
-| Date/Time        | Description          | Result            | Performed By | Follow-Up | Notes |
-|------------------|----------------------|-------------------|--------------|-----------|-------|
-| 4 Oct, 11:15     | Replaced the 65W     | Charge rate       | Michael      | Required  | See   |
-| (Asia/Bangkok)   | charger              | verified          | Brown        | ✔ note    | ...png|
-+------------------+----------------------+-------------------+--------------+-----------+-------|
++---------------------------------------------------------------+
+| Date/Time     4 Oct, 11:15 (Asia/Bangkok)                     |
+| Description   Replaced the 65W charger                        |
+| Result        Charge rate verified                            |
+| Performed By  Michael Brown                                   |
+| Follow-Up     Required + note                                 |
+| Notes         See ...png                                      |
+|                                                    [ Edit ]   |
++---------------------------------------------------------------+
 ```
 
-Column set is Date/Time, Description, Result, Performed By, Follow-Up, Notes
-(AD-16). A Ticket can accumulate many actions and they are compared across each
-other, so this is a table rather than a card list. On mobile it becomes stacked
-cards, one action per card, keeping all six fields.
+Entry fields are Date/Time, Description, Result, Performed By, Follow-Up, Notes
+(AD-16). A Ticket can accumulate many actions, so the area is a **compact list —
+one entry per action** — rather than a six-column table: it shares the Ticket
+Detail side column with the conversation tabs, where six columns would leave each
+one too narrow to read. The field order is fixed, so actions are still compared
+down the list. The same list renders at every viewport; only the label column
+narrows on mobile.
 
 - **Date/Time** renders `actionDate` in Asia/Bangkok with a relative hint
   ("4 days ago" alongside the absolute date when the gap is large).
@@ -332,8 +340,8 @@ Public Comments.
 - The Ticket's Owner and Status, where the Requester can see them, remain
   Ticket-level read-only fields and are visually separated from the actions list.
 - If the Ticket has no actions, the area shows the `ListState` empty block with
-  the text "No actions have been recorded yet" — never a zero-length table with
-  headers and no guidance.
+  the text "No actions have been recorded yet" — never an empty list of labels
+  with no guidance.
 
 ### 5.5 Workflow and Resolution Feedback
 
@@ -360,16 +368,24 @@ not change.
 
 | Viewport | Rules |
 | :--- | :--- |
-| Desktop ≥1200px | Five plain count cards in one row; `Needs your attention` full-width beneath, with the `Create Ticket` button beside it; two-column dashboard lists; Actions Taken as a six-column table; create/edit form in a right-side drawer; container max 1200px |
+| Desktop ≥1200px | Five plain count cards in one row; `Needs your attention` full-width beneath, with the `Create Ticket` button beside it; two-column dashboard lists; Actions Taken as a compact one-entry-per-action list; create/edit form in a right-side drawer; container max 1200px |
 | Small desktop 992–1199px | Three plain count cards per row, attention card still full-width; two-column dashboard lists |
-| Tablet 768–991px | Two plain count cards per row, attention card still full-width; dashboard lists stack full-width; Actions Taken table hides the Notes column into a second line per row; form drawer becomes a bottom sheet |
-| Mobile <768px | Everything stacks vertically; cards full-width; **Actions Taken table becomes one card per action** keeping all six fields, because a six-column table cannot be read at 375px; form becomes a full-screen overlay; tap targets ≥44px; **zero horizontal page scrolling** |
+| Tablet 768–991px | Two plain count cards per row, attention card still full-width; dashboard lists stack full-width; Actions Taken list stays one entry per action, full width; form drawer goes full-width from the right (see the deviation note below) |
+| Mobile <768px | Everything stacks vertically; cards full-width; **Actions Taken list keeps all six fields per entry** with a narrower label column, because a six-column table cannot be read at 375px; form becomes a full-screen overlay; tap targets ≥44px; **zero horizontal page scrolling** |
 | All sizes | No clipped labels, overlapping messages, hidden buttons, or truncated-unreadable text |
 
 **Tablet is 820px, not 768px** (AD-12). `client/src/App.css` switches to the
 mobile layout at `max-width: 768px`, so a capture at exactly 768px would render
 the mobile layout and produce a duplicate of the mobile evidence instead of
 tablet evidence. 820px sits inside the tablet band. Mobile is 375×844.
+
+**Known deviation — tablet form drawer (Issue 26).** The create/edit form uses
+the shared `Drawer` component inherited from Lab 3. At 768–991px it widens to
+`max-width: 100%` (a full-width panel anchored to the right) rather than the
+bottom sheet described above, because turning this one drawer into a bottom
+sheet would change the same component for every Lab 3 screen that reuses it.
+Mobile (`<768px`) is unaffected: the panel covers the full screen and reads as
+the intended full-screen overlay. Recorded rather than silently accepted.
 
 ## 7. Accessibility
 
@@ -394,10 +410,10 @@ Lab 4 additions:
 - **Status is never conveyed by color alone.** Every status and priority badge
   contains its text; the urgent card's emphasis is a border and a label as well
   as a color.
-- **The Actions Taken table has a `<caption>`** or an accessible name identifying
-  it as the Ticket's recorded actions, and each row's Edit button has an
-  accessible name that includes the action's date, so a list of six identical
-  "Edit" buttons is distinguishable.
+- **The Actions Taken list has an accessible name** identifying it as the
+  Ticket's recorded actions, and each entry's Edit button has an accessible name
+  that includes the action's date, so a list of six identical "Edit" buttons is
+  distinguishable.
 - **Live regions.** A dashboard's loading→loaded transition and a save's
   success or failure are announced through an `aria-live="polite"` region, so a
   non-sighted user learns that "Save action" succeeded without hunting for the
@@ -412,15 +428,15 @@ No new primitive is invented in Lab 4. Everything composes existing components:
 `SelectField` · `ReadOnlyField` · `Toggle` · `Badge` (status / priority / role) ·
 `Callout` (error / success / info / warning) · `Spinner` · `ListState` (loading /
 empty / no-results / error+retry) · `ConfirmDialog` · `Drawer` · `TicketTable` /
-`TicketCard` · `Navbar` (role-aware) · `AttachmentSection`.
+`TicketCard` · `Navbar` (role-aware) · `AttachmentSection` · `ActionList` (the
+Actions Taken entries, with an optional per-entry Edit control).
 
-Three Lab 4 constructs are new but stay **inline inside their owning screen**,
+Two Lab 4 constructs are new but stay **inline inside their owning screen**,
 following the Lab 3 decision not to over-extract single-screen pieces:
 
 | Construct | Lives in | Note |
 | :--- | :--- | :--- |
 | `MetricCard` | both dashboards | A link, a count, a label. Small enough that extracting it would add indirection without reuse beyond the two screens; both screens define it identically in `App.css` |
-| `ActionTable` | `StaffTicketDetail`, `TicketDetail` | Read mode differs (staff gets Edit, requester does not) and is not separable without prop-heavy branching |
 | `ActionForm` | `StaffTicketDetail` | Only staff have one; the requester view has no form at all |
 
 Dashboard grids, the by-priority strip, and the card row live in `App.css` in the
@@ -497,12 +513,12 @@ reviewer can re-run it instead of trusting the table.
 | 7 | Urgent list header offers **both** priority drill-down links, matching the count above it | UI-26, API-35 | Pending |
 | 8 | `userCounts` card rendered for Administrator and absent for IT Staff | API-32, UI-27, RESP-07..12 | Pending |
 | 9 | Every dashboard card is a link with an accessible name that includes its number | UI-24 | Pending |
-| 10 | Actions Taken table columns: Date/Time, Description, Result, Performed By, Follow-Up, Notes | UI-09, RESP-13..15 | Pending |
+| 10 | Actions Taken entries show Date/Time, Description, Result, Performed By, Follow-Up, Notes | UI-09, RESP-13..15 | Pending |
 | 11 | Dates and times render in Asia/Bangkok on both dashboards and both Actions Taken views | UI-10, STYLE-09 | Pending |
 | 12 | "Performed By" is read-only text — no picker, no editable affordance | UI-11 | Pending |
 | 13 | No assignee control and no per-action status control exist in either Actions Taken view (FR-24, FR-25) | UI-12, UI-13, API-14, API-15 | Pending |
 | 14 | Requester Actions Taken view has no Record, Edit, or Delete control | UI-15, API-03, API-04, RESP-19..21 | Pending |
-| 15 | Staff Actions Taken empty state is a helpful message, not a bare table with headers | UI-16, RESP-28..30 | Pending |
+| 15 | Staff Actions Taken empty state is a helpful message, not a bare list of labels | UI-16, RESP-28..30 | Pending |
 | 16 | Follow-Up toggle reveals and requires its note on the same render; toggling off does not destroy a typed note | UI-03 | Pending |
 | 17 | Character counters turn to the error color over 2000 characters | STYLE-07 | Pending |
 | 18 | Save button shows the busy state while in flight and cannot be double-clicked into a second request | UI-04, STYLE-05 | Pending |
@@ -512,10 +528,10 @@ reviewer can re-run it instead of trusting the table.
 | 22 | Confirmation dialog names the exact transition it is about to apply | UI-19, STATE-25..27 | Pending |
 | 23 | The status dropdown offers only permitted targets for the current status | UI-18, API-23 | Pending |
 | 24 | "Requester indicates resolved" badge is visually distinct from the status badge | STYLE-03, UI-20 | Pending |
-| 25 | Actions Taken table becomes one card per action at 375px, keeping all six fields | RESP-13..21 | Pending |
+| 25 | Actions Taken list keeps all six fields per entry at 375px with no horizontal scrolling | RESP-13..21 | Pending |
 | 26 | No horizontal scrolling at 375px on any new or changed screen | RESP-01..30 | Pending |
 | 27 | No clipped labels, overlapping callouts, or hidden buttons at any of the three viewports | RESP-01..30, STYLE-08 | Pending |
-| 28 | Keyboard: every card, table row action, and form control is reachable in reading order | UI-19, STATE-19..21 | Pending |
+| 28 | Keyboard: every card, action Edit button, and form control is reachable in reading order | UI-19, STATE-19..21 | Pending |
 | 29 | Visible focus ring on a card, a row Edit button, and each form field | STYLE-08, STATE-19..21 | Pending |
 | 30 | Focus returns to the trigger after a dialog closes | UI-19, STATE-25..27 | Pending |
 | 31 | Status and priority are legible without color (text present in every badge) | STYLE-02 | Pending |
@@ -550,11 +566,12 @@ of a Lab 4 test rig, not of the Lab 3 screens.
 | :--- | :--- | :--- | :--- |
 | v1.0 | 2026-10-04 | Initial Lab 4 UI contract. | Approved (student, 2026-10-04) |
 | v1.1 | 2026-10-04 | Section 4 card layout and section 6 responsive rules said three different things — a five-card wireframe, "Six count cards in one row", and "three per row from 1200px down". All three now describe one named grid: five plain cards 5/3/2/full-width per row, `Needs your attention` full-width at every size, with the `Create Ticket` button beside it. Added the `actions-taken/` parent folder handout section 12 requires, keeping the four per-screen sub-folders. Checklist row 34 now cites `REG-01` only, with a note on where its visual half is proven. | Approved (student, 2026-10-04) |
+| v1.2 | 2026-10-24 | **Actions Taken is a list, not a table.** Section 5.3's six-column read mode left each column too narrow in the staff Ticket Detail side column (about 540px at 1440), where the area shares the column with the conversation tabs. Read mode is now one compact entry per action showing the same six fields, and the same markup serves every viewport with only the label column narrowing on mobile. Updated section 5.3, 5.4, section 6 desktop/tablet/mobile rows, section 7's accessible-name rule, section 8 (the construct is now the shared `ActionList` component rather than the inline `ActionTable`), and checklist rows 10, 15, 25, 28. | Approved (student, 2026-10-24) |
 
 ---
 
 *End of UI specification. Changes require student approval and a version bump.*
 
-**Approval:** v1.1 approved by the student on 2026-10-04. This approves the
+**Approval:** v1.2 approved by the student on 2026-10-24. This approves the
 contract only — no FR, BR, AC, endpoint, screen, or checklist row is verified by
 it, because nothing has been built or run yet.

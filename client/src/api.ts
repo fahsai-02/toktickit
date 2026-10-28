@@ -805,3 +805,123 @@ export async function removeAttachment(
   return data;
 }
 
+// ── Actions Taken (Issue 26, api-spec section 2) ──────────────────────────
+// Append-only "what did we actually do" log on a Ticket. The server owns the
+// performer identity (performedById from the session) and the concurrency
+// guard (`version`), so the client only ever sends the editable fields.
+
+export interface ActionTaken {
+  id: number;
+  ticketId: number;
+  actionDate: string;
+  description: string;
+  result: string;
+  performedById: number;
+  performedBy: { id: number; name: string; role: UserRole };
+  followUpRequired: boolean;
+  followUpNote: string | null;
+  attachmentNotes: string | null;
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ActionTakenInput {
+  actionDate: string;
+  description: string;
+  result: string;
+  followUpRequired: boolean;
+  followUpNote: string | null;
+  attachmentNotes: string | null;
+}
+
+/** PUT body: the editable fields plus the `version` being replaced (FR-12). */
+export type ActionTakenUpdateInput = ActionTakenInput & { version: number };
+
+/**
+ * Thrown by `updateActionTaken` on `409`. Carries the server's current copy
+ * (`latest`) so the screen can offer a one-click refresh without a second
+ * request (api-spec section 2.3 conflict body, AD-03).
+ */
+export class ActionConflictError extends ApiError {
+  latest: ActionTaken;
+
+  constructor(message: string, latest: ActionTaken) {
+    super(message, "CONFLICT");
+    this.name = "ActionConflictError";
+    this.latest = latest;
+  }
+}
+
+export async function fetchTicketActions(
+  ticketId: number
+): Promise<ActionTaken[]> {
+  const base = API_URL || window.location.origin;
+  const url = new URL(`/api/tickets/${ticketId}/actions`, base);
+
+  const res = await fetch(url, { credentials: "include" });
+  if (!res.ok) {
+    await handleApiError(res, `Failed to fetch actions: ${res.status}`);
+  }
+  const { data } = (await res.json()) as { data: ActionTaken[] };
+  return data;
+}
+
+export async function createActionTaken(
+  ticketId: number,
+  input: ActionTakenInput
+): Promise<ActionTaken> {
+  const res = await fetch(`${API_URL}/api/tickets/${ticketId}/actions`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    await handleApiError(res, "Failed to record action");
+  }
+  const { data } = (await res.json()) as { data: ActionTaken };
+  return data;
+}
+
+export async function updateActionTaken(
+  actionId: number,
+  input: ActionTakenUpdateInput
+): Promise<ActionTaken> {
+  const res = await fetch(`${API_URL}/api/actions/${actionId}`, {
+    method: "PUT",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+
+  // The conflict body keeps the Lab 3 `error` shape and adds the current
+  // record under `data` (api-spec section 2.3). `handleApiError` only reads
+  // `error`, so a 409 is handled here to preserve `data` for the UI.
+  if (res.status === 409) {
+    let message =
+      "This Action Taken was updated by someone else. Refresh to load the latest version.";
+    let latest: ActionTaken | null = null;
+    try {
+      const body = (await res.json()) as {
+        error?: { message?: string };
+        data?: ActionTaken;
+      };
+      message = body.error?.message ?? message;
+      latest = body.data ?? null;
+    } catch {
+      // Malformed conflict body — fall through to a plain CONFLICT.
+    }
+    if (latest) {
+      throw new ActionConflictError(message, latest);
+    }
+    throw new ApiError(message, "CONFLICT");
+  }
+
+  if (!res.ok) {
+    await handleApiError(res, "Failed to update action");
+  }
+  const { data } = (await res.json()) as { data: ActionTaken };
+  return data;
+}
+

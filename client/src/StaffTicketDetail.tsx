@@ -14,6 +14,10 @@ import {
   updateStaffTicketStatus,
   updateStaffTicketCategory,
   saveResolutionSummary,
+  fetchTicketActions,
+  createActionTaken,
+  updateActionTaken,
+  ActionConflictError,
   ApiError,
   type StaffTicketDetail as StaffTicketDetailType,
   type StaffUser,
@@ -21,6 +25,8 @@ import {
   type PublicComment,
   type InternalNote,
   type Attachment,
+  type ActionTaken,
+  type ActionTakenInput,
   type TicketStatus,
   type User,
 } from "./api.js";
@@ -33,8 +39,13 @@ import ReadOnlyField from "./components/ReadOnlyField.js";
 import SelectField from "./components/SelectField.js";
 import ListState from "./components/ListState.js";
 import TextArea from "./components/TextArea.js";
+import TextField from "./components/TextField.js";
+import Toggle from "./components/Toggle.js";
+import Callout from "./components/Callout.js";
+import Drawer from "./components/Drawer.js";
 import Button from "./components/Button.js";
 import AttachmentSection from "./components/AttachmentSection.js";
+import ActionList from "./components/ActionList.js";
 import { useAuth } from "./AuthContext.js";
 import { transitionsFrom, requiresConfirmation, statusLabel } from "./lib/statusTransitions.js";
 import { PRIORITY_OPTIONS } from "./lib/options.js";
@@ -48,16 +59,66 @@ import {
 } from "lucide-react";
 
 const TEXT_MAX_LENGTH = 2000;
+// ui-spec section 5.3: the counter warns as the field nears its limit and turns
+// to the error colour once it exceeds it (the action fields are not hard-capped
+// with maxLength, so the over-limit state is reachable and validated on save).
+const TEXT_WARN_LENGTH = Math.floor(TEXT_MAX_LENGTH * 0.9);
+// BR-07 / AD-11: an Action Taken may be backdated freely but not dated into the
+// future beyond five minutes (compared against the server clock).
+const ACTION_DATE_FUTURE_MS = 5 * 60 * 1000;
 
 type DetailState = "loading" | "error" | "not-found" | "access-denied" | "idle";
 type CommsState = "loading" | "idle" | "error";
-type ActiveTab = "comments" | "notes" | "attachments";
+type ActiveTab = "comments" | "notes" | "attachments" | "actions";
+
+interface ActionFormErrors {
+  actionDate?: string;
+  description?: string;
+  result?: string;
+  followUpNote?: string;
+  attachmentNotes?: string;
+}
 
 function friendlyError(err: unknown, fallback: string): string {
   if (err instanceof ApiError) {
     return err.fields?.content ?? err.message;
   }
   return err instanceof Error ? err.message : fallback;
+}
+
+/** "YYYY-MM-DDTHH:mm" as shown in a `datetime-local` input, in Asia/Bangkok. */
+function toBangkokInputValue(date: Date): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Bangkok",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).format(date);
+  // en-CA renders "2026-10-04, 09:30" — swap the separator for the input format.
+  return parts.replace(", ", "T");
+}
+
+/**
+ * The input shows Bangkok wall-clock time, so anchor it to +07:00 when parsing
+ * rather than letting the browser's own zone reinterpret it (ui-spec 5.3).
+ */
+function fromBangkokInputValue(value: string): string | null {
+  if (!value) return null;
+  const parsed = new Date(`${value}:00+07:00`);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed.toISOString();
+}
+
+/** Ascending actionDate, tie-broken by createdAt (BR-06). */
+function sortActions(list: ActionTaken[]): ActionTaken[] {
+  return [...list].sort((a, b) => {
+    const byDate = new Date(a.actionDate).getTime() - new Date(b.actionDate).getTime();
+    if (byDate !== 0) return byDate;
+    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+  });
 }
 
 export default function StaffTicketDetail() {
@@ -84,6 +145,34 @@ export default function StaffTicketDetail() {
   const [creatingNote, setCreatingNote] = useState(false);
 
   const [tab, setTab] = useState<ActiveTab>("comments");
+
+  // Actions Taken (FR-01..FR-07, ui-spec 5.3). The list is read from the
+  // server; the create/edit form lives in a Drawer and always keeps the user's
+  // typing on failure (FR-21).
+  const [actions, setActions] = useState<ActionTaken[]>([]);
+  const [actionsState, setActionsState] = useState<CommsState>("loading");
+  const [actionError, setActionError] = useState("");
+  // Bumped by the error block's Retry button so the actions list reloads
+  // without refetching the Ticket and the other tabs (ui-spec 5.1/5.3).
+  const [actionsReloadKey, setActionsReloadKey] = useState(0);
+
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingAction, setEditingAction] = useState<ActionTaken | null>(null);
+  const [actionDateValue, setActionDateValue] = useState("");
+  const [actionDescription, setActionDescription] = useState("");
+  const [actionResult, setActionResult] = useState("");
+  const [actionFollowUp, setActionFollowUp] = useState(false);
+  const [actionFollowUpNote, setActionFollowUpNote] = useState("");
+  const [actionAttachmentNotes, setActionAttachmentNotes] = useState("");
+  const [formErrors, setFormErrors] = useState<ActionFormErrors>({});
+  const [formSaving, setFormSaving] = useState(false);
+  const [formError, setFormError] = useState("");
+  const [conflictLatest, setConflictLatest] = useState<ActionTaken | null>(null);
+  const [actionSaved, setActionSaved] = useState(false);
+  // Synchronous single-flight guard. `formSaving` state is not yet updated
+  // when a second click lands in the same tick, so a ref is what actually
+  // guarantees one network call (FR-20, BR-16, UI-04).
+  const actionSavingRef = useRef(false);
 
   // Per-operation busy/error state.
   const [claiming, setClaiming] = useState(false);
@@ -119,6 +208,11 @@ export default function StaffTicketDetail() {
     setState("loading");
     setErrorMessage("");
     setTab("comments");
+    setFormOpen(false);
+    setEditingAction(null);
+    setConflictLatest(null);
+    setFormError("");
+    setFormErrors({});
 
     fetchStaffTicket(id)
       .then((data) => {
@@ -196,6 +290,39 @@ export default function StaffTicketDetail() {
       cancelled = true;
     };
   }, [ticketId]);
+
+  // Actions Taken load independently so Retry can refetch only this list
+  // without reloading the Ticket and the other tabs (ui-spec 5.1, 5.3).
+  // A 403 is an expected failure and must render the visible error block
+  // (FR-22); it must never be mistaken for "no actions have been recorded".
+  useEffect(() => {
+    if (!ticketId) return;
+    const id = Number(ticketId);
+    if (!Number.isFinite(id) || id <= 0) return;
+
+    let cancelled = false;
+    setActions([]);
+    setActionsState("loading");
+    setActionError("");
+
+    fetchTicketActions(id)
+      .then((data) => {
+        if (cancelled) return;
+        setActions(sortActions(data));
+        setActionsState("idle");
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setActionError(
+          err instanceof Error ? err.message : "Could not load actions."
+        );
+        setActionsState("error");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [ticketId, actionsReloadKey]);
 
   // Focus trap + Escape for the status-transition confirm dialog (ui-spec
   // section 8 dialog rules; same pattern as AttachmentSection's remove dialog).
@@ -509,11 +636,167 @@ export default function StaffTicketDetail() {
     }
   };
 
+  // ── Actions Taken handlers (Issue 26) ────────────────────────────────────
+
+  const openCreateForm = () => {
+    setEditingAction(null);
+    setActionDateValue(toBangkokInputValue(new Date()));
+    setActionDescription("");
+    setActionResult("");
+    setActionFollowUp(false);
+    setActionFollowUpNote("");
+    setActionAttachmentNotes("");
+    setFormErrors({});
+    setFormError("");
+    setConflictLatest(null);
+    setActionSaved(false);
+    setFormOpen(true);
+  };
+
+  const openEditForm = (action: ActionTaken) => {
+    setEditingAction(action);
+    setActionDateValue(toBangkokInputValue(new Date(action.actionDate)));
+    setActionDescription(action.description);
+    setActionResult(action.result);
+    setActionFollowUp(action.followUpRequired);
+    setActionFollowUpNote(action.followUpNote ?? "");
+    setActionAttachmentNotes(action.attachmentNotes ?? "");
+    setFormErrors({});
+    setFormError("");
+    setConflictLatest(null);
+    setActionSaved(false);
+    setFormOpen(true);
+  };
+
+  const closeActionForm = () => {
+    setFormOpen(false);
+    setConflictLatest(null);
+  };
+
+  const setActionDateNow = () => {
+    setActionDateValue(toBangkokInputValue(new Date()));
+    setFormErrors((prev) => ({ ...prev, actionDate: undefined }));
+  };
+
+  // Client-side validation mirrors the server rules (FR-01, BR-04, BR-05,
+  // BR-07). A blank/invalid form must never reach the network (UI-02, UI-08).
+  const validateActionForm = (): ActionTakenInput | null => {
+    const errors: ActionFormErrors = {};
+    const description = actionDescription.trim();
+    const result = actionResult.trim();
+
+    if (description.length < 1 || description.length > TEXT_MAX_LENGTH) {
+      errors.description = `Description is required (1-${TEXT_MAX_LENGTH} characters).`;
+    }
+    if (result.length < 1 || result.length > TEXT_MAX_LENGTH) {
+      errors.result = `Result is required (1-${TEXT_MAX_LENGTH} characters).`;
+    }
+    if (actionFollowUp && actionFollowUpNote.trim().length === 0) {
+      errors.followUpNote =
+        "Follow-Up Note is required when follow-up is needed.";
+    } else if (actionFollowUpNote.length > TEXT_MAX_LENGTH) {
+      errors.followUpNote = `Follow-Up Note must be at most ${TEXT_MAX_LENGTH} characters.`;
+    }
+    if (actionAttachmentNotes.length > TEXT_MAX_LENGTH) {
+      errors.attachmentNotes = `Attachment Notes must be at most ${TEXT_MAX_LENGTH} characters.`;
+    }
+
+    const iso = fromBangkokInputValue(actionDateValue);
+    if (!iso) {
+      errors.actionDate = "Enter a valid date and time.";
+    } else if (new Date(iso).getTime() > Date.now() + ACTION_DATE_FUTURE_MS) {
+      errors.actionDate =
+        "Action Date/Time cannot be more than 5 minutes in the future.";
+    }
+
+    setFormErrors(errors);
+    if (Object.keys(errors).length > 0 || !iso) return null;
+
+    return {
+      actionDate: iso,
+      description,
+      result,
+      followUpRequired: actionFollowUp,
+      followUpNote: actionFollowUp ? actionFollowUpNote : null,
+      attachmentNotes:
+        actionAttachmentNotes.trim() === "" ? null : actionAttachmentNotes,
+    };
+  };
+
+  const handleSaveAction = async () => {
+    if (!ticket || actionSavingRef.current) return;
+    const input = validateActionForm();
+    if (!input) return;
+
+    actionSavingRef.current = true;
+    setFormSaving(true);
+    setFormError("");
+    setActionSaved(false);
+    setConflictLatest(null);
+    try {
+      if (editingAction) {
+        const updated = await updateActionTaken(editingAction.id, {
+          ...input,
+          version: editingAction.version,
+        });
+        setActions((prev) =>
+          sortActions(prev.map((a) => (a.id === updated.id ? updated : a)))
+        );
+        setEditingAction(updated);
+      } else {
+        const created = await createActionTaken(ticket.id, input);
+        setActions((prev) => sortActions([...prev, created]));
+        setActionsState("idle");
+      }
+      setActionSaved(true);
+      setFormOpen(false);
+    } catch (err) {
+      if (err instanceof ActionConflictError) {
+        // Keep the form and the user's typing; offer the server copy (UI-07).
+        setConflictLatest(err.latest);
+        setFormError(err.message);
+      } else if (err instanceof ApiError) {
+        setFormErrors({
+          description: err.fields?.description,
+          result: err.fields?.result,
+          followUpNote: err.fields?.followUpNote,
+          attachmentNotes: err.fields?.attachmentNotes,
+          actionDate: err.fields?.actionDate,
+        });
+        setFormError(err.message);
+      } else {
+        setFormError(
+          err instanceof Error ? err.message : "Could not save this action."
+        );
+      }
+    } finally {
+      setFormSaving(false);
+      actionSavingRef.current = false;
+    }
+  };
+
+  const refreshFromConflict = () => {
+    if (!conflictLatest) return;
+    const latest = conflictLatest;
+    setActions((prev) =>
+      sortActions(prev.map((a) => (a.id === latest.id ? latest : a)))
+    );
+    setEditingAction(latest);
+    setActionDateValue(toBangkokInputValue(new Date(latest.actionDate)));
+    setActionDescription(latest.description);
+    setActionResult(latest.result);
+    setActionFollowUp(latest.followUpRequired);
+    setActionFollowUpNote(latest.followUpNote ?? "");
+    setActionAttachmentNotes(latest.attachmentNotes ?? "");
+    setConflictLatest(null);
+    setFormError("");
+    setFormErrors({});
+  };
+
   const ownerOptions = staffUsers.map((u) => ({
     value: u.id,
     label: u.name,
   }));
-
   const currentOwner = ticket.owner;
   if (currentOwner && !staffUsers.some((u) => u.id === currentOwner.id)) {
     ownerOptions.push({ value: currentOwner.id, label: currentOwner.name });
@@ -740,7 +1023,86 @@ export default function StaffTicketDetail() {
             >
               Attachments ({attachmentCount})
             </button>
+            <button
+              role="tab"
+              aria-selected={tab === "actions"}
+              className={`detail-tab ${tab === "actions" ? "detail-tab--active" : ""}`}
+              onClick={() => setTab("actions")}
+              data-testid="tab-actions"
+            >
+              Actions Taken ({actions.length})
+            </button>
           </div>
+
+          {tab === "actions" && (
+            <section
+              className="actions-section"
+              data-testid="panel-actions"
+              role="tabpanel"
+              aria-label="Actions Taken"
+            >
+              <div className="actions-toolbar">
+                <Button
+                  variant="primary"
+                  onClick={openCreateForm}
+                  data-testid="record-action-btn"
+                >
+                  Record Action
+                </Button>
+                <span
+                  className="sr-only"
+                  role="status"
+                  aria-live="polite"
+                  data-testid="actions-live"
+                >
+                  {actionSaved ? "Action saved." : ""}
+                </span>
+              </div>
+
+              {actionsState === "loading" && (
+                <ListState
+                  testId="actions-loading"
+                  loading
+                  message="Loading actions..."
+                />
+              )}
+
+              {actionsState === "error" && (
+                <ListState
+                  testId="actions-error"
+                  variant="error"
+                  message={<p className="error-banner">{actionError}</p>}
+                >
+                  <Button
+                    variant="secondary"
+                    onClick={() => setActionsReloadKey((key) => key + 1)}
+                    data-testid="actions-retry-btn"
+                  >
+                    Retry
+                  </Button>
+                </ListState>
+              )}
+
+              {actionsState === "idle" && actions.length === 0 && (
+                <ListState
+                  testId="actions-empty"
+                  message="No actions have been recorded yet."
+                >
+                  <Button
+                    variant="secondary"
+                    onClick={openCreateForm}
+                    data-testid="empty-record-action-btn"
+                  >
+                    Record an action
+                  </Button>
+                </ListState>
+              )}
+
+              {actionsState === "idle" && actions.length > 0 && (
+                <ActionList actions={actions} onEdit={openEditForm} />
+              )}
+            </section>
+          )}
 
           {tab === "comments" && (
             <section
@@ -926,6 +1288,197 @@ export default function StaffTicketDetail() {
           )}
         </div>
       </div>
+
+      {/* ── Actions Taken create/edit form (ui-spec 5.3) ────────────────── */}
+      <Drawer
+        open={formOpen}
+        title={editingAction ? "Edit Action Taken" : "Record an Action"}
+        onClose={closeActionForm}
+        testId="action-form-drawer"
+      >
+        {conflictLatest && (
+          <Callout
+            variant="error"
+            className="action-conflict-callout"
+            data-testid="action-conflict-callout"
+          >
+            <p>This action was updated by someone else.</p>
+            <Button
+              variant="secondary"
+              onClick={refreshFromConflict}
+              data-testid="action-conflict-refresh"
+            >
+              Refresh
+            </Button>
+          </Callout>
+        )}
+
+        {formError && !conflictLatest && (
+          <Callout
+            variant="error"
+            className="action-form-error"
+            data-testid="action-form-error"
+          >
+            {formError}
+          </Callout>
+        )}
+
+        <form
+          className="action-form"
+          noValidate
+          onSubmit={(e) => {
+            e.preventDefault();
+            void handleSaveAction();
+          }}
+        >
+          <div className="action-date-field">
+            <TextField
+              id="action-date-input"
+              type="datetime-local"
+              label="Action Date/Time"
+              value={actionDateValue}
+              onChange={(e) => {
+                setActionDateValue(e.target.value);
+                setFormErrors((prev) => ({ ...prev, actionDate: undefined }));
+              }}
+              error={formErrors.actionDate}
+              errorTestId="action-date-error"
+              data-testid="action-date-input"
+            />
+            <Button
+              variant="ghost"
+              className="action-date-now"
+              onClick={setActionDateNow}
+              data-testid="action-date-now"
+            >
+              Set to now
+            </Button>
+          </div>
+
+          <TextArea
+            id="action-description"
+            label="Description"
+            required
+            rows={3}
+            counter={{
+              value: actionDescription.length,
+              max: TEXT_MAX_LENGTH,
+              warnAt: TEXT_WARN_LENGTH,
+            }}
+            value={actionDescription}
+            onChange={(e) => {
+              setActionDescription(e.target.value);
+              setFormErrors((prev) => ({ ...prev, description: undefined }));
+            }}
+            error={formErrors.description}
+            errorTestId="action-description-error"
+            data-testid="action-description-input"
+          />
+
+          <TextArea
+            id="action-result"
+            label="Result"
+            required
+            rows={3}
+            counter={{
+              value: actionResult.length,
+              max: TEXT_MAX_LENGTH,
+              warnAt: TEXT_WARN_LENGTH,
+            }}
+            value={actionResult}
+            onChange={(e) => {
+              setActionResult(e.target.value);
+              setFormErrors((prev) => ({ ...prev, result: undefined }));
+            }}
+            error={formErrors.result}
+            errorTestId="action-result-error"
+            data-testid="action-result-input"
+          />
+
+          <Toggle
+            id="action-followup"
+            label="Follow-up required — a note is needed when this is on."
+            checked={actionFollowUp}
+            onChange={(checked) => {
+              setActionFollowUp(checked);
+              if (!checked) {
+                setFormErrors((prev) => ({
+                  ...prev,
+                  followUpNote: undefined,
+                }));
+              }
+            }}
+            testId="action-followup-toggle"
+          />
+
+          {actionFollowUp && (
+            <TextArea
+              id="action-followup-note"
+              label="Follow-Up Note"
+              required
+              rows={2}
+              counter={{
+                value: actionFollowUpNote.length,
+                max: TEXT_MAX_LENGTH,
+                warnAt: TEXT_WARN_LENGTH,
+              }}
+              value={actionFollowUpNote}
+              onChange={(e) => {
+                setActionFollowUpNote(e.target.value);
+                setFormErrors((prev) => ({ ...prev, followUpNote: undefined }));
+              }}
+              error={formErrors.followUpNote}
+              errorTestId="action-followup-note-error"
+              data-testid="action-followup-note-input"
+            />
+          )}
+
+          <TextArea
+            id="action-attachment-notes"
+            label="Attachment Notes"
+            rows={2}
+            counter={{
+              value: actionAttachmentNotes.length,
+              max: TEXT_MAX_LENGTH,
+              warnAt: TEXT_WARN_LENGTH,
+            }}
+            value={actionAttachmentNotes}
+            onChange={(e) => {
+              setActionAttachmentNotes(e.target.value);
+              setFormErrors((prev) => ({
+                ...prev,
+                attachmentNotes: undefined,
+              }));
+            }}
+            error={formErrors.attachmentNotes}
+            errorTestId="action-attachment-notes-error"
+            data-testid="action-attachment-notes-input"
+          />
+          <p className="action-field-hint" id="action-attachment-notes-hint">
+            Which attachment or screenshot should we look at? This is a note only
+            — it does not attach a file.
+          </p>
+
+          <div className="action-form-actions">
+            <Button
+              variant="ghost"
+              onClick={closeActionForm}
+              disabled={formSaving}
+              data-testid="cancel-action-btn"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              loading={formSaving}
+              data-testid="save-action-btn"
+            >
+              Save Action
+            </Button>
+          </div>
+        </form>
+      </Drawer>
 
       {/* ── BR-12 confirmation dialog (ui-spec section 8 dialog rules) ──── */}
       {pendingTransition && (
