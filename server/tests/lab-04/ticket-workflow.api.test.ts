@@ -12,10 +12,10 @@ import {
 import { authedAgent, seedUserFor } from "../helpers/auth.js";
 
 // Lab 4 — Ticket workflow: version check + resolution gate
-// (docs/lab-04/api-spec.md section 5.1; docs/lab-04/tests.md rows UNIT-04 and
-// API-19..API-28). Setup creates throw-away Tickets so the seeded Lab 4 block
-// that migration-regression.api.test.ts asserts over is never mutated;
-// everything created here is deleted in afterAll.
+// (docs/lab-04/api-spec.md section 5.1; docs/lab-04/tests.md rows UNIT-04,
+// API-19..API-28, and AUTH-01). Setup creates throw-away Tickets so the seeded
+// Lab 4 block that migration-regression.api.test.ts asserts over is never
+// mutated; everything created here is deleted in afterAll.
 
 const FRESH_TICKET_PREFIX = `TKT-L4-WF-${process.pid}-${Date.now()}`;
 
@@ -353,6 +353,38 @@ describe("Lab 4: ticket workflow & resolution gate (api-spec 5.1)", () => {
 
       const after = await statusOf(t.id);
       expect(after.currentStatus).toBe("IN_PROGRESS");
+    });
+  });
+
+  describe("Inactive-assignee rejection stays at Lab 3's 404 (BR-14, AC-13)", () => {
+    it("AUTH-01: assign refuses an inactive IT Staff owner and an inactive Requester identically", async () => {
+      const ticket = await createTicket({ status: "OPEN" });
+      const inactiveStaff = await db.user.findFirstOrThrow({
+        where: { role: "IT_STAFF", isActive: false },
+        select: { id: true },
+      });
+      const inactiveRequester = await db.user.findFirstOrThrow({
+        where: { role: "REQUESTER", isActive: false },
+        select: { id: true },
+      });
+
+      for (const target of [inactiveStaff, inactiveRequester]) {
+        const res = await staffAgent
+          .put(`/api/staff/tickets/${ticket.id}/assign`)
+          .send({ ownerId: target.id });
+        expect(res.status).toBe(404);
+        expect(res.body.error.code).toBe("NOT_FOUND");
+        expect(res.body.error.message).toBe(
+          "Owner must be an active IT Staff or Administrator user"
+        );
+      }
+
+      // Neither rejected write changed the Ticket's owner.
+      const after = await db.ticket.findUniqueOrThrow({
+        where: { id: ticket.id },
+        select: { ownerId: true },
+      });
+      expect(after.ownerId).toBe(staffUserId);
     });
   });
 

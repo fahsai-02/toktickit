@@ -4,9 +4,9 @@
 | :--- | :--- |
 | **Project** | Tok TickIT — IT Service Desk |
 | **Sprint** | Lab 4: Actions Taken, Ticket Workflow, and Role Dashboards |
-| **Version** | v1.7 — 2026-10-29 (Issue 27 server workflow/gate + client TicketWorkflow suites executed on top of the Issue 26 follow-up; see section 6) |
+| **Version** | v1.8 — 2026-10-29 (Issue 27 adds the AUTH-01 inactive-assignee regression on top of the workflow/gate suites; see section 6) |
 | **Date** | 2026-10-29 |
-| **Traceability source** | `specification.md` v1.2 AC-01..18 · `api-spec.md` v1.3 · `ui-spec.md` v1.2 |
+| **Traceability source** | `specification.md` v1.2 AC-01..18 · `api-spec.md` v1.4 · `ui-spec.md` v1.2 |
 
 ---
 
@@ -213,11 +213,14 @@ Handout section 10 lists authorization as its own category, and grading Part 6 a
 for "role restrictions" and "inactive-assignee rejection" as named evidence. Both
 are therefore collected here instead of being inferred from scattered `403` rows.
 `API-03`, `API-04`, `API-05`, `API-40`, and `API-41` moved here from the API
-section with their numbers unchanged.
+section with their numbers unchanged. `AUTH-01` is executed inside
+`ticket-workflow.api.test.ts`, because the Ticket Workflow issue owns the
+inactive-assignee regression; the remaining AUTH rows land in
+`authorization.api.test.ts` with Issue 29.
 
 | Test ID | Requirement | What It Tests | Expected Result | Automated Test File | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| AUTH-01 | BR-14, AC-13 | `PUT /api/staff/tickets/:id/assign` refuses an **inactive** owner | `404` carrying exactly "Owner must be an active IT Staff or Administrator user"; `ownerId` unchanged; an inactive `REQUESTER` is refused identically. Asserted against a user row read from `db`, not a literal id | `authorization.api.test.ts` | Planned |
+| AUTH-01 | BR-14, AC-13 | `PUT /api/staff/tickets/:id/assign` refuses an **inactive** owner | `404` carrying exactly "Owner must be an active IT Staff or Administrator user"; `ownerId` unchanged; an inactive `REQUESTER` is refused identically. Asserted against a user row read from `db`, not a literal id | `ticket-workflow.api.test.ts` | Pass |
 | AUTH-02 | BR-08, BR-09, AC-05 | Role matrix over every new write endpoint | `POST /api/tickets/:id/actions`, `PUT /api/actions/:id`, and `PUT /api/staff/tickets/:id/status` each return `403` for a `REQUESTER` (their own Ticket included) and succeed for `IT_STAFF` and `ADMINISTRATOR` — all three roles exercised per endpoint, not sampled | `authorization.api.test.ts` | Planned |
 | AUTH-03 | BR-08, AC-05 | Requester reading a **foreign** Ticket's actions | `403`, and the error body carries no row from that Ticket | `authorization.api.test.ts` | Planned |
 | AUTH-04 | BR-19, AC-10 | Requester dashboard scope cannot be widened by the client | `?userId=<other user>` and `?requesterId=<other user>` are ignored: the response is deep-equal to the unparameterized call, and another user's Ticket count is unchanged | `authorization.api.test.ts` | Planned |
@@ -535,9 +538,9 @@ rows `Planned`).
 | Suite | Command | Result |
 |-------|---------|--------|
 | Lab 4 (Actions Taken + migration) | `cd server && pnpm test --run tests/lab-04` | **2026-10-10:** 2 files, **35 of 35 tests pass** (`actions-taken.api.test.ts` API-01..18 incl. the API-09 type check and the AUTH-05 401 block, `migration-regression.api.test.ts` MIG-01..05 + REG-02) against the seeded dev DB. |
-| Lab 4 (workflow + gate) | `cd server && pnpm test --run tests/lab-04` | **2026-10-29:** 4 files, **57 of 57 tests pass** (`resolution-gate.unit.test.ts` 7, `ticket-workflow.api.test.ts` 15 — API-19..28, UNIT-04, plus the order-of-checks case, `actions-taken.api.test.ts` 28, `migration-regression.api.test.ts` 7) against the seeded dev DB. |
+| Lab 4 (workflow + gate) | `cd server && pnpm test --run tests/lab-04` | **2026-10-29:** 4 files, **58 of 58 tests pass** (`resolution-gate.unit.test.ts` 7, `ticket-workflow.api.test.ts` 16 — API-19..28, UNIT-04, AUTH-01, plus the order-of-checks case, `actions-taken.api.test.ts` 28, `migration-regression.api.test.ts` 7) against the seeded dev DB. |
 | Lab 4 (client TicketWorkflow) | `cd client && pnpm test --run tests/lab-04/TicketWorkflow.test.tsx` | **2026-10-29:** 1 file, **5 of 5 tests pass** (UI-17..20 + the `409` conflict-refresh case). |
-| Server (unit + API) | `cd server && pnpm test` | **2026-10-29:** 24 files, **343 of 343 tests pass**. Issue 27 adds `resolution-gate.unit.test.ts` (7) and `ticket-workflow.api.test.ts` (15) on top of the 22 files / 321 tests recorded for Issue 25 on 2026-10-10. Run after `pnpm exec prisma generate`: the generated client is gitignored, and a stale copy makes the staff-detail suites answer `500` even though the database is migrated. The earlier 2026-10-09 run was 318/319; the single failure was `lab-03/users-admin.api.test.ts` **API-68**, whose assertion demanded the user table hold *exactly* `SEED_USERS.length` rows. A hand-created dev account (`fahsai.meow@toktickit.dev`) makes it 12 vs 11 — a brittle assertion rather than an environment defect, and one the repo's own test rule 1 forbids ("must pass on ANY seeded DB"). The assertion now requires *at least* that many rows plus the presence of every seeded email per the repo's own test rule 1, and the suite is green. |
+| Server (unit + API) | `cd server && pnpm test` | **2026-10-29:** 24 files, **344 of 344 tests pass**. Issue 27 adds `resolution-gate.unit.test.ts` (7) and `ticket-workflow.api.test.ts` (16, including AUTH-01) on top of the 22 files / 321 tests recorded for Issue 25 on 2026-10-10. Run after `pnpm exec prisma generate`: the generated client is gitignored, and a stale copy makes the staff-detail suites answer `500` even though the database is migrated. The earlier 2026-10-09 run was 318/319; the single failure was `lab-03/users-admin.api.test.ts` **API-68**, whose assertion demanded the user table hold *exactly* `SEED_USERS.length` rows. A hand-created dev account (`fahsai.meow@toktickit.dev`) makes it 12 vs 11 — a brittle assertion rather than an environment defect, and one the repo's own test rule 1 forbids ("must pass on ANY seeded DB"). The assertion now requires *at least* that many rows plus the presence of every seeded email per the repo's own test rule 1, and the suite is green. |
 | Client (component + style) | `cd client && pnpm test` | **2026-10-29:** 20 files, **234 of 234 tests pass**. Issue 27 adds `TicketWorkflow.test.tsx` (5 tests: UI-17..20 + the `409` conflict-refresh case) on top of the 19 files / 229 tests recorded for the Issue 26 follow-up on 2026-10-23; `ActionsTaken.test.tsx` keeps its 28 tests and the requester `hidden`/Notes class assertions. The four Lab 2/3 suites that mount a Ticket Detail (`RequesterTicketDetail`, `RequesterTicketComments`, `StaffTicketDetail`) stub `fetchTicketActions`. |
 | E2E (Playwright, functional) | `pnpm test:e2e:lab4` | Not run (owned by Issue 29, #82) |
 | E2E (Playwright, visual + audit) | the three `*.visual.spec.ts` files | Not run |
@@ -623,6 +626,7 @@ updates this file together with `specification.md`, `api-spec.md`, and
 | v1.5 | 2026-10-23 | **Issue 26 follow-up after peer review.** Moved the `@layer layout` closing brace in `client/src/App.css` to the end of the file so the Actions Taken rules (and the pre-existing drawer/access-denied block) sit inside the documented layout layer instead of overriding every layer as unlayered CSS. Removed the `FORBIDDEN → idle` special case from both Actions Taken list loaders, so a `403` now renders the visible `actions-error` block with a Retry action, as FR-22 and ui-spec section 5.1/5.3 require, instead of claiming no actions were recorded; the list now loads in its own `useEffect` so Retry refetches only that list. Added `actions-cell-notes` to the requester Actions Taken table so the tablet Notes width matches the staff table. Added two regression tests (staff and requester `403` + Retry) and a class assertion. `cd client && pnpm test` **19 files, 229/229**, `pnpm build` clean (2026-10-23). Did **not** add a Performed By field to the create/edit drawer: ui-spec section 5.3 enumerates the create-mode fields and Performed By is a read-mode cell; “auto-filled on create” is the server-side FR-02/BR-03 rule. | Approved (student, 2026-10-23) |
 | v1.6 | 2026-10-24 | **Actions Taken list (Issue 26 polish).** Swapped the six-column table for one entry per action in the shared `ActionList` component (staff and requester) so the side column reads at 1440×900. Updated `specification.md` AD-16, `ui-spec.md` v1.2, `tests.md` rows UI-09/A11Y-03/A11Y-05/RESP-13..15, and `ActionsTaken.test.tsx` to list semantics. Client tests **19 files, 229/229**, build clean. | Approved (student, 2026-10-24) |
 | v1.7 | 2026-10-29 | **Issue 27 (#80) suites executed + review pass, rebased on the Issue 26 follow-up.** Flipped `UNIT-01/02/04`, `API-19..28`, `UI-17..20` to `Pass` and recorded **both** runs in section 6, which the transition from `Planned` had skipped: `cd server && pnpm test --run tests/lab-04` **4 files, 57/57** (`resolution-gate.unit.test.ts` 7, `ticket-workflow.api.test.ts` 15, `actions-taken.api.test.ts` 28, `migration-regression.api.test.ts` 7), whole server suite **24 files, 343/343**, client **20 files, 234/234** (`TicketWorkflow.test.tsx` 5 on top of the Issue 26 baseline of 19 files / 229), and both builds clean (seeded dev DB, 5 migrations). Applied the local fix-list review: added the order-of-checks assertion to the workflow suite so a nonexistent Ticket with an invalid enum is `404`, matching `api-spec.md` section 5.1 (S3 — the route now looks the Ticket up before validating the payload); removed the unintentional `version` field from the requester `GET /api/tickets/:id` response and kept it only on the staff detail via `StaffTicketDetail extends TicketDetail`, with `api-spec.md` section 6 updated to v1.3 (B2); dropped the dead `status-conflict-callout`/`status-error-callout` class names and the unreferenced `status-error` id (N4/N5); renamed the stale `updateStaffTicketStatus` test title to name `version` (N6). Traceability source bumped to `api-spec.md` v1.3. | Approved (student, 2026-10-29) |
+| v1.8 | 2026-10-29 | **Issue 27 (#80) AUTH-01 regression.** Added the inactive-assignee rejection test to `ticket-workflow.api.test.ts` (API suite now 16), asserting the Lab 3 `404` "Owner must be an active IT Staff or Administrator user" for an inactive IT Staff owner **and** an inactive Requester, with `ownerId` unchanged. Flipped `AUTH-01` from `Planned` to `Pass`, re-pointed its file column to the workflow suite, and recorded the run: Lab 4 files **58/58**, whole server suite **344/344**, client **234/234**, both builds clean. Clarified with `api-spec.md` v1.4 that `Ticket.version` is enforced on the status endpoint (FR-12), not on `claim`/`assign`/`priority`, which keep their Lab 3 shape. | Approved (student, 2026-10-29) |
 
 ---
 
@@ -634,7 +638,7 @@ server build clean, Prisma schema valid and migrated), followed by the Issue 26
 client Actions Taken suites on 2026-10-14 (client 227/227, client build clean),
 followed by the Issue 26 follow-up on 2026-10-23 (client 229/229, client build
 clean, Actions Taken list failures now visible with Retry), and the Issue 27
-workflow/gate suites on 2026-10-29 (Lab 4 server 57/57, whole server suite
-343/343, client 234/234, both builds clean). The rows still marked `Planned`
+workflow/gate suites on 2026-10-29 (Lab 4 server 58/58, whole server suite
+344/344, client 234/234, both builds clean). The rows still marked `Planned`
 remain unexecuted on purpose — E2E and dashboard suites belong to issues that
 have not landed.
