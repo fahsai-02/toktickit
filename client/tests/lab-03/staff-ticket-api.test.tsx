@@ -157,6 +157,33 @@ describe("updateStaffTicketStatus", () => {
       version: 1,
     });
   });
+
+  // docs/lab-04/api-spec.md section 5.1 and FR-12: `version` is optional on the
+  // status endpoint, and when it is absent the property must not be sent at all
+  // (an explicit `null` is a 400, not last-write-wins).
+  it("omits version from the body when the caller has none", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        okJson({ data: { currentStatus: "OPEN", version: 2 } })
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(updateStaffTicketStatus(12, "OPEN")).resolves.toEqual({
+      currentStatus: "OPEN",
+      version: 2,
+    });
+
+    const [url, options] = fetchMock.mock.calls[0] as [
+      string,
+      RequestInit | undefined
+    ];
+    expect(url).toMatch(/\/api\/staff\/tickets\/12\/status$/);
+    expect(options?.method).toBe("PUT");
+    const body = JSON.parse(options?.body as string);
+    expect(body).toEqual({ currentStatus: "OPEN" });
+    expect(body).not.toHaveProperty("version");
+  });
 });
 
 describe("updateStaffTicketCategory", () => {

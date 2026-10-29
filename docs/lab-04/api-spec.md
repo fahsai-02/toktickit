@@ -654,7 +654,7 @@ Permitted status transition, now with the resolution gate and a version check
 | Field | Type | Required | Rules |
 | :--- | :--- | :--- | :--- |
 | `currentStatus` | enum | **Yes** | Must be a permitted transition from the Ticket's current status per BR-12 |
-| `version` | integer | No | When present, must equal the Ticket's stored `version`, else `409`. When absent, the transition is applied without a concurrency check |
+| `version` | integer | No | Only an **omitted** field is absent: the transition is then applied without a concurrency check. When present it must be an integer equal to the Ticket's stored `version`, else `409`; a present `null` is not absent and fails the integer check with `400` |
 
 **Why `version` is required on an Action Taken update but optional here.** The
 two writes have different contexts. Editing an Action Taken always happens on a
@@ -724,7 +724,7 @@ write path is introduced, and the Requester's advisory
 | Status | Code | Condition |
 | :--- | :--- | :--- |
 | 400 | VALIDATION_ERROR | `fields.currentStatus`: "Invalid status value." |
-| 400 | VALIDATION_ERROR | Malformed `:id`, or a non-integer `version` |
+| 400 | VALIDATION_ERROR | Malformed `:id`, or a non-integer `version` (a present `null` is invalid, not absent) |
 | 400 | BUSINESS_RULE_VIOLATION | Pair not in BR-12: "Cannot transition from OPEN to RESOLVED. Permitted transitions: IN_PROGRESS, WAITING_FOR_REQUESTER, CANCELLED." |
 | 400 | BUSINESS_RULE_VIOLATION | Terminal source: "Cannot transition from CANCELLED to OPEN. This status is terminal; no further transitions are permitted." |
 | 400 | BUSINESS_RULE_VIOLATION | Gate, no summary: "Cannot resolve this ticket without a resolution summary. Save a resolution summary first." |
@@ -758,7 +758,7 @@ likely to disturb.
 | Requester comments | `POST`/`GET /api/tickets/:id/comments`, the `405` guards | |
 | Requester advisory | `PUT /api/tickets/:id/indicate-resolved`, `PUT /api/tickets/:id/resolution-summary` (always `403`) | BR-13 unchanged |
 | Staff queue and detail | `GET /api/staff/tickets`, `GET /api/staff/tickets/:id` | `GET /api/staff/tickets` gains `statusGroup` only. `GET /api/staff/tickets/:id` additionally returns `version` (FR-12) so the screen can send it on a status transition; every other field is unchanged. The requester detail `GET /api/tickets/:id` does **not** gain `version` and keeps its Lab 3 shape exactly. |
-| Staff operations | `claim`, `assign`, `priority`, `resolution-summary`, `category` | `assign` keeps the `404` on an inactive owner (BR-14). These endpoints stay **unversioned**: FR-12 scopes the Ticket `version` check to `PUT /api/staff/tickets/:id/status`, so `claim`/`assign`/`priority` keep their Lab 3 request shape and remain last-write-wins. |
+| Staff operations | `claim`, `assign`, `priority`, `resolution-summary`, `category` | `assign` keeps the `404` on an inactive owner (BR-14). These endpoints stay **unversioned**: FR-12 scopes the Ticket `version` check to `PUT /api/staff/tickets/:id/status`, so `claim`/`assign`/`priority` keep their Lab 3 request shape and remain last-write-wins. They also do **not** advance `Ticket.version`: that counter is status-transition-only (BR-15), and a successful transition is the only Ticket write that increments it. |
 | Staff comments/notes | `POST`/`GET` comments, `POST`/`GET` notes, the `405` guards | Internal Notes stay staff-only |
 | Staff users | `GET /api/staff/users` | |
 | Administrator | `GET`/`POST /api/admin/users`, `PUT /api/admin/users/:id`, `POST /api/admin/users/:id/reset-password` | Self-deactivation `403`, last-admin `409` |
@@ -836,6 +836,7 @@ recorded status, which is what handout section 10 asks for.
 | v1.2 | 2026-10-10 | Section 2.1's `followUpRequired` field now states that a non-boolean value is `400 fields.followUpRequired` rather than a silent `false` — a coerced `false` on `PUT` would lift the BR-04 note requirement without any signal — and the create error table gains that case (the update table already inherits it via "any field rule above"). Contract change approved with Issue 25 (#78); the API enforces it and `API-09` asserts it. | Approved (student, 2026-10-10) |
 | v1.3 | 2026-10-14 | Section 6 now records that `GET /api/staff/tickets/:id` returns `version` (FR-12) for the status transition, which the table previously implied was unchanged. `GET /api/tickets/:id` stays untouched: the `version` field was removed from the requester select so the requester detail keeps its Lab 3 shape exactly. Contract change approved with Issue 27 (#80). | Approved (student, 2026-10-14) |
 | v1.4 | 2026-10-29 | Section 6's Staff operations row now states explicitly that `claim`, `assign`, `priority`, `resolution-summary`, and `category` stay **unversioned**, because FR-12 scopes the Ticket `version` check to `PUT /api/staff/tickets/:id/status`. This resolves the Issue 27 (#80) acceptance wording that mentioned status/owner/priority: the approved contract keeps owner and priority last-write-wins so their Lab 3 request shape is unchanged, and only the status endpoint plus `PUT /api/actions/:id` are `[versioned]`. No endpoint behavior changed. | Approved (student, 2026-10-29) |
+| v1.5 | 2026-10-30 | **Peer-review clarifications and one validation fix for Issue 27 (#80).** Section 5.1 now distinguishes an **omitted** `version` (last-write-wins) from a present `null` (a non-integer, `400 VALIDATION_ERROR`); the endpoint previously treated `null` as omitted, so this line records a real behavior fix, and `API-44` asserts it. Section 6's Staff operations row now also states that those unversioned writes do not advance `Ticket.version`, making BR-15's status-transition-only counter explicit rather than implied; that part is documentation-only and matches the existing implementation. | Approved (student, 2026-10-30) |
 
 ---
 

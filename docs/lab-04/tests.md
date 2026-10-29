@@ -110,8 +110,9 @@ Request/response behavior, validation, and dashboard calculation. Rows that test
 **who** may call an endpoint (`API-03`, `API-04`, `API-05`, `API-40`, `API-41`) are
 collected under **Authorization** below rather than duplicated here, because
 handout section 10 lists authorization as its own category; rows that test the
-transition matrix and the gate (`API-19`..`API-28`) are under **Workflow**. Every
-ID keeps its original number and its place in the section 3 traceability table.
+transition matrix, the gate, and the status `version` validation (`API-19`..`API-28`,
+`API-44`) are under **Workflow**. Every ID keeps its original number and its place
+in the section 3 traceability table.
 
 | Test ID | Requirement | What It Tests | Expected Result | Automated Test File | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -245,9 +246,10 @@ inactive-assignee regression; the remaining AUTH rows land in
 ### Workflow
 
 Handout section 10 also lists workflow as its own category. These rows moved here
-from the API and UI component sections with their numbers unchanged; the client
-half moved into `TicketWorkflow.test.tsx`, the handout's file name for this
-subject.
+from the API and UI component sections with their numbers unchanged; the UI half
+runs in `TicketWorkflow.test.tsx`, the handout's file name for this subject.
+UI-31 is the API-helper contract test for the optional `version` body, kept with
+the other Staff API helper assertions in `staff-ticket-api.test.tsx`.
 
 | Test ID | Requirement | What It Tests | Expected Result | Automated Test File | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -261,10 +263,13 @@ subject.
 | API-26 | BR-11 | Gate applies to `CLOSED` too | `→ CLOSED` without summary/actions is `400` | `ticket-workflow.api.test.ts` | Pass |
 | API-27 | BR-11, BR-12 | Gate does **not** apply elsewhere | `→ CANCELLED` and `→ REOPENED` succeed with no summary and no actions | `ticket-workflow.api.test.ts` | Pass |
 | API-28 | FR-11, BR-13, AC-09 | `indicate-resolved` stays advisory | Sets the flag and timestamp; does not change `currentStatus`; does not satisfy the gate | `ticket-workflow.api.test.ts` | Pass |
+| API-44 | FR-12, BR-15 | Status with `version: null` | `400 VALIDATION_ERROR` naming `version`; the transition is **not** applied and the stored version is unchanged (a present `null` is invalid, not the omitted-field escape hatch) | `ticket-workflow.api.test.ts` | Pass |
 | UI-17 | BR-11, AC-07 | Gate failure feedback | The message renders **at the status control**, names the unmet condition, and the status badge does not change | `TicketWorkflow.test.tsx` | Pass |
 | UI-18 | BR-12, AC-08 | Only permitted targets are offered | The dropdown for `IN_PROGRESS` contains `RESOLVED` but not `CANCELLED` | `TicketWorkflow.test.tsx` | Pass |
 | UI-19 | BR-12 | Confirmation-required transitions | `OPEN → CANCELLED` and `IN_PROGRESS → RESOLVED` raise a dialog naming the exact transition; cancelling sends nothing | `TicketWorkflow.test.tsx` | Pass |
 | UI-20 | FR-11, BR-13, AC-09 | Requester-indicated-resolved badge | Rendered and visually distinct from the status badge | `TicketWorkflow.test.tsx` | Pass |
+| UI-30 | FR-12, AC-06 | Status `409` conflict refresh | The status badge stays unchanged, a conflict callout offers Refresh, and Refresh loads the server's latest copy | `TicketWorkflow.test.tsx` | Pass |
+| UI-31 | FR-12 | Client omits an unavailable `version` | The status request body is exactly `{ currentStatus }` when no version is supplied, never `{ currentStatus, version: null }`; with a version it sends both | `staff-ticket-api.test.tsx` | Pass |
 
 > **The gate is tested at both levels on purpose.** API-19..API-22 prove the
 > backend refuses the transition no matter what sent the request, which is the
@@ -428,7 +433,7 @@ present at all".
 | AC-03 | API-06, UI-09 |
 | AC-04 | API-12, UI-08 |
 | AC-05 | API-03, API-04, API-07, AUTH-02, AUTH-03, UI-15, E2E-02 |
-| AC-06 | API-16, API-17, API-18, API-24, UI-07, E2E-01 |
+| AC-06 | API-16, API-17, API-18, API-24, API-44, UI-07, UI-30, UI-31, E2E-01 |
 | AC-07 | UNIT-01, UNIT-02, API-19, API-20, API-21, API-22, UI-17, E2E-03 |
 | AC-08 | UNIT-04, API-23, UI-18, UI-19, E2E-03 |
 | AC-09 | UNIT-02, API-28, UI-20, E2E-03 |
@@ -538,15 +543,15 @@ rows `Planned`).
 | Suite | Command | Result |
 |-------|---------|--------|
 | Lab 4 (Actions Taken + migration) | `cd server && pnpm test --run tests/lab-04` | **2026-10-10:** 2 files, **35 of 35 tests pass** (`actions-taken.api.test.ts` API-01..18 incl. the API-09 type check and the AUTH-05 401 block, `migration-regression.api.test.ts` MIG-01..05 + REG-02) against the seeded dev DB. |
-| Lab 4 (workflow + gate) | `cd server && pnpm test --run tests/lab-04` | **2026-10-29:** 4 files, **58 of 58 tests pass** (`resolution-gate.unit.test.ts` 7, `ticket-workflow.api.test.ts` 16 — API-19..28, UNIT-04, AUTH-01, plus the order-of-checks case, `actions-taken.api.test.ts` 28, `migration-regression.api.test.ts` 7) against the seeded dev DB. |
-| Lab 4 (client TicketWorkflow) | `cd client && pnpm test --run tests/lab-04/TicketWorkflow.test.tsx` | **2026-10-29:** 1 file, **5 of 5 tests pass** (UI-17..20 + the `409` conflict-refresh case). |
-| Server (unit + API) | `cd server && pnpm test` | **2026-10-29:** 24 files, **344 of 344 tests pass**. Issue 27 adds `resolution-gate.unit.test.ts` (7) and `ticket-workflow.api.test.ts` (16, including AUTH-01) on top of the 22 files / 321 tests recorded for Issue 25 on 2026-10-10. Run after `pnpm exec prisma generate`: the generated client is gitignored, and a stale copy makes the staff-detail suites answer `500` even though the database is migrated. The earlier 2026-10-09 run was 318/319; the single failure was `lab-03/users-admin.api.test.ts` **API-68**, whose assertion demanded the user table hold *exactly* `SEED_USERS.length` rows. A hand-created dev account (`fahsai.meow@toktickit.dev`) makes it 12 vs 11 — a brittle assertion rather than an environment defect, and one the repo's own test rule 1 forbids ("must pass on ANY seeded DB"). The assertion now requires *at least* that many rows plus the presence of every seeded email per the repo's own test rule 1, and the suite is green. |
-| Client (component + style) | `cd client && pnpm test` | **2026-10-29:** 20 files, **234 of 234 tests pass**. Issue 27 adds `TicketWorkflow.test.tsx` (5 tests: UI-17..20 + the `409` conflict-refresh case) on top of the 19 files / 229 tests recorded for the Issue 26 follow-up on 2026-10-23; `ActionsTaken.test.tsx` keeps its 28 tests and the requester `hidden`/Notes class assertions. The four Lab 2/3 suites that mount a Ticket Detail (`RequesterTicketDetail`, `RequesterTicketComments`, `StaffTicketDetail`) stub `fetchTicketActions`. |
+| Lab 4 (workflow + gate) | `cd server && pnpm test --run tests/lab-04` | **2026-10-30:** 4 files, **59 of 59 tests pass** (`resolution-gate.unit.test.ts` 7, `ticket-workflow.api.test.ts` 17 — API-19..28, API-44, UNIT-04, AUTH-01, plus the order-of-checks case, `actions-taken.api.test.ts` 28, `migration-regression.api.test.ts` 7) against the seeded dev DB. |
+| Lab 4 (client TicketWorkflow) | `cd client && pnpm test --run tests/lab-04/TicketWorkflow.test.tsx` | **2026-10-30:** 1 file, **5 of 5 tests pass** (UI-17..20 + the `409` conflict-refresh case, UI-30). |
+| Server (unit + API) | `cd server && pnpm test` | **2026-10-30:** 24 files, **345 of 345 tests pass**. The Issue 27 review adds API-44 (`version: null`) to `ticket-workflow.api.test.ts` on top of the 344 tests recorded for Issue 27 on 2026-10-29. Run after `pnpm exec prisma generate`: the generated client is gitignored, and a stale copy makes the staff-detail suites answer `500` even though the database is migrated. The earlier 2026-10-09 run was 318/319; the single failure was `lab-03/users-admin.api.test.ts` **API-68**, whose assertion demanded the user table hold *exactly* `SEED_USERS.length` rows. A hand-created dev account (`fahsai.meow@toktickit.dev`) makes it 12 vs 11 — a brittle assertion rather than an environment defect, and one the repo's own test rule 1 forbids ("must pass on ANY seeded DB"). The assertion now requires *at least* that many rows plus the presence of every seeded email per the repo's own test rule 1, and the suite is green. |
+| Client (component + style) | `cd client && pnpm test` | **2026-10-30:** 20 files, **235 of 235 tests pass**. The Issue 27 review adds the no-version body case to `tests/lab-03/staff-ticket-api.test.tsx` (now 13 tests, UI-31) on top of the 234 tests recorded on 2026-10-29; `TicketWorkflow.test.tsx` keeps its 5 tests (UI-17..20 + UI-30), `ActionsTaken.test.tsx` keeps its 28 tests and the requester `hidden`/Notes class assertions. The four Lab 2/3 suites that mount a Ticket Detail (`RequesterTicketDetail`, `RequesterTicketComments`, `StaffTicketDetail`) stub `fetchTicketActions`. |
 | E2E (Playwright, functional) | `pnpm test:e2e:lab4` | Not run (owned by Issue 29, #82) |
 | E2E (Playwright, visual + audit) | the three `*.visual.spec.ts` files | Not run |
 | E2E regression, Labs 2–3 | `pnpm test:e2e` | Not run |
 | Server + client regression, Labs 1–3 | `cd server && pnpm test` and `cd client && pnpm test` | Covered by the two "Server (unit + API)" and "Client (component + style)" rows above. |
-| Build | `cd server && pnpm build` and `cd client && pnpm build` | **2026-10-29:** both pass (`cd server` → `tsc` clean; `cd client` → `tsc && vite build` clean, 1878 modules). |
+| Build | `cd server && pnpm build` and `cd client && pnpm build` | **2026-10-30:** both pass (`cd server` → `tsc` clean; `cd client` → `tsc && vite build` clean, 1878 modules). |
 | Schema | `cd server && pnpm exec prisma validate && pnpm exec prisma migrate status` | **2026-10-29:** schema valid; "Database schema is up to date!" (5 migrations, incl. `20261013193834_lab4_ticket_version`). |
 
 ## 7. Known Limitations / Deferred
@@ -579,7 +584,8 @@ Deferred **within** Lab 4:
   (AC-03), so back-dating an action places it correctly without a drag handle.
 - Status transition with no `version` is last-write-wins by design (FR-12,
   BR-15). Documented rather than prevented; API-25 exists so the escape hatch
-  cannot grow unnoticed.
+  cannot grow unnoticed. Omitting the field is the only way in: a present `null`
+  is a `400` (API-44), not a second spelling of "absent".
 - Deep pagination on dashboards is not implemented; the lists are capped (5
   recent, 10 urgent) rather than paginated.
 - Tablet form drawer is full-width from the right, not a bottom sheet
@@ -627,6 +633,7 @@ updates this file together with `specification.md`, `api-spec.md`, and
 | v1.6 | 2026-10-24 | **Actions Taken list (Issue 26 polish).** Swapped the six-column table for one entry per action in the shared `ActionList` component (staff and requester) so the side column reads at 1440×900. Updated `specification.md` AD-16, `ui-spec.md` v1.2, `tests.md` rows UI-09/A11Y-03/A11Y-05/RESP-13..15, and `ActionsTaken.test.tsx` to list semantics. Client tests **19 files, 229/229**, build clean. | Approved (student, 2026-10-24) |
 | v1.7 | 2026-10-29 | **Issue 27 (#80) suites executed + review pass, rebased on the Issue 26 follow-up.** Flipped `UNIT-01/02/04`, `API-19..28`, `UI-17..20` to `Pass` and recorded **both** runs in section 6, which the transition from `Planned` had skipped: `cd server && pnpm test --run tests/lab-04` **4 files, 57/57** (`resolution-gate.unit.test.ts` 7, `ticket-workflow.api.test.ts` 15, `actions-taken.api.test.ts` 28, `migration-regression.api.test.ts` 7), whole server suite **24 files, 343/343**, client **20 files, 234/234** (`TicketWorkflow.test.tsx` 5 on top of the Issue 26 baseline of 19 files / 229), and both builds clean (seeded dev DB, 5 migrations). Applied the local fix-list review: added the order-of-checks assertion to the workflow suite so a nonexistent Ticket with an invalid enum is `404`, matching `api-spec.md` section 5.1 (S3 — the route now looks the Ticket up before validating the payload); removed the unintentional `version` field from the requester `GET /api/tickets/:id` response and kept it only on the staff detail via `StaffTicketDetail extends TicketDetail`, with `api-spec.md` section 6 updated to v1.3 (B2); dropped the dead `status-conflict-callout`/`status-error-callout` class names and the unreferenced `status-error` id (N4/N5); renamed the stale `updateStaffTicketStatus` test title to name `version` (N6). Traceability source bumped to `api-spec.md` v1.3. | Approved (student, 2026-10-29) |
 | v1.8 | 2026-10-29 | **Issue 27 (#80) AUTH-01 regression.** Added the inactive-assignee rejection test to `ticket-workflow.api.test.ts` (API suite now 16), asserting the Lab 3 `404` "Owner must be an active IT Staff or Administrator user" for an inactive IT Staff owner **and** an inactive Requester, with `ownerId` unchanged. Flipped `AUTH-01` from `Planned` to `Pass`, re-pointed its file column to the workflow suite, and recorded the run: Lab 4 files **58/58**, whole server suite **344/344**, client **234/234**, both builds clean. Clarified with `api-spec.md` v1.4 that `Ticket.version` is enforced on the status endpoint (FR-12), not on `claim`/`assign`/`priority`, which keep their Lab 3 shape. | Approved (student, 2026-10-29) |
+| v1.9 | 2026-10-30 | **Issue 27 (#80) peer-review fixes.** Added **API-44** (`version: null` is a `400`, not the omitted-field last-write-wins path) to `ticket-workflow.api.test.ts`, **UI-31** (the client omits the `version` property when it has none) to `staff-ticket-api.test.tsx`, and **UI-30** as the traceability row for the existing `409` status-conflict refresh test in `TicketWorkflow.test.tsx`. AC-06 now maps API-44, UI-30, and UI-31. Recorded the runs: Lab 4 server **59/59**, whole server suite **345/345**, client **235/235** (20 files), both builds clean. Cross-references `specification.md` v1.3 and `api-spec.md` v1.5, which now define `Ticket.version` as a status-transition-only counter. | Approved (student, 2026-10-30) |
 
 ---
 

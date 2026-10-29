@@ -374,13 +374,19 @@ export async function updateStaffTicketPriority(
 export async function updateStaffTicketStatus(
   ticketId: number,
   currentStatus: TicketStatus,
-  version: number
+  version?: number
 ): Promise<{ currentStatus: TicketStatus; version: number }> {
   const res = await fetch(`${API_URL}/api/staff/tickets/${ticketId}/status`, {
     method: "PUT",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ currentStatus, version }),
+    // FR-12 / api-spec 5.1: `version` is optional. Omit the property entirely
+    // when the caller has none so the request is a documented last-write-wins
+    // transition, not an explicit `null` (which the server rejects as 400).
+    body: JSON.stringify({
+      currentStatus,
+      ...(version === undefined ? {} : { version }),
+    }),
   });
 
   // The conflict body keeps the Lab 3 `error` shape and adds the server's

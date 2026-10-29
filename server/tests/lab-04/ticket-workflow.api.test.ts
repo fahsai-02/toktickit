@@ -327,6 +327,24 @@ describe("Lab 4: ticket workflow & resolution gate (api-spec 5.1)", () => {
       const after = await statusOf(t.id);
       expect(after.currentStatus).toBe("NEW");
     });
+
+    it("API-44: version: null is invalid, not absent → 400 VALIDATION_ERROR", async () => {
+      // api-spec 5.1: only an omitted `version` is the last-write-wins escape
+      // hatch. A present `null` is a non-integer and must be rejected rather
+      // than silently treated as "no version supplied".
+      const t = await createTicket({ status: "NEW" });
+      const res = await putStatus(staffAgent, t.id, {
+        currentStatus: "OPEN",
+        version: null,
+      });
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe("VALIDATION_ERROR");
+      expect(res.body.error.fields.version).toBeDefined();
+
+      const after = await statusOf(t.id);
+      expect(after.currentStatus).toBe("NEW");
+      expect(after.version).toBe(t.version);
+    });
   });
 
   describe("Requester indication stays advisory (FR-11, BR-13, AC-09)", () => {
