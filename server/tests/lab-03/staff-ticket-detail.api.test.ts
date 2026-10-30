@@ -35,6 +35,11 @@ async function cleanup(): Promise<void> {
     where: { ticketId: { in: createdTicketIds } },
   });
   await db.attachment.deleteMany({ where: { ticketId: { in: createdTicketIds } } });
+  // Lab 4 BR-11 sets up an Action Taken for the chain walk (API-73); the FK is
+  // Restrict, so it must go before the Ticket.
+  await db.actionTaken.deleteMany({
+    where: { ticketId: { in: createdTicketIds } },
+  });
   await db.ticket.deleteMany({ where: { id: { in: createdTicketIds } } });
   createdTicketIds.length = 0;
 }
@@ -232,7 +237,10 @@ describe("status transitions (API-41..43, API-73, AC-09, FR-30, BR-12)", () => {
       .put(`/api/staff/tickets/${ticketId}/status`)
       .send({ currentStatus: "OPEN" });
     expect(res.status).toBe(200);
-    expect(res.body.data).toEqual({ currentStatus: "OPEN" });
+    // Lab 4 FR-12: the status response also carries the bumped `version`.
+    expect(res.body.data).toEqual(
+      expect.objectContaining({ currentStatus: "OPEN", version: expect.any(Number) })
+    );
   });
 
   it("rejects OPEN → RESOLVED with BUSINESS_RULE_VIOLATION (API-42)", async () => {
@@ -269,6 +277,26 @@ describe("status transitions (API-41..43, API-73, AC-09, FR-30, BR-12)", () => {
 
   it("walks the full chain through to CLOSED → REOPENED (API-73)", async () => {
     const target = await createTicketVia(requester);
+    // Lab 4 BR-11: RESOLVED and CLOSED now require a resolution summary and at
+    // least one Action Taken, so satisfy the gate before walking the chain.
+    const staffUser = await db.user.findFirstOrThrow({
+      where: { email: seedUserFor("IT_STAFF", 0).email },
+      select: { id: true },
+    });
+    await db.ticket.update({
+      where: { id: target },
+      data: { resolutionSummary: "Resolved during the chain walk." },
+    });
+    await db.actionTaken.create({
+      data: {
+        ticketId: target,
+        performedById: staffUser.id,
+        actionDate: new Date(),
+        description: "Diagnosed the fault.",
+        result: "Replaced the part and verified the fix.",
+      },
+    });
+
     const steps = ["OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED", "REOPENED"];
     let previous = "NEW";
     for (const step of steps) {

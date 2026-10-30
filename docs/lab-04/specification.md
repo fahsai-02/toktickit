@@ -4,8 +4,8 @@
 | :--- | :--- |
 | **Project** | Tok TickIT — IT Service Desk |
 | **Sprint** | Lab 4: Actions Taken, Ticket Workflow, and Role Dashboards |
-| **Version** | v1.2 (Approved 2026-10-24) |
-| **Date** | 2026-10-24 |
+| **Version** | v1.3 (Approved 2026-10-30) |
+| **Date** | 2026-10-30 |
 | **Sources** | Derived from the CPE 334 Lab 4 labsheet (course-provided handout), the Lab 3 approved increment, and the completed Lab 1–2 increments |
 | **Related docs** | `api-spec.md`, `ui-spec.md`, `tests.md` |
 | **Contract role** | This file is the single source of truth for Issues 25–30. Every FR, BR, and AC below is traceable from code and tests back to this document. |
@@ -309,9 +309,15 @@ Additionally excluded, as a Lab 4 scope decision rather than a handout one:
   Issue 27 adds the regression test.
 - **BR-15:** `ActionTaken.version` and `Ticket.version` are integer counters
   starting at 1. A write that **presents** a version other than the stored one is
-  rejected with `409`, and the response carries the server's latest copy. The
-  stored version increments by one on each successful update. Presenting a
-  version is **mandatory** on `PUT /api/actions/:id` and **optional** on
+  rejected with `409`, and the response carries the server's latest copy.
+  `ActionTaken.version` increments by one on each successful update.
+  `Ticket.version` is a **status-transition counter**: it increments by one only
+  when `PUT /api/staff/tickets/:id/status` applies a transition. Every other
+  Ticket write — `claim`, `assign`, `priority`, `category`,
+  `resolution-summary`, and the Requester's advisory `indicate-resolved` — is
+  unversioned: it does not read a supplied `version` and leaves the stored
+  counter unchanged. Presenting a version is **mandatory** on
+  `PUT /api/actions/:id` and **optional** on
   `PUT /api/staff/tickets/:id/status`; on the status endpoint an absent `version`
   applies the transition as last-write-wins (FR-12, rationale in `api-spec.md`
   sections 2.3 and 5.1).
@@ -787,6 +793,9 @@ response shape. `GET /api/health` continues to return exactly `{ "status": "ok",
   `currentStatus` is a single enum value that is immediately visible on the badge —
   unlike a paragraph of follow-up prose. Every Lab 4 client screen sends `version`
   when it holds one, and `API-25` asserts the escape hatch stays deliberate.
+  `Ticket.version` counts status transitions only (BR-15): the other Ticket
+  writes are unversioned and never advance it, so saving a resolution summary
+  immediately before resolving does not invalidate the loaded version.
 - **AD-21:** **IT Staff dashboard status breakdown completeness (section 3.2).** The staff dashboard `counts` object focuses on operational/queue state (active statuses plus ownership and urgency). Terminal statuses (`RESOLVED`, `CLOSED`, `CANCELLED`) and `REOPENED` are surfaced via filters/drill-downs (notably `statusGroup` in section 4.1) and via list views rather than duplicating all eight statuses as separate top-level count cards; this matches the operational emphasis of AC-11/FR-14 while still supporting drill-down by status groups.
 - **AD-22:** **Scope hygiene — merged Lab 3 documentation.** Minor Lab 3 documentation clarifications and traceability reference adjustments are included in this Lab 4 contract PR because `lab3-staging` was closed/merged at the time of this contract work. These edits are limited strictly to non-behavioral documentation (clarifications, mapping notes, and traceability) to preserve alignment across labs without reopening a Lab 3 PR.
 
@@ -799,11 +808,12 @@ response shape. `GET /api/health` continues to return exactly `{ "status": "ok",
 | v1.0 | 2026-10-04 | Initial Lab 4 specification. | Approved (student, 2026-10-04) |
 | v1.1 | 2026-10-04 | Section 2 no longer states a row count taken from one development database ("a full-screen table of 343 rows"); it describes the Requester's problem without a number that is only true of a particular snapshot. Section 7 seed requirements now name all three shapes handout section 5.3 requires — zero, **exactly one**, and multiple — and point at `MIG-05`, which had no "exactly one" case to assert. Section 8's `GET /api/dashboards/requester` row read `Session (REQUESTER scope)` with a `403` in its error list, which contradicted `api-spec.md` section 3.2 and `ui-spec.md` section 4; it is now any authenticated role, own data only, `401` and `500`, and the Authorization Matrix agrees. Added **AD-20** recording the meaningful choice handout section 9 asks for: `version` mandatory on `PUT /api/actions/:id`, optional on the status endpoint. Added a note under BR-13 that Lab 4 BR numbering is independent of Lab 3, so BR-13 (advisory indication) is not read as Lab 3 BR-13 (inactive-assignee, here BR-14). | Approved (student, 2026-10-04) |
 | v1.2 | 2026-10-24 | **AD-16:** Actions Taken is a compact list (one entry per action) rather than a six-column table because it shares the Ticket Detail side column with the conversation tabs; the same markup serves all viewports. Matches `ui-spec.md` v1.2 and the shared `ActionList` component. | Approved (student, 2026-10-24) |
+| v1.3 | 2026-10-30 | **Clarified BR-15 after peer review of Issue 27 (#80).** BR-15 said "the stored version increments by one on each successful update", which could be read as every Ticket write, while the implementation (and the approved v1.4 API contract) advances `Ticket.version` only on a successful status transition. BR-15 and AD-20 now state that `Ticket.version` is a status-transition counter and that `claim`, `assign`, `priority`, `category`, `resolution-summary`, and `indicate-resolved` are unversioned and leave it unchanged. No behavior change to the counter: the status endpoint remains the only Ticket write that increments it. `api-spec.md` v1.5 records the same scope and the separate fix that a present `null` is invalid rather than absent. | Approved (student, 2026-10-30) |
 
 ---
 
 *End of specification. Changes require student approval and a version bump.*
 
-**Approval:** v1.2 approved by the student on 2026-10-24. This approves the
-contract only — no FR, BR, AC, endpoint, screen, or checklist row is verified by
+**Approval:** v1.3 approved by the student on 2026-10-30. v1.2 was approved on
+2026-10-24. This approves the contract only — no FR, BR, AC, endpoint, screen, or checklist row is verified by
 it, because nothing has been built or run yet.

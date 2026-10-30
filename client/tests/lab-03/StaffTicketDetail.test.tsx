@@ -32,6 +32,7 @@ const baseTicket: api.StaffTicketDetail = {
   itPriority: "MEDIUM",
   currentStatus: "NEW",
   ticketDate: "2026-09-01T10:00:00.000Z",
+  version: 1,
   requester: { id: 1, name: "Jennifer Anderson" },
   category: { id: 2, name: "Hardware" },
   relatedSystem: { id: 7, name: "Corporate Laptop" },
@@ -330,9 +331,10 @@ describe("StaffTicketDetail — status dropdown shows only permitted next states
 
   it("NEW offers only OPEN as a next state (BR-12 matrix)", async () => {
     vi.spyOn(api, "fetchStaffTicket").mockResolvedValue(baseTicket);
+    // Lab 4 FR-12: the status PUT now also carries the loaded `version`.
     const statusSpy = vi
       .spyOn(api, "updateStaffTicketStatus")
-      .mockResolvedValue({ currentStatus: "OPEN" });
+      .mockResolvedValue({ currentStatus: "OPEN", version: 2 });
     renderDetail();
 
     await screen.findByTestId("staff-ticket-detail");
@@ -343,7 +345,7 @@ describe("StaffTicketDetail — status dropdown shows only permitted next states
 
     fireEvent.change(select, { target: { value: "OPEN" } });
     await waitFor(() => {
-      expect(statusSpy).toHaveBeenCalledWith(101, "OPEN");
+      expect(statusSpy).toHaveBeenCalledWith(101, "OPEN", 1);
     });
   });
 
@@ -374,7 +376,7 @@ describe("StaffTicketDetail — status dropdown shows only permitted next states
     );
     const statusSpy = vi
       .spyOn(api, "updateStaffTicketStatus")
-      .mockResolvedValue({ currentStatus: "CANCELLED" });
+      .mockResolvedValue({ currentStatus: "CANCELLED", version: 2 });
     renderDetail();
 
     await screen.findByTestId("staff-ticket-detail");
@@ -389,7 +391,8 @@ describe("StaffTicketDetail — status dropdown shows only permitted next states
 
     fireEvent.click(screen.getByTestId("status-confirm-accept"));
     await waitFor(() => {
-      expect(statusSpy).toHaveBeenCalledWith(101, "CANCELLED");
+      // Lab 4 FR-12: `version` is the third argument now.
+      expect(statusSpy).toHaveBeenCalledWith(101, "CANCELLED", 1);
     });
   });
 

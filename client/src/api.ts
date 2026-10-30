@@ -282,8 +282,14 @@ export async function fetchStaffTickets(
 
 // ── IT Staff Ticket Detail (Issue 20, api-spec section 5.2-5.13) ────────────
 
-/** Same shape as the requester detail (api-spec 5.2 "same as 4.3"). */
-export type StaffTicketDetail = TicketDetail;
+/**
+ * The staff detail is the requester detail plus the optimistic-locking
+ * `version` (api-spec 5.1, FR-12). The requester contract is unchanged and
+ * carries no `version`, so it stays on `TicketDetail` only here.
+ */
+export interface StaffTicketDetail extends TicketDetail {
+  version: number;
+}
 
 export interface StaffUser {
   id: number;
@@ -367,18 +373,51 @@ export async function updateStaffTicketPriority(
 
 export async function updateStaffTicketStatus(
   ticketId: number,
-  currentStatus: TicketStatus
-): Promise<{ currentStatus: TicketStatus }> {
+  currentStatus: TicketStatus,
+  version?: number
+): Promise<{ currentStatus: TicketStatus; version: number }> {
   const res = await fetch(`${API_URL}/api/staff/tickets/${ticketId}/status`, {
     method: "PUT",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ currentStatus }),
+    // FR-12 / api-spec 5.1: `version` is optional. Omit the property entirely
+    // when the caller has none so the request is a documented last-write-wins
+    // transition, not an explicit `null` (which the server rejects as 400).
+    body: JSON.stringify({
+      currentStatus,
+      ...(version === undefined ? {} : { version }),
+    }),
   });
+
+  // The conflict body keeps the Lab 3 `error` shape and adds the server's
+  // latest copy under `data` (api-spec 5.1, AD-03). `handleApiError` only reads
+  // `error`, so a 409 is handled here to preserve `data` for the UI.
+  if (res.status === 409) {
+    let message =
+      "This ticket was updated by someone else. Refresh to load the latest version.";
+    let latest: TicketConflictError["latest"] | null = null;
+    try {
+      const body = (await res.json()) as {
+        error?: { message?: string };
+        data?: TicketConflictError["latest"];
+      };
+      message = body.error?.message ?? message;
+      latest = body.data ?? null;
+    } catch {
+      // Malformed conflict body — fall through to a plain CONFLICT.
+    }
+    if (latest) {
+      throw new TicketConflictError(message, latest);
+    }
+    throw new ApiError(message, "CONFLICT");
+  }
+
   if (!res.ok) {
     await handleApiError(res, "Failed to update ticket status");
   }
-  const { data } = (await res.json()) as { data: { currentStatus: TicketStatus } };
+  const { data } = (await res.json()) as {
+    data: { currentStatus: TicketStatus; version: number };
+  };
   return data;
 }
 
@@ -837,6 +876,26 @@ export interface ActionTakenInput {
 
 /** PUT body: the editable fields plus the `version` being replaced (FR-12). */
 export type ActionTakenUpdateInput = ActionTakenInput & { version: number };
+
+/**
+ * Thrown by `updateStaffTicketStatus` on `409` (FR-12, api-spec 5.1, AD-03).
+ * Carries the server's latest Ticket copy so the screen can refresh and retry
+ * without guessing the new `version`.
+ */
+export class TicketConflictError extends ApiError {
+  latest: {
+    id: number;
+    currentStatus: TicketStatus;
+    resolutionSummary: string | null;
+    version: number;
+  };
+
+  constructor(message: string, latest: TicketConflictError["latest"]) {
+    super(message, "CONFLICT");
+    this.name = "TicketConflictError";
+    this.latest = latest;
+  }
+}
 
 /**
  * Thrown by `updateActionTaken` on `409`. Carries the server's current copy
