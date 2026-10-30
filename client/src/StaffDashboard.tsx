@@ -15,6 +15,11 @@ import Badge, {
 } from "./components/Badge.js";
 import ListState from "./components/ListState.js";
 import { formatRelativeTime } from "./lib/format.js";
+import {
+  DashboardListCard,
+  DashboardTicketListLink,
+  DashboardActionListLink,
+} from "./components/DashboardList.js";
 
 interface MetricCardProps {
   to: string;
@@ -276,94 +281,39 @@ export default function StaffDashboard() {
 
       {/* Two columns: Recently Updated | My Recent Actions */}
       <section className="dashboard-lists">
-        <div className="dashboard-list-card" data-testid="staff-recent-tickets-card">
-          <h2 className="dashboard-list-title">Recently Updated</h2>
-          {recentTickets.length === 0 ? (
-            <ListState
-              testId="staff-recent-tickets-empty"
-              message="No recently updated tickets in queue."
+        <DashboardListCard
+          title="Recently Updated"
+          items={recentTickets}
+          emptyMessage="No recently updated tickets in queue."
+          emptyTestId="staff-recent-tickets-empty"
+          cardTestId="staff-recent-tickets-card"
+          listAriaLabel="Recently updated tickets in queue"
+          renderItem={(ticket: StaffDashboardTicketRow) => (
+            <DashboardTicketListLink
+              ticket={ticket}
+              to={`/staff/tickets/${ticket.id}`}
+              testId={`staff-recent-ticket-${ticket.id}`}
+              showOwner
+              timeKey="updatedAt"
             />
-          ) : (
-            <ul className="dashboard-list" aria-label="Recently updated tickets in queue">
-              {recentTickets.map((ticket: StaffDashboardTicketRow) => (
-                <li key={ticket.id} className="dashboard-list-item">
-                  <Link
-                    to={`/staff/tickets/${ticket.id}`}
-                    className="dashboard-list-link"
-                    data-testid={`staff-recent-ticket-${ticket.id}`}
-                  >
-                    <div className="dashboard-list-info">
-                      <span className="dashboard-ticket-number">
-                        {ticket.ticketNumber}
-                      </span>
-                      <span className="dashboard-ticket-summary">
-                        {ticket.summary}
-                      </span>
-                    </div>
-                    <div className="dashboard-list-meta">
-                      <Badge variant={coloredStatusBadgeVariant(ticket.currentStatus)}>
-                        {ticket.currentStatus}
-                      </Badge>
-                      <span className="dashboard-ticket-owner">
-                        {ticket.owner ? ticket.owner.name : "Unassigned"}
-                      </span>
-                      <time
-                        className="dashboard-ticket-time"
-                        dateTime={ticket.updatedAt}
-                      >
-                        {formatRelativeTime(ticket.updatedAt)}
-                      </time>
-                    </div>
-                  </Link>
-                </li>
-              ))}
-            </ul>
           )}
-        </div>
+        />
 
-        <div className="dashboard-list-card" data-testid="my-recent-actions-card">
-          <h2 className="dashboard-list-title">My Recent Actions</h2>
-          {myRecentActions.length === 0 ? (
-            <ListState
-              testId="my-recent-actions-empty"
-              message="No recent actions recorded."
+        <DashboardListCard
+          title="My Recent Actions"
+          items={myRecentActions}
+          emptyMessage="No recent actions recorded."
+          emptyTestId="my-recent-actions-empty"
+          cardTestId="my-recent-actions-card"
+          listAriaLabel="My recent actions taken"
+          renderItem={(action: MyRecentAction) => (
+            <DashboardActionListLink
+              action={action}
+              to={`/staff/tickets/${action.ticketId}`}
+              testId={`recent-action-${action.id}`}
             />
-          ) : (
-            <ul className="dashboard-list" aria-label="My recent actions taken">
-              {myRecentActions.map((action: MyRecentAction) => (
-                <li key={action.id} className="dashboard-list-item">
-                  <Link
-                    to={`/staff/tickets/${action.ticketId}`}
-                    className="dashboard-list-link"
-                    data-testid={`recent-action-${action.id}`}
-                  >
-                    <div className="dashboard-list-info">
-                      <span className="dashboard-ticket-number">
-                        {action.ticketNumber}
-                      </span>
-                      <span className="dashboard-ticket-summary">
-                        {action.description}
-                      </span>
-                    </div>
-                    <div className="dashboard-list-meta">
-                      {action.result && (
-                        <span className="dashboard-action-result">
-                          {action.result}
-                        </span>
-                      )}
-                      <time
-                        className="dashboard-ticket-time"
-                        dateTime={action.actionDate}
-                      >
-                        {formatRelativeTime(action.actionDate)}
-                      </time>
-                    </div>
-                  </Link>
-                </li>
-              ))}
-            </ul>
           )}
-        </div>
+        />
       </section>
 
       {/* Administrator Users Management Card (FR-15, UI-27) */}

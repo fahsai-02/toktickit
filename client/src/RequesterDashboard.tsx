@@ -8,9 +8,11 @@ import {
   ApiError,
 } from "./api.js";
 import Button from "./components/Button.js";
-import Badge, { coloredStatusBadgeVariant } from "./components/Badge.js";
 import ListState from "./components/ListState.js";
-import { formatRelativeTime } from "./lib/format.js";
+import {
+  DashboardListCard,
+  DashboardTicketListLink,
+} from "./components/DashboardList.js";
 
 interface MetricCardProps {
   to: string;
@@ -177,102 +179,43 @@ export default function RequesterDashboard() {
 
       {/* Lists */}
       <section className="dashboard-lists">
-        <div className="dashboard-list-card" data-testid="recent-tickets-card">
-          <h2 className="dashboard-list-title">Recently Updated</h2>
-          {recentTickets.length === 0 ? (
-            <ListState
-              testId="recent-tickets-empty"
-              message={
-                isZeroActivity
-                  ? "You have not submitted any tickets yet."
-                  : "No recently updated tickets."
-              }
-            >
-              {isZeroActivity && (
-                <Button
-                  variant="primary"
-                  onClick={() => navigate("/create-ticket")}
-                >
-                  Create Ticket
-                </Button>
-              )}
-            </ListState>
-          ) : (
-            <ul className="dashboard-list" aria-label="Recently updated tickets">
-              {recentTickets.map((ticket: DashboardTicketRow) => (
-                <li key={ticket.id} className="dashboard-list-item">
-                  <Link
-                    to={`/tickets/${ticket.id}`}
-                    className="dashboard-list-link"
-                    data-testid={`recent-ticket-${ticket.id}`}
-                  >
-                    <div className="dashboard-list-info">
-                      <span className="dashboard-ticket-number">
-                        {ticket.ticketNumber}
-                      </span>
-                      <span className="dashboard-ticket-summary">
-                        {ticket.summary}
-                      </span>
-                    </div>
-                    <div className="dashboard-list-meta">
-                      <Badge variant={coloredStatusBadgeVariant(ticket.currentStatus)}>
-                        {ticket.currentStatus}
-                      </Badge>
-                      <time
-                        className="dashboard-ticket-time"
-                        dateTime={ticket.updatedAt}
-                      >
-                        {formatRelativeTime(ticket.updatedAt)}
-                      </time>
-                    </div>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-
-        <div className="dashboard-list-card" data-testid="recently-resolved-card">
-          <h2 className="dashboard-list-title">Recently Resolved</h2>
-          {recentlyResolved.length === 0 ? (
-            <ListState
-              testId="recently-resolved-empty"
-              message="No recently resolved tickets."
+        <DashboardListCard
+          title="Recently Updated"
+          items={recentTickets}
+          emptyMessage={
+            isZeroActivity
+              ? "You have not submitted any tickets yet."
+              : "No recently updated tickets."
+          }
+          emptyTestId="recent-tickets-empty"
+          cardTestId="recent-tickets-card"
+          listAriaLabel="Recently updated tickets"
+          renderItem={(ticket: DashboardTicketRow) => (
+            <DashboardTicketListLink
+              ticket={ticket}
+              to={`/tickets/${ticket.id}`}
+              testId={`recent-ticket-${ticket.id}`}
+              timeKey="updatedAt"
             />
-          ) : (
-            <ul className="dashboard-list" aria-label="Recently resolved tickets">
-              {recentlyResolved.map((ticket: DashboardTicketRow) => (
-                <li key={ticket.id} className="dashboard-list-item">
-                  <Link
-                    to={`/tickets/${ticket.id}`}
-                    className="dashboard-list-link"
-                    data-testid={`resolved-ticket-${ticket.id}`}
-                  >
-                    <div className="dashboard-list-info">
-                      <span className="dashboard-ticket-number">
-                        {ticket.ticketNumber}
-                      </span>
-                      <span className="dashboard-ticket-summary">
-                        {ticket.summary}
-                      </span>
-                    </div>
-                    <div className="dashboard-list-meta">
-                      <Badge variant={coloredStatusBadgeVariant(ticket.currentStatus)}>
-                        {ticket.currentStatus}
-                      </Badge>
-                      <time
-                        className="dashboard-ticket-time"
-                        dateTime={ticket.updatedAt}
-                      >
-                        {formatRelativeTime(ticket.updatedAt)}
-                      </time>
-                    </div>
-                  </Link>
-                </li>
-              ))}
-            </ul>
           )}
-        </div>
+        />
+
+        <DashboardListCard
+          title="Recently Resolved"
+          items={recentlyResolved}
+          emptyMessage="No recently resolved tickets."
+          emptyTestId="recently-resolved-empty"
+          cardTestId="recently-resolved-card"
+          listAriaLabel="Recently resolved tickets"
+          renderItem={(ticket: DashboardTicketRow) => (
+            <DashboardTicketListLink
+              ticket={ticket}
+              to={`/tickets/${ticket.id}`}
+              testId={`resolved-ticket-${ticket.id}`}
+              timeKey="updatedAt"
+            />
+          )}
+        />
       </section>
     </div>
   );
