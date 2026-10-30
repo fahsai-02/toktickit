@@ -4,9 +4,9 @@
 | :--- | :--- |
 | **Project** | Tok TickIT — IT Service Desk |
 | **Sprint** | Lab 4: Actions Taken, Ticket Workflow, and Role Dashboards |
-| **Version** | v1.8 — 2026-10-29 (Issue 27 adds the AUTH-01 inactive-assignee regression on top of the workflow/gate suites; see section 6) |
-| **Date** | 2026-10-29 |
-| **Traceability source** | `specification.md` v1.2 AC-01..18 · `api-spec.md` v1.4 · `ui-spec.md` v1.2 |
+| **Version** | v1.9 — 2026-10-30 (Issue 27 review fixes: API-44, UI-30, UI-31; see section 6) |
+| **Date** | 2026-10-30 |
+| **Traceability source** | `specification.md` v1.3 AC-01..18 · `api-spec.md` v1.5 · `ui-spec.md` v1.2 |
 
 ---
 

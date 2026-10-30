@@ -4,8 +4,8 @@
 | :--- | :--- |
 | **Project** | Tok TickIT — IT Service Desk |
 | **Sprint** | Lab 4: Actions Taken, Ticket Workflow, and Role Dashboards |
-| **Version** | v1.2 (Approved 2026-10-24) |
-| **Date** | 2026-10-24 |
+| **Version** | v1.3 (Approved 2026-10-30) |
+| **Date** | 2026-10-30 |
 | **Sources** | Derived from the CPE 334 Lab 4 labsheet (course-provided handout), the Lab 3 approved increment, and the completed Lab 1–2 increments |
 | **Related docs** | `api-spec.md`, `ui-spec.md`, `tests.md` |
 | **Contract role** | This file is the single source of truth for Issues 25–30. Every FR, BR, and AC below is traceable from code and tests back to this document. |
@@ -814,6 +814,6 @@ response shape. `GET /api/health` continues to return exactly `{ "status": "ok",
 
 *End of specification. Changes require student approval and a version bump.*
 
-**Approval:** v1.2 approved by the student on 2026-10-24. This approves the
-contract only — no FR, BR, AC, endpoint, screen, or checklist row is verified by
+**Approval:** v1.3 approved by the student on 2026-10-30. v1.2 was approved on
+2026-10-24. This approves the contract only — no FR, BR, AC, endpoint, screen, or checklist row is verified by
 it, because nothing has been built or run yet.

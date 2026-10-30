@@ -4,9 +4,9 @@
 | :--- | :--- |
 | **Project** | Tok TickIT — IT Service Desk |
 | **Sprint** | Lab 4: Actions Taken, Ticket Workflow, and Role Dashboards |
-| **Version** | v1.4 (Approved 2026-10-29) |
-| **Date** | 2026-10-29 |
-| **Contract source** | `specification.md` v1.0 (FR/BR/AC references below trace to it) |
+| **Version** | v1.5 (Approved 2026-10-30) |
+| **Date** | 2026-10-30 |
+| **Contract source** | `specification.md` v1.3 (FR/BR/AC references below trace to it) |
 | **Predecessor** | `docs/lab-03/api-spec.md` v1.2 — every endpoint not listed in sections 2–5 keeps its Lab 3 shape verbatim |
 
 ---
@@ -842,6 +842,6 @@ recorded status, which is what handout section 10 asks for.
 
 *End of API specification. Changes require student approval and a version bump.*
 
-**Approval:** v1.4 approved by the student on 2026-10-29. v1.3 was approved on
-2026-10-14. This approves the contract only — no FR, BR, AC, endpoint, screen, or
+**Approval:** v1.5 approved by the student on 2026-10-30. v1.4 was approved on
+2026-10-29. This approves the contract only — no FR, BR, AC, endpoint, screen, or
 checklist row is verified by it, because nothing has been built or run yet.

@@ -1584,11 +1584,6 @@ export default function StaffTicketDetail() {
                 Change Status
               </Button>
             </div>
-            {statusError && (
-              <p className="field-error-msg" data-testid="status-error">
-                {statusError}
-              </p>
-            )}
           </div>
         </div>
       )}
