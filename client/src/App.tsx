@@ -11,6 +11,8 @@ import TicketDetail from "./TicketDetail.js";
 import StaffTicketQueue from "./StaffTicketQueue.js";
 import StaffTicketDetail from "./StaffTicketDetail.js";
 import UserManagement from "./UserManagement.js";
+import RequesterDashboard from "./RequesterDashboard.js";
+import StaffDashboard from "./StaffDashboard.js";
 import Spinner from "./components/Spinner.js";
 
 /** Landing page: sends each user to the default screen for their state. */
@@ -153,6 +155,18 @@ export default function App() {
           </RequireAuth>
         }
       >
+        {/* Role Dashboards (Issue 28, ui-spec section 4.2). /dashboard is
+            accessible to any authenticated caller; /staff/dashboard is
+            restricted to IT Staff and Administrators. */}
+        <Route path="/dashboard" element={<RequesterDashboard />} />
+        <Route
+          path="/staff/dashboard"
+          element={
+            <RequireRole roles={["IT_STAFF", "ADMINISTRATOR"]}>
+              <StaffDashboard />
+            </RequireRole>
+          }
+        />
         <Route
           path="/my-tickets"
           element={

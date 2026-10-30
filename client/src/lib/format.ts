@@ -54,6 +54,33 @@ export function relativeDayHint(
   return null;
 }
 
+/**
+ * Format timestamp as a friendly relative time string (e.g. "2 hours ago", "3 days ago")
+ * for dashboard ticket and action lists (ui-spec section 5.1).
+ */
+export function formatRelativeTime(
+  iso: string,
+  now: Date = new Date()
+): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+
+  const diffMs = now.getTime() - date.getTime();
+  if (diffMs < 0) return "just now";
+
+  const diffSec = Math.floor(diffMs / 1000);
+  if (diffSec < 60) return "just now";
+
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin} minute${diffMin === 1 ? "" : "s"} ago`;
+
+  const diffHour = Math.floor(diffMin / 60);
+  if (diffHour < 24) return `${diffHour} hour${diffHour === 1 ? "" : "s"} ago`;
+
+  const diffDays = Math.floor(diffHour / 24);
+  return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
+}
+
 export function formatFileSize(bytes: number): string {
   if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   if (bytes >= 1024) return `${(bytes / 1024).toFixed(1)} KB`;

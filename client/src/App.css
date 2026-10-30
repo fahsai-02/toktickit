@@ -2326,4 +2326,370 @@
     align-items: stretch;
   }
 }
+
+  /* =====================================================================
+     Role Dashboards (Issue 28, ui-spec section 5 & 6)
+     ===================================================================== */
+  .dashboard-container {
+    padding-top: 24px;
+    padding-bottom: 48px;
+  }
+
+  .dashboard-header {
+    margin-bottom: 24px;
+  }
+
+  .dashboard-header .page-title {
+    margin-bottom: 4px;
+  }
+
+  .dashboard-greeting {
+    font-size: 16px;
+    color: var(--color-text-muted);
+    margin: 0;
+  }
+
+  /* Metric cards grid */
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .dashboard-grid--staff {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .dashboard-ownership {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .metric-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 1px 3px var(--color-shadow);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .metric-card:hover {
+    border-color: var(--color-secondary);
+    box-shadow: 0 2px 6px rgba(0, 107, 60, 0.12);
+  }
+
+  .metric-card__value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--color-text);
+    line-height: 1.2;
+    margin-bottom: 4px;
+  }
+
+  .metric-card__label {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-text-muted);
+  }
+
+  .metric-card__subtext {
+    font-size: 12px;
+    color: var(--color-text-muted);
+    margin-top: 4px;
+  }
+
+  .metric-card--attention {
+    background: #FFFBEB;
+    border-color: #FCD34D;
+    border-left: 4px solid var(--color-warning);
+  }
+
+  .metric-card--attention .metric-card__value {
+    color: #92400E;
+  }
+
+  .metric-card--attention .metric-card__label {
+    color: #B45309;
+    font-weight: 600;
+  }
+
+  .metric-card--users {
+    border-left: 4px solid var(--color-info);
+  }
+
+  /* Attention section full-width */
+  .dashboard-attention {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .dashboard-attention .metric-card--attention {
+    flex: 1;
+  }
+
+  .dashboard-quick-actions {
+    display: flex;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+
+  /* Priority Strip */
+  .priority-strip {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 3px var(--color-shadow);
+  }
+
+  .priority-strip__title {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0 0 12px 0;
+    color: var(--color-text);
+  }
+
+  .priority-strip__buckets {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .priority-strip__item {
+    flex: 1;
+    min-width: 90px;
+    background: var(--color-page);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+  }
+
+  .priority-strip__item:hover {
+    border-color: var(--color-primary);
+    background-color: var(--color-pale);
+  }
+
+  .priority-strip__label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+  }
+
+  .priority-strip__count {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--color-text);
+    margin-top: 2px;
+  }
+
+  /* Urgent section */
+  .dashboard-urgent-section {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 3px var(--color-shadow);
+  }
+
+  .dashboard-urgent-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .dashboard-urgent-links {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .dashboard-filter-link {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-primary);
+    text-decoration: none;
+  }
+
+  .dashboard-filter-link:hover {
+    text-decoration: underline;
+  }
+
+  /* Lists section */
+  .dashboard-lists {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 24px;
+  }
+
+  .dashboard-list-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: 0 1px 3px var(--color-shadow);
+  }
+
+  .dashboard-list-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 16px 0;
+    color: var(--color-text);
+  }
+
+  .dashboard-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .dashboard-list-item {
+    margin: 0;
+    padding: 0;
+  }
+
+  .dashboard-list-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    text-decoration: none;
+    color: inherit;
+    gap: 12px;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .dashboard-list-link:hover {
+    background-color: var(--color-pale);
+    border-color: var(--color-primary);
+  }
+
+  .dashboard-list-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+    gap: 2px;
+  }
+
+  .dashboard-ticket-number {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-primary);
+  }
+
+  .dashboard-ticket-summary {
+    font-size: 13px;
+    color: var(--color-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .dashboard-list-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .dashboard-ticket-owner {
+    font-size: 12px;
+    color: var(--color-text-muted);
+  }
+
+  .dashboard-ticket-time {
+    font-size: 12px;
+    color: var(--color-text-muted);
+  }
+
+  .dashboard-action-result {
+    font-size: 12px;
+    color: var(--color-text-muted);
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .dashboard-admin-section {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 3px var(--color-shadow);
+  }
+
+  /* Responsive breakpoints: 1200 / 992 / 768 */
+  @media (max-width: 1199px) {
+    .dashboard-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .dashboard-grid--staff {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 991px) {
+    .dashboard-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .dashboard-lists {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .dashboard-grid,
+    .dashboard-grid--staff,
+    .dashboard-ownership {
+      grid-template-columns: 1fr;
+    }
+    .dashboard-attention {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .priority-strip__buckets {
+      flex-direction: column;
+    }
+    .dashboard-list-link {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 6px;
+    }
+    .dashboard-list-meta {
+      width: 100%;
+      justify-content: space-between;
+    }
+  }
 }

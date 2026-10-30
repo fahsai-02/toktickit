@@ -94,7 +94,7 @@ Every `Status` below **starts** as `Planned`: this is the Test DD deliverable wr
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | UNIT-01 | BR-11, AC-07 | Resolution-gate predicate, standalone | `false` unless a non-blank `resolutionSummary` **and** ≥1 Action Taken; whitespace-only summary counts as blank | `resolution-gate.unit.test.ts` | Pass |
 | UNIT-02 | BR-11, BR-13, AC-09 | Gate is unaffected by the requester-resolved indication | A Ticket with `requesterIndicatedResolved = true` and no summary/actions still fails the gate | `resolution-gate.unit.test.ts` | Pass |
-| UNIT-03 | BR-25, AC-11 | Urgent predicate | `true` for `itPriority = URGENT`; `true` for `itPriority = null` + `requestedPriority = URGENT`; **`false`** for `itPriority = HIGH` + `requestedPriority = URGENT`; `false` for `RESOLVED`/`CLOSED`/`CANCELLED` at any priority | `dashboard-queries.unit.test.ts` | Planned |
+| UNIT-03 | BR-25, AC-11 | Urgent predicate | `true` for `itPriority = URGENT`; `true` for `itPriority = null` + `requestedPriority = URGENT`; **`false`** for `itPriority = HIGH` + `requestedPriority = URGENT`; `false` for `RESOLVED`/`CLOSED`/`CANCELLED` at any priority | `dashboard-queries.unit.test.ts` | Pass |
 | UNIT-04 | BR-12, AC-08 | Lab 3 transition matrix unchanged | Every pair in the Lab 3 matrix still resolves to the same permitted/denied answer; `IN_PROGRESS → RESOLVED` and `OPEN → CANCELLED` are flagged confirmation-required | `ticket-workflow.api.test.ts` (unit block) | Pass |
 
 > **UNIT-03 is the row that would otherwise be silently wrong.** "Urgent" reads
@@ -131,18 +131,18 @@ in the section 3 traceability table.
 | API-16 | FR-12, AC-06 | Update with the correct `version` | `200`; `version` incremented by one | `actions-taken.api.test.ts` | Pass |
 | API-17 | FR-12, AC-06 | Update with a stale `version` | `409`; `data` carries the server's latest copy; DB unchanged | `actions-taken.api.test.ts` | Pass |
 | API-18 | BR-15, AC-06 | Update with a **missing** `version` | `400` — required on this endpoint (distinct from API-25) | `actions-taken.api.test.ts` | Pass |
-| API-29 | BR-19, FR-14, AC-11 | `unassigned` counts owner-less Tickets only | Cross-checked against a direct `ownerId IS NULL` count | `staff-dashboard.api.test.ts` | Planned |
-| API-30 | BR-19, FR-14, AC-11 | `myAssigned` counts the caller's own | Cross-checked against `ownerId = caller` | `staff-dashboard.api.test.ts` | Planned |
-| API-31 | FR-14, AC-11 | `byItPriority` always has 5 buckets | Includes a null/not-set bucket; bucket counts sum to the queue total | `staff-dashboard.api.test.ts` | Planned |
-| API-32 | FR-15, AC-11 | `userCounts` role-conditional | Present for Administrator, **absent** for IT Staff | `staff-dashboard.api.test.ts` | Planned |
-| API-33 | BR-25, AC-11 | `counts.urgentTickets` matches the predicate | Includes the itPriority-URGENT and requestedPriority-URGENT groups; excludes staff-de-escalated and terminal statuses | `staff-dashboard.api.test.ts` | Planned |
-| API-34 | BR-25 | `counts.urgentTickets` equals COUNT(*) matching BR-25 (preview limited to 10; count independent of preview length) | Asserts predicate-based count against BR-25; list length may equal count only when ≤ 10 urgent Tickets exist | `staff-dashboard.api.test.ts` | Planned |
-| API-35 | FR-16, AC-12 | Every drill-down returns exactly the counted set | Each `drillDown` query from `api-spec.md` section 3, followed and compared to the count | `staff-dashboard.api.test.ts` | Planned |
-| API-36 | BR-19, AC-10 | Requester dashboard counts own Tickets only | Each `counts` value equals a direct query over the caller's Tickets; another user's Tickets excluded | `requester-dashboard.api.test.ts` | Planned |
-| API-37 | BR-23, AC-10 | Requester with zero Tickets | All counts `0`, arrays `[]`, `200` — not an error, not `null` | `requester-dashboard.api.test.ts` | Planned |
-| API-38 | BR-20, FR-17, AC-10 | Zero metrics are `0`, never `null` and never `[]` in place of a count | Asserts each numeric field's type | `requester-dashboard.api.test.ts` | Planned |
-| API-39 | FR-15, AC-11 | Administrator calling the staff dashboard | `200` including `userCounts` | `staff-dashboard.api.test.ts` | Planned |
-| API-42 | FR-16, AC-12 | `statusGroup` filters the staff queue | Each documented group returns only its statuses | `staff-dashboard.api.test.ts` | Planned |
+| API-29 | BR-19, FR-14, AC-11 | `unassigned` counts owner-less Tickets only | Cross-checked against a direct `ownerId IS NULL` count | `staff-dashboard.api.test.ts` | Pass |
+| API-30 | BR-19, FR-14, AC-11 | `myAssigned` counts the caller's own | Cross-checked against `ownerId = caller` | `staff-dashboard.api.test.ts` | Pass |
+| API-31 | FR-14, AC-11 | `byItPriority` always has 5 buckets | Includes a null/not-set bucket; bucket counts sum to the queue total | `staff-dashboard.api.test.ts` | Pass |
+| API-32 | FR-15, AC-11 | `userCounts` role-conditional | Present for Administrator, **absent** for IT Staff | `staff-dashboard.api.test.ts` | Pass |
+| API-33 | BR-25, AC-11 | `counts.urgentTickets` matches the predicate | Includes the itPriority-URGENT and requestedPriority-URGENT groups; excludes staff-de-escalated and terminal statuses | `staff-dashboard.api.test.ts` | Pass |
+| API-34 | BR-25 | `counts.urgentTickets` equals COUNT(*) matching BR-25 (preview limited to 10; count independent of preview length) | Asserts predicate-based count against BR-25; list length may equal count only when ≤ 10 urgent Tickets exist | `staff-dashboard.api.test.ts` | Pass |
+| API-35 | FR-16, AC-12 | Every drill-down returns exactly the counted set | Each `drillDown` query from `api-spec.md` section 3, followed and compared to the count | `staff-dashboard.api.test.ts` | Pass |
+| API-36 | BR-19, AC-10 | Requester dashboard counts own Tickets only | Each `counts` value equals a direct query over the caller's Tickets; another user's Tickets excluded | `requester-dashboard.api.test.ts` | Pass |
+| API-37 | BR-23, AC-10 | Requester with zero Tickets | All counts `0`, arrays `[]`, `200` — not an error, not `null` | `requester-dashboard.api.test.ts` | Pass |
+| API-38 | BR-20, FR-17, AC-10 | Zero metrics are `0`, never `null` and never `[]` in place of a count | Asserts each numeric field's type | `requester-dashboard.api.test.ts` | Pass |
+| API-39 | FR-15, AC-11 | Administrator calling the staff dashboard | `200` including `userCounts` | `staff-dashboard.api.test.ts` | Pass |
+| API-42 | FR-16, AC-12 | `statusGroup` filters the staff queue | Each documented group returns only its statuses | `staff-dashboard.api.test.ts` | Pass |
 | API-43 | FR-23, BR-09 | Existing Lab 2/3 ticket endpoints unchanged | Spot-check the Lab 3 suite's key assertions still hold on the Lab 4 schema | `migration-regression.api.test.ts` | Pass |
 
 > **API-10 is pinned, not left open.** An earlier draft of this row read "the note
@@ -224,14 +224,14 @@ inactive-assignee regression; the remaining AUTH rows land in
 | AUTH-01 | BR-14, AC-13 | `PUT /api/staff/tickets/:id/assign` refuses an **inactive** owner | `404` carrying exactly "Owner must be an active IT Staff or Administrator user"; `ownerId` unchanged; an inactive `REQUESTER` is refused identically. Asserted against a user row read from `db`, not a literal id | `ticket-workflow.api.test.ts` | Pass |
 | AUTH-02 | BR-08, BR-09, AC-05 | Role matrix over every new write endpoint | `POST /api/tickets/:id/actions`, `PUT /api/actions/:id`, and `PUT /api/staff/tickets/:id/status` each return `403` for a `REQUESTER` (their own Ticket included) and succeed for `IT_STAFF` and `ADMINISTRATOR` — all three roles exercised per endpoint, not sampled | `authorization.api.test.ts` | Planned |
 | AUTH-03 | BR-08, AC-05 | Requester reading a **foreign** Ticket's actions | `403`, and the error body carries no row from that Ticket | `authorization.api.test.ts` | Planned |
-| AUTH-04 | BR-19, AC-10 | Requester dashboard scope cannot be widened by the client | `?userId=<other user>` and `?requesterId=<other user>` are ignored: the response is deep-equal to the unparameterized call, and another user's Ticket count is unchanged | `authorization.api.test.ts` | Planned |
+| AUTH-04 | BR-19, AC-10 | Requester dashboard scope cannot be widened by the client | `?userId=<other user>` and `?requesterId=<other user>` are ignored: the response is deep-equal to the unparameterized call, and another user's Ticket count is unchanged | `authorization.api.test.ts` | Pass |
 | AUTH-05 | FR-23, AC-17 | The Lab 4 Action Taken endpoints refuse an unauthenticated caller | `401` without a session. **Issue 25 owns** `POST`/`GET /api/tickets/:id/actions` and `PUT /api/actions/:id`, asserted in `actions-taken.api.test.ts`. The dashboard `401` is API-41 and the status-endpoint `401` belongs to the Ticket Workflow issue; both land in `authorization.api.test.ts` with those endpoints | `actions-taken.api.test.ts` (later endpoints in `authorization.api.test.ts`) | Pass |
 | AUTH-06 | BR-10, api-spec section 2.4 | Method guards answer `405`, not `401`, with no session | `DELETE`, `PATCH`, and `POST` on `/api/actions/:id` and `/api/tickets/:id/actions` return `405` for an anonymous caller, and the stored record is untouched — proving the guard reads nothing | `actions-taken.api.test.ts` | Pass |
 | API-03 | BR-08, AC-05 | Requester cannot create | `403` | `actions-taken.api.test.ts` | Pass |
 | API-04 | BR-08, AC-05 | Requester cannot update | `403`; existing record unchanged | `actions-taken.api.test.ts` | Pass |
 | API-05 | BR-09 | Staff may act on **any** Ticket in the queue | `201` on a Ticket the caller does not own **and** `201` on one they do — recording an action never requires ownership, which is what BR-09 defines an accessible Ticket to be | `actions-taken.api.test.ts` | Pass |
-| API-40 | BR-19 | Requester calling the staff dashboard | `403` | `staff-dashboard.api.test.ts` | Planned |
-| API-41 | BR-19 | Unauthenticated | `401` on both dashboard endpoints | `authorization.api.test.ts` | Planned |
+| API-40 | BR-19 | Requester calling the staff dashboard | `403` | `staff-dashboard.api.test.ts` | Pass |
+| API-41 | BR-19 | Unauthenticated | `401` on both dashboard endpoints | `authorization.api.test.ts` | Pass |
 
 > **API-05 used to assert a scenario that cannot happen.** It read "staff cannot
 > act on an inaccessible Ticket → `404`", but BR-09 defines an accessible Ticket as
