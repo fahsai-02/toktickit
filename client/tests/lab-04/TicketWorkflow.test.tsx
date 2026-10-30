@@ -5,7 +5,7 @@ import { AuthProvider } from "../../src/AuthContext.js";
 import StaffTicketDetail from "../../src/StaffTicketDetail.js";
 import * as api from "../../src/api.js";
 
-// Lab 4 — Ticket workflow UI (docs/lab-04/tests.md rows UI-17..UI-20;
+// Lab 4 — Ticket workflow UI (docs/lab-04/tests.md rows UI-17..UI-20, UI-30;
 // ui-spec 5.5). jsdom; every API call is mocked. The backend is the enforcer,
 // so the gate message the UI shows is the one the server returns.
 
@@ -60,7 +60,7 @@ function renderDetail() {
 const GATE_NO_SUMMARY_MSG =
   "Cannot resolve this ticket without a resolution summary. Save a resolution summary first.";
 
-describe("TicketWorkflow — status gate, matrix and confirmation (UI-17..UI-20)", () => {
+describe("TicketWorkflow — status gate, matrix and confirmation (UI-17..UI-20, UI-30)", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     // jsdom has no real confirm; stub it (AGENTS.md test rule 6).
@@ -169,15 +169,17 @@ describe("TicketWorkflow — status gate, matrix and confirmation (UI-17..UI-20)
     expect(indicator).not.toHaveTextContent("IN_PROGRESS");
   });
 
-  it("a 409 shows a conflict callout with a Refresh action instead of silently reverting", async () => {
-    vi.spyOn(api, "fetchStaffTicket").mockResolvedValue(makeTicket());
+  it("UI-30: a 409 shows a conflict callout with a Refresh action that updates status, version, and resolution summary", async () => {
+    vi.spyOn(api, "fetchStaffTicket").mockResolvedValue(
+      makeTicket({ resolutionSummary: "Initial local summary" })
+    );
     vi.spyOn(api, "updateStaffTicketStatus").mockRejectedValue(
       new api.TicketConflictError(
         "This ticket was updated by someone else. Refresh to load the latest version.",
         {
           id: 101,
           currentStatus: "WAITING_FOR_REQUESTER",
-          resolutionSummary: null,
+          resolutionSummary: "Newer summary saved by another staff member",
           version: 9,
         }
       )
@@ -185,6 +187,8 @@ describe("TicketWorkflow — status gate, matrix and confirmation (UI-17..UI-20)
     renderDetail();
 
     await screen.findByTestId("staff-ticket-detail");
+    expect(screen.getByTestId("resolution-input")).toHaveValue("Initial local summary");
+
     fireEvent.change(screen.getByTestId("staff-status-select"), {
       target: { value: "RESOLVED" },
     });
@@ -197,5 +201,8 @@ describe("TicketWorkflow — status gate, matrix and confirmation (UI-17..UI-20)
     await waitFor(() => {
       expect(screen.queryByTestId("status-conflict-callout")).not.toBeInTheDocument();
     });
+    expect(screen.getByTestId("resolution-input")).toHaveValue(
+      "Newer summary saved by another staff member"
+    );
   });
 });

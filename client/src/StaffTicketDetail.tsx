@@ -567,6 +567,9 @@ export default function StaffTicketDetail() {
       resolutionSummary: statusConflict.resolutionSummary,
       version: statusConflict.version,
     });
+    setResolutionText(statusConflict.resolutionSummary ?? "");
+    setResolutionError("");
+    setResolutionSaved(false);
     setStatusConflict(null);
     setStatusError("");
   };
