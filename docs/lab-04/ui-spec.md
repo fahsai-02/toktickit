@@ -4,8 +4,8 @@
 | :--- | :--- |
 | **Project** | Tok TickIT — IT Service Desk |
 | **Sprint** | Lab 4: Actions Taken, Ticket Workflow, and Role Dashboards |
-| **Version** | v1.2 (Approved 2026-10-24) |
-| **Date** | 2026-10-24 |
+| **Version** | v1.3 (Approved 2026-10-31) |
+| **Date** | 2026-10-31 |
 | **Contract source** | `specification.md` v1.0; request and response shapes in `api-spec.md` |
 | **Predecessor** | `docs/lab-03/ui-spec.md` — Lab 4 inherits its tokens, states, and accessibility rules unchanged |
 
@@ -245,6 +245,16 @@ conditions (BR-25), the header carries **two filter links, "By IT Priority" and
 section 3.3. A single link here would show the user fewer rows than the count
 above it.
 
+**Fixed-height list box.** The list can return up to 10 rows, and the number is
+not known until the data lands. To keep the loading and loaded layouts the same
+height (section 5.1 "no layout shift"), the rows sit in a box that is exactly
+five rows high and **scrolls inside itself** when more than five arrive, rather
+than growing the page or reserving ten rows that would sit empty in the usual
+case of zero to three urgent Tickets. When it scrolls, the box is a labelled,
+keyboard-focusable region ("Urgent tickets, scrollable"); with five rows or
+fewer it adds no tab stop. Every other dashboard list likewise reserves the
+height of its five-row cap in both the skeleton and the loaded page.
+
 **My Recent Actions.** The `myRecentActions` list — the caller's own five most
 recent Action Taken records across all Tickets, and the evidence grading Part 5
 asks for. Each row: ticket number, `actionDate` relative in Asia/Bangkok, and the
@@ -432,7 +442,16 @@ empty / no-results / error+retry) · `ConfirmDialog` · `Drawer` · `TicketTable
 Actions Taken entries, with an optional per-entry Edit control).
 
 Two Lab 4 constructs are new but stay **inline inside their owning screen**,
-following the Lab 3 decision not to over-extract single-screen pieces:
+following the Lab 3 decision not to over-extract single-screen pieces
+(`MetricCard` and `ActionForm`, below). **One deviation, recorded in v1.3:** the
+dashboard list pieces are shared between the two dashboards, in
+`client/src/components/DashboardList.tsx` — `DashboardListCard` (a titled list
+with its empty state), `DashboardTicketListLink` and `DashboardActionListLink`
+(the rows), and `DashboardSkeleton` (the loading placeholder). Both dashboards
+use the same list card, row, and skeleton, so keeping them inline would have
+duplicated them in two screens and let the skeleton drift from the loaded
+layout. They compose existing components (`Badge`, `ListState`) and add no new
+visual primitive.
 
 | Construct | Lives in | Note |
 | :--- | :--- | :--- |
@@ -567,11 +586,13 @@ of a Lab 4 test rig, not of the Lab 3 screens.
 | v1.0 | 2026-10-04 | Initial Lab 4 UI contract. | Approved (student, 2026-10-04) |
 | v1.1 | 2026-10-04 | Section 4 card layout and section 6 responsive rules said three different things — a five-card wireframe, "Six count cards in one row", and "three per row from 1200px down". All three now describe one named grid: five plain cards 5/3/2/full-width per row, `Needs your attention` full-width at every size, with the `Create Ticket` button beside it. Added the `actions-taken/` parent folder handout section 12 requires, keeping the four per-screen sub-folders. Checklist row 34 now cites `REG-01` only, with a note on where its visual half is proven. | Approved (student, 2026-10-04) |
 | v1.2 | 2026-10-24 | **Actions Taken is a list, not a table.** Section 5.3's six-column read mode left each column too narrow in the staff Ticket Detail side column (about 540px at 1440), where the area shares the column with the conversation tabs. Read mode is now one compact entry per action showing the same six fields, and the same markup serves every viewport with only the label column narrowing on mobile. Updated section 5.3, 5.4, section 6 desktop/tablet/mobile rows, section 7's accessible-name rule, section 8 (the construct is now the shared `ActionList` component rather than the inline `ActionTable`), and checklist rows 10, 15, 25, 28. | Approved (student, 2026-10-24) |
+| v1.3 | 2026-10-31 | **Issue 28 (#81) review decisions.** Section 5.2 now describes the Urgent list as a fixed five-row box that scrolls inside itself (a keyboard-focusable, labelled region past five rows), and states that every dashboard list reserves its five-row cap, so loading and loaded layouts match (section 5.1 "no layout shift"). Section 8 records the shared dashboard list components in `DashboardList.tsx` as a deviation from "stay inline". Both were choices made while building Issue 28 and are written down here rather than left as undocumented behavior. | Approved (student, 2026-10-31) |
 
 ---
 
 *End of UI specification. Changes require student approval and a version bump.*
 
-**Approval:** v1.2 approved by the student on 2026-10-24. This approves the
+**Approval:** v1.3 approved by the student on 2026-10-31. v1.2 was approved on
+2026-10-24. This approves the
 contract only — no FR, BR, AC, endpoint, screen, or checklist row is verified by
 it, because nothing has been built or run yet.
