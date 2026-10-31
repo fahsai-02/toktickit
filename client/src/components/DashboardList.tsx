@@ -33,6 +33,8 @@ interface DashboardListCardProps<T extends { id: number }> {
   emptyTestId?: string;
   cardTestId?: string;
   listAriaLabel?: string;
+  /** Optional call to action rendered inside the empty block (ui-spec 5.1). */
+  emptyAction?: React.ReactNode;
   renderItem: (item: T) => React.ReactNode;
 }
 
@@ -43,13 +45,16 @@ export function DashboardListCard<T extends { id: number }>({
   emptyTestId = "dashboard-list-empty",
   cardTestId,
   listAriaLabel,
+  emptyAction,
   renderItem,
 }: DashboardListCardProps<T>) {
   return (
     <div className="dashboard-list-card" data-testid={cardTestId}>
       <h2 className="dashboard-list-title">{title}</h2>
       {items.length === 0 ? (
-        <ListState testId={emptyTestId} message={emptyMessage} />
+        <ListState testId={emptyTestId} message={emptyMessage}>
+          {emptyAction}
+        </ListState>
       ) : (
         <ul className="dashboard-list" aria-label={listAriaLabel}>
           {items.map((item) => (

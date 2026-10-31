@@ -27,11 +27,10 @@ function HomeRedirect() {
   }
   if (!user) return <Navigate to="/login" replace />;
   if (user.mustChangePassword) return <Navigate to="/change-password" replace />;
-  if (user.role === "REQUESTER") return <Navigate to="/my-tickets" replace />;
-  // ui-spec section 4.1: IT Staff and Admins land on the staff queue; the
-  // admin user-management screen is added at release time (ui-spec 4.4).
+  // ui-spec section 4.1: each role's Dashboard is its landing page.
+  if (user.role === "REQUESTER") return <Navigate to="/dashboard" replace />;
   if (user.role === "IT_STAFF" || user.role === "ADMINISTRATOR") {
-    return <Navigate to="/staff/queue" replace />;
+    return <Navigate to="/staff/dashboard" replace />;
   }
   return <Navigate to="/create-ticket" replace />;
 }

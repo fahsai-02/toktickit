@@ -44,10 +44,10 @@ function makeTicket(overrides: Partial<api.StaffTicketDetail> = {}) {
   return { ...baseTicket, ...overrides };
 }
 
-function renderDetail() {
+function renderDetail(path = "/staff/tickets/101") {
   return render(
     <AuthProvider>
-      <MemoryRouter initialEntries={["/staff/tickets/101"]}>
+      <MemoryRouter initialEntries={[path]}>
         <Routes>
           <Route path="/staff/tickets/:ticketId" element={<StaffTicketDetail />} />
           <Route path="/staff/queue" element={<div data-testid="queue-route" />} />
@@ -204,5 +204,14 @@ describe("TicketWorkflow — status gate, matrix and confirmation (UI-17..UI-20,
     expect(screen.getByTestId("resolution-input")).toHaveValue(
       "Newer summary saved by another staff member"
     );
+  });
+
+  // ui-spec section 5.2: dashboard "My Recent Actions" rows link with ?tab=actions.
+  it("opens the Actions Taken tab when the URL carries ?tab=actions", async () => {
+    vi.spyOn(api, "fetchStaffTicket").mockResolvedValue(makeTicket());
+    renderDetail("/staff/tickets/101?tab=actions");
+    await screen.findByTestId("staff-ticket-detail");
+    const tab = await screen.findByRole("tab", { name: /Actions Taken/ });
+    expect(tab).toHaveAttribute("aria-selected", "true");
   });
 });

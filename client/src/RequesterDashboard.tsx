@@ -190,6 +190,17 @@ export default function RequesterDashboard() {
           emptyTestId="recent-tickets-empty"
           cardTestId="recent-tickets-card"
           listAriaLabel="Recently updated tickets"
+          emptyAction={
+            isZeroActivity ? (
+              <Button
+                variant="secondary"
+                onClick={() => navigate("/create-ticket")}
+                data-testid="recent-tickets-empty-cta"
+              >
+                Create Ticket
+              </Button>
+            ) : undefined
+          }
           renderItem={(ticket: DashboardTicketRow) => (
             <DashboardTicketListLink
               ticket={ticket}
@@ -207,6 +218,17 @@ export default function RequesterDashboard() {
           emptyTestId="recently-resolved-empty"
           cardTestId="recently-resolved-card"
           listAriaLabel="Recently resolved tickets"
+          emptyAction={
+            isZeroActivity ? (
+              <Button
+                variant="secondary"
+                onClick={() => navigate("/create-ticket")}
+                data-testid="resolved-tickets-empty-cta"
+              >
+                Create Ticket
+              </Button>
+            ) : undefined
+          }
           renderItem={(ticket: DashboardTicketRow) => (
             <DashboardTicketListLink
               ticket={ticket}

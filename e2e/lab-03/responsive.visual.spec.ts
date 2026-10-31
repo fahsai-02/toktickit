@@ -129,6 +129,10 @@ test.describe("RESP-10..12 requester ticket detail", () => {
     page,
   }, testInfo) => {
     await loginAndUnlock(page, "jennifer.anderson@toktickit.dev", REQ_INITIAL_PASSWORD);
+    // Lab 4 ui-spec section 4.1: the landing page is the Dashboard; this
+    // screen is reached through My Tickets.
+    await expect(page).toHaveURL(/\/dashboard/);
+    await page.goto("/my-tickets");
     await expect(page).toHaveURL(/\/my-tickets/);
 
     // Navigate by the visible ticket number rather than a hard-coded row id.
@@ -265,6 +269,10 @@ test.describe("RESP-25..27 requester my tickets", () => {
   // the list shows a real mix of status and priority badges.
   test("ticket list renders at every viewport", async ({ page }, testInfo) => {
     await loginAndUnlock(page, REQ_EMAIL, REQ_INITIAL_PASSWORD);
+    // Lab 4 ui-spec section 4.1: the landing page is the Dashboard; this
+    // screen is reached through My Tickets.
+    await expect(page).toHaveURL(/\/dashboard/);
+    await page.goto("/my-tickets");
     await expect(page).toHaveURL(/\/my-tickets/);
     await expect(
       page.locator('[data-testid^="ticket-row-"], [data-testid^="ticket-card-"]')

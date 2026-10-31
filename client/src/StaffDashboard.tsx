@@ -309,7 +309,7 @@ export default function StaffDashboard() {
           renderItem={(action: MyRecentAction) => (
             <DashboardActionListLink
               action={action}
-              to={`/staff/tickets/${action.ticketId}`}
+              to={`/staff/tickets/${action.ticketId}?tab=actions`}
               testId={`recent-action-${action.id}`}
             />
           )}

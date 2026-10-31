@@ -420,7 +420,19 @@ describe("role-aware routing and shell (FR-10, ui-spec.md section 4.1)", () => {
       data: [],
       meta: { total: 0, page: 1, pageSize: 10, totalPages: 0 },
     });
-    // Staff/Admin homes land on the staff queue (Issue 19) — fetch must resolve.
+    // Lab 4 ui-spec section 4.1: each role lands on its Dashboard.
+    vi.spyOn(api, "fetchRequesterDashboard").mockResolvedValue({
+      counts: { open: 0, inProgress: 0, waitingForRequester: 0, resolved: 0, closed: 0, attentionRequired: 0 },
+      recentTickets: [],
+      recentlyResolved: [],
+    });
+    vi.spyOn(api, "fetchStaffDashboard").mockResolvedValue({
+      counts: { new: 0, open: 0, inProgress: 0, waitingForRequester: 0, unassigned: 0, myAssigned: 0, urgentTickets: 0 },
+      byItPriority: [],
+      recentTickets: [],
+      urgentTickets: [],
+      myRecentActions: [],
+    });
     vi.spyOn(api, "fetchStaffTickets").mockResolvedValue({
       data: [],
       meta: { total: 0, page: 1, pageSize: 10, totalPages: 0 },
@@ -440,12 +452,11 @@ describe("role-aware routing and shell (FR-10, ui-spec.md section 4.1)", () => {
     expect(screen.queryByText("Sign in to your account")).not.toBeInTheDocument();
   });
 
-  it("lands IT Staff on My Queue (staff queue home, ui-spec 4.1)", async () => {
+  it("lands IT Staff on the staff Dashboard (Lab 4 ui-spec 4.1)", async () => {
     renderAuthedAs(staffUser, ["/"]);
-    // StaffTicketQueue page heading — the "My Queue" nav link alone would
-    // also match, so target the heading role.
+    // StaffDashboard page heading (the nav link alone would not be a heading).
     expect(
-      await screen.findByRole("heading", { name: "My Queue" })
+      await screen.findByRole("heading", { name: "IT Staff Dashboard" })
     ).toBeInTheDocument();
     // Role badge + name in the profile button; requester-only link hidden.
     // (Name also appears in the queue's own headers, so assert the profile
@@ -460,15 +471,15 @@ describe("role-aware routing and shell (FR-10, ui-spec.md section 4.1)", () => {
   it("bounces IT Staff away from the requester-only /my-tickets", async () => {
     renderAuthedAs(staffUser, ["/my-tickets"]);
     expect(
-      await screen.findByRole("heading", { name: "My Queue" })
+      await screen.findByRole("heading", { name: "IT Staff Dashboard" })
     ).toBeInTheDocument();
     expect(screen.queryByTestId("ticket-table-desktop")).not.toBeInTheDocument();
   });
 
-  it("lands Administrators on My Queue with the Administrator badge", async () => {
+  it("lands Administrators on the staff Dashboard with the Administrator badge", async () => {
     renderAuthedAs(adminUser, ["/"]);
     expect(
-      await screen.findByRole("heading", { name: "My Queue" })
+      await screen.findByRole("heading", { name: "IT Staff Dashboard" })
     ).toBeInTheDocument();
     expect(screen.getByText("Administrator")).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /my tickets/i })).not.toBeInTheDocument();

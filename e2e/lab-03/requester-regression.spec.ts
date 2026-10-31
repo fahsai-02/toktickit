@@ -40,8 +40,8 @@ test.describe("E2E-05 Requester regression (AC-03, AC-07)", () => {
     await expect(page).toHaveURL(/\/change-password/);
     await changePasswordViaUi(page, REQ_INITIAL_PASSWORD, REQ_PASSWORD);
 
-    // Mandatory change completes → land on the requester default page.
-    await expect(page).toHaveURL(/\/my-tickets/);
+    // Mandatory change completes → land on the Dashboard (Lab 4 ui-spec section 4.1).
+    await expect(page).toHaveURL(/\/dashboard/);
 
     // ── Create a ticket through the UI (auth identity, no requester picker)
     const summary = `E2E requester regression ${Date.now()}`;

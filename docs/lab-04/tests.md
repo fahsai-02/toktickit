@@ -4,8 +4,8 @@
 | :--- | :--- |
 | **Project** | Tok TickIT — IT Service Desk |
 | **Sprint** | Lab 4: Actions Taken, Ticket Workflow, and Role Dashboards |
-| **Version** | v1.9 — 2026-10-30 (Issue 27 review fixes: API-44, UI-30, UI-31; see section 6) |
-| **Date** | 2026-10-30 |
+| **Version** | v1.10 — 2026-10-31 (Issue 28 review fixes: dashboard client tests UI-21..29; see section 6) |
+| **Date** | 2026-10-31 |
 | **Traceability source** | `specification.md` v1.3 AC-01..18 · `api-spec.md` v1.5 · `ui-spec.md` v1.2 |
 
 ---
@@ -174,15 +174,15 @@ in the section 3 traceability table.
 | UI-14 | FR-24 | Assign control lives at Ticket level | The owner control is present **on the Ticket**, not on the action | `ActionsTaken.test.tsx` | Pass |
 | UI-15 | BR-08, AC-05 | Requester read-only view | No Record, Edit, or Delete control; the six fields still render | `ActionsTaken.test.tsx` | Pass |
 | UI-16 | FR-03 | Empty Actions Taken state | A helpful empty block, not a headers-only table | `ActionsTaken.test.tsx` | Pass |
-| UI-21 | FR-13, AC-10 | Requester dashboard cards | All six cards render with the server's numbers; the client recomputes none of them | `RequesterDashboard.test.tsx` | Planned |
-| UI-22 | FR-17, AC-10 | Zero cards | A `0` card is still rendered with `0` | `RequesterDashboard.test.tsx` | Planned |
-| UI-23 | FR-13 | Attention card wording | Reads "Needs your attention", not the raw field name | `RequesterDashboard.test.tsx` | Planned |
-| UI-24 | FR-16, AC-12 | Card drill-downs | Each card renders the documented URL as a real link with its number in the accessible name | `DashboardCards.test.tsx` | Planned |
-| UI-25 | FR-14, AC-11 | Staff dashboard strip | All five priority buckets render, including "Not set" | `StaffDashboard.test.tsx` | Planned |
-| UI-26 | FR-14, AC-11 | Urgent header offers both links | "By IT Priority" and "By Requested Priority" both present and pointing at different queries | `StaffDashboard.test.tsx` | Planned |
-| UI-27 | FR-15 | Users card is role-conditional | Renders for an Administrator payload; absent entirely when `userCounts` is missing | `StaffDashboard.test.tsx` | Planned |
-| UI-28 | FR-14 | My Recent Actions | Renders the caller's five most recent, each linking to its Ticket | `StaffDashboard.test.tsx` | Planned |
-| UI-29 | FR-22 | Console clean | `vi.spyOn(console, 'error')` records nothing unhandled on any new screen, happy path and failure | `DashboardCards.test.tsx` | Planned |
+| UI-21 | FR-13, AC-10 | Requester dashboard cards | All six cards render with the server's numbers; the client recomputes none of them | `RequesterDashboard.test.tsx` | Pass |
+| UI-22 | FR-17, AC-10 | Zero cards | A `0` card is still rendered with `0` | `RequesterDashboard.test.tsx` | Pass |
+| UI-23 | FR-13 | Attention card wording | Reads "Needs your attention", not the raw field name | `RequesterDashboard.test.tsx` | Pass |
+| UI-24 | FR-16, AC-12 | Card drill-downs | Each card renders the documented URL as a real link with its number in the accessible name | `DashboardCards.test.tsx` | Pass |
+| UI-25 | FR-14, AC-11 | Staff dashboard strip | All five priority buckets render, including "Not set" | `StaffDashboard.test.tsx` | Pass |
+| UI-26 | FR-14, AC-11 | Urgent header offers both links | "By IT Priority" and "By Requested Priority" both present and pointing at different queries | `StaffDashboard.test.tsx` | Pass |
+| UI-27 | FR-15 | Users card is role-conditional | Renders for an Administrator payload; absent entirely when `userCounts` is missing | `StaffDashboard.test.tsx` | Pass |
+| UI-28 | FR-14 | My Recent Actions | Renders the caller's five most recent, each linking to its Ticket | `StaffDashboard.test.tsx` | Pass |
+| UI-29 | FR-22 | Console clean | `vi.spyOn(console, 'error')` records nothing unhandled on any new screen, happy path and failure | `DashboardCards.test.tsx` | Pass |
 
 > **UI-12 and UI-13 assert an absence, which is unusual and deliberate.** The
 > Part 6 traceability requirement is that `assign`, `status transition`,
@@ -547,6 +547,7 @@ rows `Planned`).
 | Lab 4 (client TicketWorkflow) | `cd client && pnpm test --run tests/lab-04/TicketWorkflow.test.tsx` | **2026-10-30:** 1 file, **5 of 5 tests pass** (UI-17..20 + the `409` conflict-refresh case, UI-30). |
 | Server (unit + API) | `cd server && pnpm test` | **2026-10-30:** 24 files, **345 of 345 tests pass**. The Issue 27 review adds API-44 (`version: null`) to `ticket-workflow.api.test.ts` on top of the 344 tests recorded for Issue 27 on 2026-10-29. Run after `pnpm exec prisma generate`: the generated client is gitignored, and a stale copy makes the staff-detail suites answer `500` even though the database is migrated. The earlier 2026-10-09 run was 318/319; the single failure was `lab-03/users-admin.api.test.ts` **API-68**, whose assertion demanded the user table hold *exactly* `SEED_USERS.length` rows. A hand-created dev account (`fahsai.meow@toktickit.dev`) makes it 12 vs 11 — a brittle assertion rather than an environment defect, and one the repo's own test rule 1 forbids ("must pass on ANY seeded DB"). The assertion now requires *at least* that many rows plus the presence of every seeded email per the repo's own test rule 1, and the suite is green. |
 | Client (component + style) | `cd client && pnpm test` | **2026-10-30:** 20 files, **235 of 235 tests pass**. The Issue 27 review adds the no-version body case to `tests/lab-03/staff-ticket-api.test.tsx` (now 13 tests, UI-31) on top of the 234 tests recorded on 2026-10-29; `TicketWorkflow.test.tsx` keeps its 5 tests (UI-17..20 + UI-30), `ActionsTaken.test.tsx` keeps its 28 tests and the requester `hidden`/Notes class assertions. The four Lab 2/3 suites that mount a Ticket Detail (`RequesterTicketDetail`, `RequesterTicketComments`, `StaffTicketDetail`) stub `fetchTicketActions`. |
+| Client (component + style) | `cd client && pnpm test` | **2026-10-31:** 23 files, **252 of 252 tests pass**. Issue 28 review adds `RequesterDashboard.test.tsx` (6), `DashboardCards.test.tsx` (3), `StaffDashboard.test.tsx` (7) and one `?tab=actions` case in `TicketWorkflow.test.tsx` (now 6); `pnpm build` clean. `Login.test.tsx` and `ChangePassword.test.tsx` now expect the Dashboard landing page (ui-spec section 4.1). |
 | E2E (Playwright, functional) | `pnpm test:e2e:lab4` | Not run (owned by Issue 29, #82) |
 | E2E (Playwright, visual + audit) | the three `*.visual.spec.ts` files | Not run |
 | E2E regression, Labs 2–3 | `pnpm test:e2e` | Not run |
@@ -634,6 +635,7 @@ updates this file together with `specification.md`, `api-spec.md`, and
 | v1.7 | 2026-10-29 | **Issue 27 (#80) suites executed + review pass, rebased on the Issue 26 follow-up.** Flipped `UNIT-01/02/04`, `API-19..28`, `UI-17..20` to `Pass` and recorded **both** runs in section 6, which the transition from `Planned` had skipped: `cd server && pnpm test --run tests/lab-04` **4 files, 57/57** (`resolution-gate.unit.test.ts` 7, `ticket-workflow.api.test.ts` 15, `actions-taken.api.test.ts` 28, `migration-regression.api.test.ts` 7), whole server suite **24 files, 343/343**, client **20 files, 234/234** (`TicketWorkflow.test.tsx` 5 on top of the Issue 26 baseline of 19 files / 229), and both builds clean (seeded dev DB, 5 migrations). Applied the local fix-list review: added the order-of-checks assertion to the workflow suite so a nonexistent Ticket with an invalid enum is `404`, matching `api-spec.md` section 5.1 (S3 — the route now looks the Ticket up before validating the payload); removed the unintentional `version` field from the requester `GET /api/tickets/:id` response and kept it only on the staff detail via `StaffTicketDetail extends TicketDetail`, with `api-spec.md` section 6 updated to v1.3 (B2); dropped the dead `status-conflict-callout`/`status-error-callout` class names and the unreferenced `status-error` id (N4/N5); renamed the stale `updateStaffTicketStatus` test title to name `version` (N6). Traceability source bumped to `api-spec.md` v1.3. | Approved (student, 2026-10-29) |
 | v1.8 | 2026-10-29 | **Issue 27 (#80) AUTH-01 regression.** Added the inactive-assignee rejection test to `ticket-workflow.api.test.ts` (API suite now 16), asserting the Lab 3 `404` "Owner must be an active IT Staff or Administrator user" for an inactive IT Staff owner **and** an inactive Requester, with `ownerId` unchanged. Flipped `AUTH-01` from `Planned` to `Pass`, re-pointed its file column to the workflow suite, and recorded the run: Lab 4 files **58/58**, whole server suite **344/344**, client **234/234**, both builds clean. Clarified with `api-spec.md` v1.4 that `Ticket.version` is enforced on the status endpoint (FR-12), not on `claim`/`assign`/`priority`, which keep their Lab 3 shape. | Approved (student, 2026-10-29) |
 | v1.9 | 2026-10-30 | **Issue 27 (#80) peer-review fixes.** Added **API-44** (`version: null` is a `400`, not the omitted-field last-write-wins path) to `ticket-workflow.api.test.ts`, **UI-31** (the client omits the `version` property when it has none) to `staff-ticket-api.test.tsx`, and **UI-30** as the traceability row for the existing `409` status-conflict refresh test in `TicketWorkflow.test.tsx`. AC-06 now maps API-44, UI-30, and UI-31. Recorded the runs: Lab 4 server **59/59**, whole server suite **345/345**, client **235/235** (20 files), both builds clean. Cross-references `specification.md` v1.3 and `api-spec.md` v1.5, which now define `Ticket.version` as a status-transition-only counter. | Approved (student, 2026-10-30) |
+| v1.10 | 2026-10-31 | **Issue 28 (#81) peer-review fixes.** `/` now redirects Requesters to `/dashboard` and IT Staff/Administrators to `/staff/dashboard` (ui-spec section 4.1); "My Recent Actions" rows open the ticket on the Actions Taken tab through `?tab=actions` (ui-spec section 5.2); the zero-activity Requester lists offer a "Create Ticket" call to action (ui-spec section 5.1). Added the planned dashboard client suites and flipped **UI-21..UI-29** from `Planned` to `Pass`. Updated the Lab 3 `Login`/`ChangePassword` client tests and the Lab 3 E2E landing-page URL assertions to the Dashboard (assertions only; E2E not re-run). Dashboard CSS was already inside `@layer layout` (checked in the built bundle). | Pending approval |
 
 ---
 

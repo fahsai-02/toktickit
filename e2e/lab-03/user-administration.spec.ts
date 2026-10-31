@@ -50,12 +50,12 @@ test.describe("E2E-04 user administration (AC-10, AC-11, AC-12)", () => {
     await loginViaUi(page, requesterEmail, NEW_USER_INITIAL_PASSWORD);
     await expect(page).toHaveURL(/\/change-password/);
     // Complete the mandatory change so the account is left in a known state,
-    // then confirm a Requester lands on the requester home (ui-spec 4.2).
+    // then confirm a Requester lands on the Dashboard (Lab 4 ui-spec section 4.1).
     await page.fill("#change-current", NEW_USER_INITIAL_PASSWORD);
     await page.fill("#change-new", "E2ECreated1!");
     await page.fill("#change-confirm", "E2ECreated1!");
     await page.click('[data-testid="change-password-submit"]');
-    await expect(page).toHaveURL(/\/my-tickets/);
+    await expect(page).toHaveURL(/\/dashboard/);
     await logoutViaUi(page);
 
     // ── Back as Administrator: search, edit the name, deactivate ───────────
