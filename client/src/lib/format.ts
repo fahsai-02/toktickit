@@ -56,7 +56,8 @@ export function relativeDayHint(
 
 /**
  * Format timestamp as a friendly relative time string (e.g. "2 hours ago", "3 days ago")
- * for dashboard ticket and action lists (ui-spec section 5.1).
+ * for dashboard ticket and action lists (ui-spec section 5.1). Minutes and
+ * hours are elapsed time; days are Asia/Bangkok calendar days (FR-19).
  */
 export function formatRelativeTime(
   iso: string,
@@ -77,7 +78,11 @@ export function formatRelativeTime(
   const diffHour = Math.floor(diffMin / 60);
   if (diffHour < 24) return `${diffHour} hour${diffHour === 1 ? "" : "s"} ago`;
 
-  const diffDays = Math.floor(diffHour / 24);
+  // From a day upward the gap counts Asia/Bangkok calendar days, not 24-hour
+  // spans (FR-19, ui-spec section 5.1): 23:00 on the 1st seen at 01:00 on the
+  // 3rd is "2 days ago" even though only 26 hours have passed. At least one
+  // calendar day separates two timestamps 24 hours apart.
+  const diffDays = Math.max(1, bangkokCalendarDay(now) - bangkokCalendarDay(date));
   return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
 }
 
