@@ -17,6 +17,7 @@ import ListState from "./components/ListState.js";
 import { formatRelativeTime } from "./lib/format.js";
 import {
   DashboardListCard,
+  DashboardSkeleton,
   DashboardTicketListLink,
   DashboardActionListLink,
 } from "./components/DashboardList.js";
@@ -84,25 +85,250 @@ export default function StaffDashboard() {
 
   const firstName = user.name ? user.name.split(" ")[0] : "Staff";
 
-  if (loading) {
-    return (
-      <div className="container dashboard-container" data-testid="staff-dashboard">
-        <div className="dashboard-header">
-          <h1 className="page-title">IT Staff Dashboard</h1>
-          <p className="dashboard-greeting">Welcome back, {firstName}!</p>
-        </div>
-        <ListState testId="dashboard-loading" loading message="Loading queue data..." />
-      </div>
-    );
-  }
+  const renderLoaded = (data: StaffDashboardData) => {
+    const {
+      counts,
+      byItPriority,
+      recentTickets,
+      urgentTickets,
+      myRecentActions,
+      userCounts,
+    } = data;
 
-  if (errorMessage || !data) {
     return (
-      <div className="container dashboard-container" data-testid="staff-dashboard">
-        <div className="dashboard-header">
-          <h1 className="page-title">IT Staff Dashboard</h1>
-          <p className="dashboard-greeting">Welcome back, {firstName}!</p>
-        </div>
+      <>
+        {/* 4 Status Cards */}
+        <section className="dashboard-grid dashboard-grid--staff" aria-label="Status queue counts">
+          <MetricCard
+            to="/staff/queue?currentStatus=NEW"
+            label="New"
+            value={counts.new}
+            testId="metric-card-new"
+          />
+          <MetricCard
+            to="/staff/queue?currentStatus=OPEN"
+            label="Open"
+            value={counts.open}
+            testId="metric-card-open"
+          />
+          <MetricCard
+            to="/staff/queue?currentStatus=IN_PROGRESS"
+            label="In Progress"
+            value={counts.inProgress}
+            testId="metric-card-in-progress"
+          />
+          <MetricCard
+            to="/staff/queue?currentStatus=WAITING_FOR_REQUESTER"
+            label="Waiting for Requester"
+            value={counts.waitingForRequester}
+            testId="metric-card-waiting"
+          />
+        </section>
+
+        {/* Ownership Cards */}
+        <section className="dashboard-ownership" aria-label="Ticket ownership">
+          <MetricCard
+            to="/staff/queue?ownerId=unassigned"
+            label="Unassigned"
+            value={counts.unassigned}
+            testId="metric-card-unassigned"
+          />
+          <MetricCard
+            to="/staff/queue?ownerId=me"
+            label="Assigned to me"
+            value={counts.myAssigned}
+            testId="metric-card-my-assigned"
+          />
+        </section>
+
+        {/* By IT Priority Strip */}
+        <section className="priority-strip" data-testid="priority-strip" aria-label="By IT Priority breakdown">
+          <h2 className="priority-strip__title">By IT Priority</h2>
+          <div className="priority-strip__buckets">
+            {byItPriority.map((bucket) => {
+              const label = bucket.itPriority === null ? "Not set" : bucket.itPriority;
+              const to =
+                bucket.itPriority === null
+                  ? "/staff/queue"
+                  : `/staff/queue?itPriority=${bucket.itPriority}`;
+              const testId = `priority-bucket-${bucket.itPriority === null ? "null" : bucket.itPriority.toLowerCase()}`;
+              return (
+                <Link
+                  key={label}
+                  to={to}
+                  className="priority-strip__item"
+                  data-testid={testId}
+                  aria-label={`${label} priority: ${bucket.count}`}
+                >
+                  <span className="priority-strip__label">{label}</span>
+                  <span className="priority-strip__count">{bucket.count}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* Urgent list */}
+        <section className="dashboard-urgent-section" data-testid="urgent-section">
+          <div className="dashboard-urgent-header">
+            <div className="dashboard-urgent-title-group">
+              <h2 className="dashboard-list-title">
+                Urgent ({counts.urgentTickets})
+              </h2>
+            </div>
+            <div className="dashboard-urgent-links">
+              <Link
+                to="/staff/queue?itPriority=URGENT"
+                className="dashboard-filter-link"
+                data-testid="urgent-link-it-priority"
+              >
+                By IT Priority
+              </Link>
+              <Link
+                to="/staff/queue?requestedPriority=URGENT"
+                className="dashboard-filter-link"
+                data-testid="urgent-link-req-priority"
+              >
+                By Requested Priority
+              </Link>
+            </div>
+          </div>
+
+          {urgentTickets.length === 0 ? (
+            <ListState
+              testId="urgent-tickets-empty"
+              message="No urgent tickets currently in queue."
+            />
+          ) : (
+            <ul className="dashboard-list" aria-label="Urgent tickets">
+              {urgentTickets.map((ticket: StaffDashboardTicketRow) => (
+                <li key={ticket.id} className="dashboard-list-item">
+                  <Link
+                    to={`/staff/tickets/${ticket.id}`}
+                    className="dashboard-list-link"
+                    data-testid={`urgent-ticket-${ticket.id}`}
+                  >
+                    <div className="dashboard-list-info">
+                      <span className="dashboard-ticket-number">
+                        {ticket.ticketNumber}
+                      </span>
+                      <span className="dashboard-ticket-summary">
+                        {ticket.summary}
+                      </span>
+                    </div>
+                    <div className="dashboard-list-meta">
+                      <Badge variant={coloredStatusBadgeVariant(ticket.currentStatus)}>
+                        {ticket.currentStatus}
+                      </Badge>
+                      {ticket.itPriority ? (
+                        <Badge variant={priorityBadgeVariant(ticket.itPriority)}>
+                          {ticket.itPriority}
+                        </Badge>
+                      ) : (
+                        <Badge variant="neutral">Not set</Badge>
+                      )}
+                      <span className="dashboard-ticket-owner">
+                        {ticket.owner ? ticket.owner.name : "Unassigned"}
+                      </span>
+                      <time
+                        className="dashboard-ticket-time"
+                        dateTime={ticket.updatedAt}
+                      >
+                        {formatRelativeTime(ticket.updatedAt)}
+                      </time>
+                    </div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        {/* Two columns: Recently Updated | My Recent Actions */}
+        <section className="dashboard-lists">
+          <DashboardListCard
+            title="Recently Updated"
+            items={recentTickets}
+            emptyMessage="No recently updated tickets in queue."
+            emptyTestId="staff-recent-tickets-empty"
+            cardTestId="staff-recent-tickets-card"
+            listAriaLabel="Recently updated tickets in queue"
+            renderItem={(ticket: StaffDashboardTicketRow) => (
+              <DashboardTicketListLink
+                ticket={ticket}
+                to={`/staff/tickets/${ticket.id}`}
+                testId={`staff-recent-ticket-${ticket.id}`}
+                showOwner
+                timeKey="updatedAt"
+              />
+            )}
+          />
+
+          <DashboardListCard
+            title="My Recent Actions"
+            items={myRecentActions}
+            emptyMessage="No recent actions recorded."
+            emptyTestId="my-recent-actions-empty"
+            cardTestId="my-recent-actions-card"
+            listAriaLabel="My recent actions taken"
+            renderItem={(action: MyRecentAction) => (
+              <DashboardActionListLink
+                action={action}
+                to={`/staff/tickets/${action.ticketId}?tab=actions`}
+                testId={`recent-action-${action.id}`}
+              />
+            )}
+          />
+        </section>
+
+        {/* Administrator Users Management Card (FR-15, UI-27) */}
+        {userCounts && (
+          <section className="dashboard-admin-section" data-testid="admin-users-section">
+            <h2 className="dashboard-list-title">User Administration</h2>
+            <MetricCard
+              to="/admin/users"
+              label="Total Users"
+              value={userCounts.total}
+              variant="users"
+              testId="metric-card-users"
+              subtext={`${userCounts.active} active · ${userCounts.inactive} inactive`}
+            />
+          </section>
+        )}
+      </>
+    );
+  };
+
+  const liveMessage = loading
+    ? "Loading queue data..."
+    : errorMessage || !data
+      ? ""
+      : "Dashboard loaded.";
+
+  return (
+    <div
+      className="container dashboard-container"
+      data-testid="staff-dashboard"
+      aria-busy={loading}
+    >
+      <div className="dashboard-header">
+        <h1 className="page-title">IT Staff Dashboard</h1>
+        <p className="dashboard-greeting">Welcome back, {firstName}!</p>
+      </div>
+
+      {/* Always mounted, so the loading -> loaded change is announced (ui-spec section 7). */}
+      <p
+        className="sr-only"
+        role="status"
+        aria-live="polite"
+        data-testid="dashboard-live-region"
+      >
+        {liveMessage}
+      </p>
+
+      {loading ? (
+        <DashboardSkeleton cards={4} staff secondaryCards={2} />
+      ) : errorMessage || !data ? (
         <ListState
           testId="dashboard-error"
           variant="error"
@@ -112,225 +338,9 @@ export default function StaffDashboard() {
             Retry
           </Button>
         </ListState>
-      </div>
-    );
-  }
-
-  const {
-    counts,
-    byItPriority,
-    recentTickets,
-    urgentTickets,
-    myRecentActions,
-    userCounts,
-  } = data;
-
-  return (
-    <div className="container dashboard-container" data-testid="staff-dashboard">
-      <div className="dashboard-header">
-        <h1 className="page-title">IT Staff Dashboard</h1>
-        <p className="dashboard-greeting">Welcome back, {firstName}!</p>
-      </div>
-
-      {/* 4 Status Cards */}
-      <section className="dashboard-grid dashboard-grid--staff" aria-label="Status queue counts">
-        <MetricCard
-          to="/staff/queue?currentStatus=NEW"
-          label="New"
-          value={counts.new}
-          testId="metric-card-new"
-        />
-        <MetricCard
-          to="/staff/queue?currentStatus=OPEN"
-          label="Open"
-          value={counts.open}
-          testId="metric-card-open"
-        />
-        <MetricCard
-          to="/staff/queue?currentStatus=IN_PROGRESS"
-          label="In Progress"
-          value={counts.inProgress}
-          testId="metric-card-in-progress"
-        />
-        <MetricCard
-          to="/staff/queue?currentStatus=WAITING_FOR_REQUESTER"
-          label="Waiting for Requester"
-          value={counts.waitingForRequester}
-          testId="metric-card-waiting"
-        />
-      </section>
-
-      {/* Ownership Cards */}
-      <section className="dashboard-ownership" aria-label="Ticket ownership">
-        <MetricCard
-          to="/staff/queue?ownerId=unassigned"
-          label="Unassigned"
-          value={counts.unassigned}
-          testId="metric-card-unassigned"
-        />
-        <MetricCard
-          to="/staff/queue?ownerId=me"
-          label="Assigned to me"
-          value={counts.myAssigned}
-          testId="metric-card-my-assigned"
-        />
-      </section>
-
-      {/* By IT Priority Strip */}
-      <section className="priority-strip" data-testid="priority-strip" aria-label="By IT Priority breakdown">
-        <h2 className="priority-strip__title">By IT Priority</h2>
-        <div className="priority-strip__buckets">
-          {byItPriority.map((bucket) => {
-            const label = bucket.itPriority === null ? "Not set" : bucket.itPriority;
-            const to =
-              bucket.itPriority === null
-                ? "/staff/queue"
-                : `/staff/queue?itPriority=${bucket.itPriority}`;
-            const testId = `priority-bucket-${bucket.itPriority === null ? "null" : bucket.itPriority.toLowerCase()}`;
-            return (
-              <Link
-                key={label}
-                to={to}
-                className="priority-strip__item"
-                data-testid={testId}
-                aria-label={`${label} priority: ${bucket.count}`}
-              >
-                <span className="priority-strip__label">{label}</span>
-                <span className="priority-strip__count">{bucket.count}</span>
-              </Link>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* Urgent list */}
-      <section className="dashboard-urgent-section" data-testid="urgent-section">
-        <div className="dashboard-urgent-header">
-          <div className="dashboard-urgent-title-group">
-            <h2 className="dashboard-list-title">
-              Urgent ({counts.urgentTickets})
-            </h2>
-          </div>
-          <div className="dashboard-urgent-links">
-            <Link
-              to="/staff/queue?itPriority=URGENT"
-              className="dashboard-filter-link"
-              data-testid="urgent-link-it-priority"
-            >
-              By IT Priority
-            </Link>
-            <Link
-              to="/staff/queue?requestedPriority=URGENT"
-              className="dashboard-filter-link"
-              data-testid="urgent-link-req-priority"
-            >
-              By Requested Priority
-            </Link>
-          </div>
-        </div>
-
-        {urgentTickets.length === 0 ? (
-          <ListState
-            testId="urgent-tickets-empty"
-            message="No urgent tickets currently in queue."
-          />
-        ) : (
-          <ul className="dashboard-list" aria-label="Urgent tickets">
-            {urgentTickets.map((ticket: StaffDashboardTicketRow) => (
-              <li key={ticket.id} className="dashboard-list-item">
-                <Link
-                  to={`/staff/tickets/${ticket.id}`}
-                  className="dashboard-list-link"
-                  data-testid={`urgent-ticket-${ticket.id}`}
-                >
-                  <div className="dashboard-list-info">
-                    <span className="dashboard-ticket-number">
-                      {ticket.ticketNumber}
-                    </span>
-                    <span className="dashboard-ticket-summary">
-                      {ticket.summary}
-                    </span>
-                  </div>
-                  <div className="dashboard-list-meta">
-                    <Badge variant={coloredStatusBadgeVariant(ticket.currentStatus)}>
-                      {ticket.currentStatus}
-                    </Badge>
-                    {ticket.itPriority ? (
-                      <Badge variant={priorityBadgeVariant(ticket.itPriority)}>
-                        {ticket.itPriority}
-                      </Badge>
-                    ) : (
-                      <Badge variant="neutral">Not set</Badge>
-                    )}
-                    <span className="dashboard-ticket-owner">
-                      {ticket.owner ? ticket.owner.name : "Unassigned"}
-                    </span>
-                    <time
-                      className="dashboard-ticket-time"
-                      dateTime={ticket.updatedAt}
-                    >
-                      {formatRelativeTime(ticket.updatedAt)}
-                    </time>
-                  </div>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      {/* Two columns: Recently Updated | My Recent Actions */}
-      <section className="dashboard-lists">
-        <DashboardListCard
-          title="Recently Updated"
-          items={recentTickets}
-          emptyMessage="No recently updated tickets in queue."
-          emptyTestId="staff-recent-tickets-empty"
-          cardTestId="staff-recent-tickets-card"
-          listAriaLabel="Recently updated tickets in queue"
-          renderItem={(ticket: StaffDashboardTicketRow) => (
-            <DashboardTicketListLink
-              ticket={ticket}
-              to={`/staff/tickets/${ticket.id}`}
-              testId={`staff-recent-ticket-${ticket.id}`}
-              showOwner
-              timeKey="updatedAt"
-            />
-          )}
-        />
-
-        <DashboardListCard
-          title="My Recent Actions"
-          items={myRecentActions}
-          emptyMessage="No recent actions recorded."
-          emptyTestId="my-recent-actions-empty"
-          cardTestId="my-recent-actions-card"
-          listAriaLabel="My recent actions taken"
-          renderItem={(action: MyRecentAction) => (
-            <DashboardActionListLink
-              action={action}
-              to={`/staff/tickets/${action.ticketId}?tab=actions`}
-              testId={`recent-action-${action.id}`}
-            />
-          )}
-        />
-      </section>
-
-      {/* Administrator Users Management Card (FR-15, UI-27) */}
-      {userCounts && (
-        <section className="dashboard-admin-section" data-testid="admin-users-section">
-          <h2 className="dashboard-list-title">User Administration</h2>
-          <MetricCard
-            to="/admin/users"
-            label="Total Users"
-            value={userCounts.total}
-            variant="users"
-            testId="metric-card-users"
-            subtext={`${userCounts.active} active · ${userCounts.inactive} inactive`}
-          />
-        </section>
+      ) : (
+        renderLoaded(data)
       )}
     </div>
   );
 }
-

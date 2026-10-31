@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, within, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { AuthProvider } from "../../src/AuthContext.js";
 import StaffDashboard from "../../src/StaffDashboard.js";
@@ -145,5 +145,40 @@ describe("StaffDashboard (UI-25..UI-28)", () => {
     expect(await screen.findByTestId("my-recent-actions-empty")).toHaveTextContent(
       "No recent actions recorded."
     );
+  });
+
+  // ui-spec section 5.1/5.2 "Loading" and section 7 "Live regions".
+  it("loading shows card/list skeletons and announces loading, then loaded", async () => {
+    let resolve!: (v: api.StaffDashboard) => void;
+    vi.spyOn(api, "fetchMe").mockResolvedValue(staff);
+    vi.spyOn(api, "fetchStaffDashboard").mockReturnValue(
+      new Promise((r) => {
+        resolve = r;
+      })
+    );
+    render(
+      <AuthProvider>
+        <MemoryRouter initialEntries={["/staff/dashboard"]}>
+          <Routes>
+            <Route path="/staff/dashboard" element={<StaffDashboard />} />
+          </Routes>
+        </MemoryRouter>
+      </AuthProvider>
+    );
+
+    const skeleton = await screen.findByTestId("dashboard-loading");
+    // Four status cards + two ownership cards, then the two list cards.
+    expect(skeleton.querySelectorAll(".metric-card--skeleton")).toHaveLength(6);
+    expect(skeleton.querySelectorAll(".dashboard-list-card")).toHaveLength(2);
+
+    const live = screen.getByTestId("dashboard-live-region");
+    expect(live).toHaveAttribute("aria-live", "polite");
+    expect(live).toHaveTextContent("Loading queue data...");
+
+    resolve(base);
+    await screen.findByTestId("priority-strip");
+    expect(screen.getByTestId("dashboard-live-region")).toBe(live);
+    await waitFor(() => expect(live).toHaveTextContent("Dashboard loaded."));
+    expect(screen.queryByTestId("dashboard-loading")).toBeNull();
   });
 });

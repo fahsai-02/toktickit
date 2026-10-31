@@ -2657,6 +2657,55 @@
     box-shadow: 0 1px 3px var(--color-shadow);
   }
 
+  /* Dashboard loading skeleton (ui-spec section 5.1 "Loading"). The cards and
+     list cards are the real ones, so only the contents are placeholders. */
+  .metric-card--skeleton,
+  .metric-card--skeleton:hover {
+    border-color: var(--color-border);
+    box-shadow: 0 1px 3px var(--color-shadow);
+  }
+
+  .skeleton-bar {
+    display: block;
+    border-radius: 4px;
+    background: var(--color-field-readonly);
+    animation: skeleton-pulse 1.4s ease-in-out infinite;
+  }
+
+  .skeleton-bar--value {
+    height: 28px;
+    width: 40%;
+    margin-bottom: 8px;
+  }
+
+  .skeleton-bar--label {
+    height: 14px;
+    width: 70%;
+  }
+
+  .skeleton-bar--title {
+    height: 16px;
+    width: 40%;
+    margin-bottom: 16px;
+  }
+
+  .skeleton-bar--row {
+    height: 44px;
+    margin-bottom: 8px;
+  }
+
+  @keyframes skeleton-pulse {
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .skeleton-bar {
+      animation: none;
+    }
+  }
+
   /* Responsive breakpoints: 1200 / 992 / 768 */
   @media (max-width: 1199px) {
     .dashboard-grid {

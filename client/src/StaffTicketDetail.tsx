@@ -320,10 +320,12 @@ export default function StaffTicketDetail() {
     return () => {
       cancelled = true;
     };
-  }, [ticketId, requestedTab]);
+  }, [ticketId]);
 
   // Keep the visible tab in sync when a dashboard link changes `?tab=` on an
-  // already-mounted detail screen (ui-spec section 5.2).
+  // already-mounted detail screen (ui-spec section 5.2). This is separate from
+  // the ticket-load effect above, so a tab-only URL change never reloads or
+  // resets the ticket.
   useEffect(() => {
     setTab(requestedTab ?? "comments");
   }, [requestedTab]);

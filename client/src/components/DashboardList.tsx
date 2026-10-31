@@ -149,3 +149,59 @@ export function DashboardActionListLink({
     </Link>
   );
 }
+
+interface DashboardSkeletonProps {
+  /** Plain count cards in the first row (5 Requester, 4 staff). */
+  cards: number;
+  /** Variant of the first row: the staff grid has four columns. */
+  staff?: boolean;
+  /** Second row of placeholder cards (the staff ownership cards). */
+  secondaryCards?: number;
+  /** Placeholder list cards, side by side at desktop. */
+  lists?: number;
+  testId?: string;
+}
+
+/**
+ * Loading placeholder for the role dashboards (ui-spec section 5.1 "Loading":
+ * card skeletons and list placeholders, no layout shift when data lands). It
+ * reuses the real card/list classes so the loaded layout occupies the same
+ * boxes. Purely visual: the loading announcement lives in the page's live
+ * region, so this block is hidden from assistive technology.
+ */
+export function DashboardSkeleton({
+  cards,
+  staff = false,
+  secondaryCards = 0,
+  lists = 2,
+  testId = "dashboard-loading",
+}: DashboardSkeletonProps) {
+  const card = (key: number) => (
+    <div key={key} className="metric-card metric-card--skeleton">
+      <span className="skeleton-bar skeleton-bar--value" />
+      <span className="skeleton-bar skeleton-bar--label" />
+    </div>
+  );
+  return (
+    <div data-testid={testId} aria-hidden="true">
+      <div className={`dashboard-grid${staff ? " dashboard-grid--staff" : ""}`}>
+        {Array.from({ length: cards }, (_, i) => card(i))}
+      </div>
+      {secondaryCards > 0 && (
+        <div className="dashboard-ownership">
+          {Array.from({ length: secondaryCards }, (_, i) => card(100 + i))}
+        </div>
+      )}
+      <div className="dashboard-lists">
+        {Array.from({ length: lists }, (_, i) => (
+          <div key={i} className="dashboard-list-card">
+            <span className="skeleton-bar skeleton-bar--title" />
+            {[0, 1, 2].map((row) => (
+              <span key={row} className="skeleton-bar skeleton-bar--row" />
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, within, fireEvent } from "@testing-library/react";
+import { render, screen, within, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { AuthProvider } from "../../src/AuthContext.js";
 import RequesterDashboard from "../../src/RequesterDashboard.js";
@@ -138,6 +138,35 @@ describe("RequesterDashboard (UI-21..UI-23, UI-29)", () => {
     renderDashboard();
     const empty = await screen.findByTestId("recently-resolved-empty");
     expect(within(empty).queryByRole("button", { name: "Create Ticket" })).toBeNull();
+  });
+
+  // ui-spec section 5.1 "Loading" (card skeletons + list placeholders) and
+  // section 7 "Live regions" (loading -> loaded is announced politely).
+  it("loading shows card/list skeletons and announces loading, then loaded", async () => {
+    let resolve!: (v: api.RequesterDashboard) => void;
+    vi.spyOn(api, "fetchRequesterDashboard").mockReturnValue(
+      new Promise((r) => {
+        resolve = r;
+      })
+    );
+    renderDashboard();
+
+    const skeleton = await screen.findByTestId("dashboard-loading");
+    expect(skeleton.querySelectorAll(".metric-card--skeleton")).toHaveLength(5);
+    expect(skeleton.querySelectorAll(".dashboard-list-card")).toHaveLength(2);
+    expect(screen.queryByRole("progressbar")).toBeNull();
+
+    const live = screen.getByTestId("dashboard-live-region");
+    expect(live).toHaveAttribute("aria-live", "polite");
+    expect(live).toHaveAttribute("role", "status");
+    expect(live).toHaveTextContent("Loading dashboard...");
+
+    resolve(populated);
+    await screen.findByTestId("metric-card-open");
+    // The same element is updated in place, which is what makes it announce.
+    expect(screen.getByTestId("dashboard-live-region")).toBe(live);
+    await waitFor(() => expect(live).toHaveTextContent("Dashboard loaded."));
+    expect(screen.queryByTestId("dashboard-loading")).toBeNull();
   });
 
   // UI-29 — FR-22: failure state is a visible block with Retry, no console noise.
