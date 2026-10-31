@@ -11,6 +11,7 @@ import {
   isMobileProject,
   loginAndUnlock,
   useLab3DbHooks,
+  gotoStaffQueue,
 } from "./helpers.js";
 
 /**
@@ -97,7 +98,8 @@ test.describe("RESP-07..09 authenticated app shell", () => {
   // user name, the role badge, and the Logout action.
   test("shell shows role navigation and profile menu", async ({ page }, testInfo) => {
     await loginAndUnlock(page, ADMIN_EMAIL, ADMIN_PASSWORD);
-    await expect(page).toHaveURL(/\/staff\/queue/);
+    // Lab 4 ui-spec section 4.1: staff and admins land on the Dashboard.
+    await expect(page).toHaveURL(/\/staff\/dashboard/);
 
     // Below 992px the nav collapses behind the hamburger (ui-spec.md 4.1), so
     // open it first — the shot then doubles as evidence that role navigation
@@ -107,7 +109,7 @@ test.describe("RESP-07..09 authenticated app shell", () => {
     }
     const nav = page.locator('nav[aria-label="Primary"]');
     await expect(nav).toBeVisible();
-    // ui-spec.md 4.1: an Administrator sees exactly My Queue, Create Ticket and
+    // ui-spec.md 4.1: an Administrator sees Dashboard, My Queue, Create Ticket and
     // User Management — the Requester-only "My Tickets" link must be absent.
     await expect(nav.locator('a[href="/staff/queue"]')).toBeVisible();
     await expect(nav.locator('a[href="/create-ticket"]')).toBeVisible();
@@ -160,7 +162,8 @@ test.describe("RESP-13..15 IT staff ticket queue", () => {
     // Sara Patel holds a real password (mustChangePassword = false), so this
     // login has no side effect and can be repeated across tests.
     await loginAndUnlock(page, STAFF_EMAIL, STAFF_PASSWORD);
-    await expect(page).toHaveURL(/\/staff\/queue/);
+    await expect(page).toHaveURL(/\/staff\/dashboard/);
+    await gotoStaffQueue(page);
     await expect(page.locator('[data-testid="staff-queue-page"]')).toBeVisible();
     await expect(page.locator('[data-testid="results-count"]')).toBeVisible();
     await expect(
@@ -185,7 +188,8 @@ test.describe("RESP-13..15 IT staff ticket queue", () => {
 test.describe("RESP-16..18 IT staff ticket detail", () => {
   test("staff detail renders at every viewport", async ({ page }, testInfo) => {
     await loginAndUnlock(page, STAFF_EMAIL, STAFF_PASSWORD);
-    await expect(page).toHaveURL(/\/staff\/queue/);
+    await expect(page).toHaveURL(/\/staff\/dashboard/);
+    await gotoStaffQueue(page);
 
     await page.fill('[data-testid="staff-search-input"]', STAFF_TICKET);
     // The queue is a table on desktop and a card list below 768px

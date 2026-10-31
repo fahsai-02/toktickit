@@ -45,7 +45,7 @@ test.describe("E2E-05 Requester regression (AC-03, AC-07)", () => {
 
     // ── Create a ticket through the UI (auth identity, no requester picker)
     const summary = `E2E requester regression ${Date.now()}`;
-    await page.click('[data-testid="create-ticket-btn"]');
+    await page.click('[data-testid="create-ticket-cta"]');
     await expect(page).toHaveURL(/\/create-ticket/);
 
     // Pick the first real category/system (index 1 skips the placeholder).
