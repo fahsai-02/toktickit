@@ -151,57 +151,98 @@ export function DashboardActionListLink({
 }
 
 interface DashboardSkeletonProps {
-  /** Plain count cards in the first row (5 Requester, 4 staff). */
-  cards: number;
-  /** Variant of the first row: the staff grid has four columns. */
-  staff?: boolean;
-  /** Second row of placeholder cards (the staff ownership cards). */
-  secondaryCards?: number;
-  /** Placeholder list cards, side by side at desktop. */
-  lists?: number;
+  variant: "requester" | "staff";
+  /** Administrators also get the Users card once data lands (ui-spec section 5.2). */
+  adminCard?: boolean;
   testId?: string;
 }
 
 /**
  * Loading placeholder for the role dashboards (ui-spec section 5.1 "Loading":
  * card skeletons and list placeholders, no layout shift when data lands). It
- * reuses the real card/list classes so the loaded layout occupies the same
- * boxes. Purely visual: the loading announcement lives in the page's live
- * region, so this block is hidden from assistive technology.
+ * lists the same sections, in the same order, as the loaded page and reuses
+ * their real container classes, so loading and loaded occupy the same boxes.
+ * Purely visual: the loading announcement lives in the page's live region, so
+ * this block is hidden from assistive technology.
  */
 export function DashboardSkeleton({
-  cards,
-  staff = false,
-  secondaryCards = 0,
-  lists = 2,
+  variant,
+  adminCard = false,
   testId = "dashboard-loading",
 }: DashboardSkeletonProps) {
-  const card = (key: number) => (
-    <div key={key} className="metric-card metric-card--skeleton">
+  const staff = variant === "staff";
+  const card = (key: number, extra = "", sub = false) => (
+    <div key={key} className={`metric-card metric-card--skeleton ${extra}`.trim()}>
       <span className="skeleton-bar skeleton-bar--value" />
       <span className="skeleton-bar skeleton-bar--label" />
+      {sub && <span className="skeleton-bar skeleton-bar--sub" />}
     </div>
   );
+  const rows = (count: number) =>
+    Array.from({ length: count }, (_, row) => (
+      <span key={row} className="skeleton-bar skeleton-bar--row" />
+    ));
+  const listCards = (
+    <div className="dashboard-lists">
+      {[0, 1].map((i) => (
+        <div key={i} className="dashboard-list-card">
+          <span className="skeleton-bar skeleton-bar--title" />
+          {rows(3)}
+        </div>
+      ))}
+    </div>
+  );
+
   return (
     <div data-testid={testId} aria-hidden="true">
       <div className={`dashboard-grid${staff ? " dashboard-grid--staff" : ""}`}>
-        {Array.from({ length: cards }, (_, i) => card(i))}
+        {Array.from({ length: staff ? 4 : 5 }, (_, i) => card(i))}
       </div>
-      {secondaryCards > 0 && (
-        <div className="dashboard-ownership">
-          {Array.from({ length: secondaryCards }, (_, i) => card(100 + i))}
+
+      {!staff && (
+        // Attention card + the Create Ticket button beside it.
+        <div className="dashboard-attention">
+          {card(100, "metric-card--attention")}
+          <div className="dashboard-quick-actions">
+            <span className="skeleton-bar skeleton-bar--button" />
+          </div>
         </div>
       )}
-      <div className="dashboard-lists">
-        {Array.from({ length: lists }, (_, i) => (
-          <div key={i} className="dashboard-list-card">
+
+      {staff && (
+        <>
+          <div className="dashboard-ownership">{[0, 1].map((i) => card(200 + i))}</div>
+
+          <div className="priority-strip">
             <span className="skeleton-bar skeleton-bar--title" />
-            {[0, 1, 2].map((row) => (
-              <span key={row} className="skeleton-bar skeleton-bar--row" />
-            ))}
+            <div className="priority-strip__buckets">
+              {[0, 1, 2, 3, 4].map((i) => (
+                <div key={i} className="priority-strip__item">
+                  <span className="skeleton-bar skeleton-bar--label" />
+                  <span className="skeleton-bar skeleton-bar--count" />
+                </div>
+              ))}
+            </div>
           </div>
-        ))}
-      </div>
+
+          <div className="dashboard-urgent-section">
+            <div className="dashboard-urgent-header dashboard-urgent-header--skeleton">
+              <span className="skeleton-bar skeleton-bar--title skeleton-bar--flush" />
+              <span className="skeleton-bar skeleton-bar--links" />
+            </div>
+            {rows(3)}
+          </div>
+        </>
+      )}
+
+      {listCards}
+
+      {staff && adminCard && (
+        <div className="dashboard-admin-section">
+          <span className="skeleton-bar skeleton-bar--title" />
+          {card(300, "", true)}
+        </div>
+      )}
     </div>
   );
 }

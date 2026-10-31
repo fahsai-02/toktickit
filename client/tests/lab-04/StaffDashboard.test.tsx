@@ -167,9 +167,15 @@ describe("StaffDashboard (UI-25..UI-28)", () => {
     );
 
     const skeleton = await screen.findByTestId("dashboard-loading");
-    // Four status cards + two ownership cards, then the two list cards.
-    expect(skeleton.querySelectorAll(".metric-card--skeleton")).toHaveLength(6);
+    // Same sections as the loaded page (no layout shift, ui-spec section 5.2):
+    // four status cards, two ownership cards, the five-bucket priority strip,
+    // the Urgent list and the two list cards. No Users card for IT Staff.
+    expect(skeleton.querySelectorAll(".dashboard-grid .metric-card--skeleton")).toHaveLength(4);
+    expect(skeleton.querySelectorAll(".dashboard-ownership .metric-card--skeleton")).toHaveLength(2);
+    expect(skeleton.querySelectorAll(".priority-strip .priority-strip__item")).toHaveLength(5);
+    expect(skeleton.querySelectorAll(".dashboard-urgent-section")).toHaveLength(1);
     expect(skeleton.querySelectorAll(".dashboard-list-card")).toHaveLength(2);
+    expect(skeleton.querySelector(".dashboard-admin-section")).toBeNull();
 
     const live = screen.getByTestId("dashboard-live-region");
     expect(live).toHaveAttribute("aria-live", "polite");
@@ -180,5 +186,23 @@ describe("StaffDashboard (UI-25..UI-28)", () => {
     expect(screen.getByTestId("dashboard-live-region")).toBe(live);
     await waitFor(() => expect(live).toHaveTextContent("Dashboard loaded."));
     expect(screen.queryByTestId("dashboard-loading")).toBeNull();
+  });
+
+  // The Users card only exists for Administrators, so only their skeleton
+  // reserves its space (ui-spec section 5.2, FR-15).
+  it("loading reserves the Users card for an Administrator only", async () => {
+    vi.spyOn(api, "fetchMe").mockResolvedValue(admin);
+    vi.spyOn(api, "fetchStaffDashboard").mockReturnValue(new Promise(() => {}));
+    render(
+      <AuthProvider>
+        <MemoryRouter initialEntries={["/staff/dashboard"]}>
+          <Routes>
+            <Route path="/staff/dashboard" element={<StaffDashboard />} />
+          </Routes>
+        </MemoryRouter>
+      </AuthProvider>
+    );
+    const skeleton = await screen.findByTestId("dashboard-loading");
+    expect(skeleton.querySelectorAll(".dashboard-admin-section .metric-card--skeleton")).toHaveLength(1);
   });
 });

@@ -152,7 +152,14 @@ describe("RequesterDashboard (UI-21..UI-23, UI-29)", () => {
     renderDashboard();
 
     const skeleton = await screen.findByTestId("dashboard-loading");
-    expect(skeleton.querySelectorAll(".metric-card--skeleton")).toHaveLength(5);
+    // Same sections as the loaded page (no layout shift, ui-spec section 5.1):
+    // five count cards, the attention row with its Create Ticket button, and
+    // the two list cards.
+    expect(skeleton.querySelectorAll(".dashboard-grid .metric-card--skeleton")).toHaveLength(5);
+    expect(
+      skeleton.querySelectorAll(".dashboard-attention .metric-card--attention")
+    ).toHaveLength(1);
+    expect(skeleton.querySelectorAll(".dashboard-attention .skeleton-bar--button")).toHaveLength(1);
     expect(skeleton.querySelectorAll(".dashboard-list-card")).toHaveLength(2);
     expect(screen.queryByRole("progressbar")).toBeNull();
 

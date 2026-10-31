@@ -236,7 +236,7 @@ export default function RequesterDashboard() {
       </p>
 
       {loading ? (
-        <DashboardSkeleton cards={5} secondaryCards={0} />
+        <DashboardSkeleton variant="requester" />
       ) : errorMessage || !data ? (
         <ListState
           testId="dashboard-error"

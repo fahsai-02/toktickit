@@ -2661,6 +2661,7 @@
      list cards are the real ones, so only the contents are placeholders. */
   .metric-card--skeleton,
   .metric-card--skeleton:hover {
+    background: var(--color-surface);
     border-color: var(--color-border);
     box-shadow: 0 1px 3px var(--color-shadow);
   }
@@ -2672,26 +2673,87 @@
     animation: skeleton-pulse 1.4s ease-in-out infinite;
   }
 
+  /* Bar sizes are the line boxes of the text they stand in for, measured from
+     the loaded page, so loading and loaded occupy the same space. */
   .skeleton-bar--value {
-    height: 28px;
+    height: 34px;
     width: 40%;
-    margin-bottom: 8px;
+    margin-bottom: 4px;
   }
 
   .skeleton-bar--label {
-    height: 14px;
+    height: 21px;
     width: 70%;
   }
 
+  .skeleton-bar--sub {
+    height: 18px;
+    width: 55%;
+    margin-top: 4px;
+  }
+
   .skeleton-bar--title {
-    height: 16px;
+    height: 19px;
     width: 40%;
     margin-bottom: 16px;
   }
 
+  /* Rows are 62px with an 8px gap between them, like the real list. */
   .skeleton-bar--row {
-    height: 44px;
+    height: 62px;
     margin-bottom: 8px;
+  }
+
+  .skeleton-bar--row:last-child {
+    margin-bottom: 0;
+  }
+
+  /* Create Ticket button beside the attention card. */
+  .skeleton-bar--button {
+    height: 40px;
+    width: 140px;
+  }
+
+  .skeleton-bar--links {
+    height: 14px;
+    width: 30%;
+  }
+
+  /* A title bar that sits in a flex header supplies its own spacing. */
+  .skeleton-bar--flush {
+    margin-bottom: 0;
+  }
+
+  .priority-strip .skeleton-bar--title {
+    height: 18px;
+    margin-bottom: 12px;
+  }
+
+  .priority-strip__item .skeleton-bar--label {
+    height: 18px;
+  }
+
+  .priority-strip__item .skeleton-bar--count {
+    height: 30px;
+    width: 30%;
+    margin-top: 2px;
+  }
+
+  /* The real header is 35px tall (it wraps to 67px on a phone). */
+  .dashboard-urgent-header--skeleton {
+    min-height: 35px;
+  }
+
+  /* Below 768px list rows stack their meta line under the summary, so they
+     are taller than on desktop. */
+  @media (max-width: 768px) {
+    .skeleton-bar--row {
+      height: 88px;
+    }
+
+    .dashboard-urgent-header--skeleton {
+      min-height: 67px;
+    }
   }
 
   @keyframes skeleton-pulse {

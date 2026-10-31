@@ -327,7 +327,10 @@ export default function StaffDashboard() {
       </p>
 
       {loading ? (
-        <DashboardSkeleton cards={4} staff secondaryCards={2} />
+        <DashboardSkeleton
+          variant="staff"
+          adminCard={user.role === "ADMINISTRATOR"}
+        />
       ) : errorMessage || !data ? (
         <ListState
           testId="dashboard-error"
