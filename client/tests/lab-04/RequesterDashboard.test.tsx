@@ -161,6 +161,12 @@ describe("RequesterDashboard (UI-21..UI-23, UI-29)", () => {
     ).toHaveLength(1);
     expect(skeleton.querySelectorAll(".dashboard-attention .skeleton-bar--button")).toHaveLength(1);
     expect(skeleton.querySelectorAll(".dashboard-list-card")).toHaveLength(2);
+    // Each list reserves the 5 rows the API can return (api-spec section 3.1),
+    // so 3 or 5 loaded rows do not move the page.
+    for (const body of skeleton.querySelectorAll(".dashboard-list-body")) {
+      expect(body.querySelectorAll(".skeleton-bar--row")).toHaveLength(5);
+    }
+    expect(skeleton.querySelectorAll(".dashboard-list-body")).toHaveLength(2);
     expect(screen.queryByRole("progressbar")).toBeNull();
 
     const live = screen.getByTestId("dashboard-live-region");

@@ -176,6 +176,13 @@ describe("StaffDashboard (UI-25..UI-28)", () => {
     expect(skeleton.querySelectorAll(".dashboard-urgent-section")).toHaveLength(1);
     expect(skeleton.querySelectorAll(".dashboard-list-card")).toHaveLength(2);
     expect(skeleton.querySelector(".dashboard-admin-section")).toBeNull();
+    // Lists reserve 5 rows (api-spec section 3.2); the Urgent box is 5 rows high
+    // and scrolls inside, because up to 10 can arrive (api-spec section 3.3).
+    for (const body of skeleton.querySelectorAll(".dashboard-list-body")) {
+      expect(body.querySelectorAll(".skeleton-bar--row")).toHaveLength(5);
+    }
+    const urgent = skeleton.querySelector(".dashboard-urgent-body")!;
+    expect(urgent.querySelectorAll(".skeleton-bar--row")).toHaveLength(5);
 
     const live = screen.getByTestId("dashboard-live-region");
     expect(live).toHaveAttribute("aria-live", "polite");
@@ -204,5 +211,31 @@ describe("StaffDashboard (UI-25..UI-28)", () => {
     );
     const skeleton = await screen.findByTestId("dashboard-loading");
     expect(skeleton.querySelectorAll(".dashboard-admin-section .metric-card--skeleton")).toHaveLength(1);
+  });
+
+  // ui-spec section 5.1 "no layout shift" with the cap from api-spec section
+  // 3.3: up to 10 urgent Tickets come back, and they must not grow the page.
+  it("a full 10-row Urgent list scrolls inside a fixed box and is keyboard-reachable", async () => {
+    const ten = Array.from({ length: 10 }, (_, i) => ticket(100 + i));
+    renderDashboard(staff, {
+      ...base,
+      counts: { ...base.counts, urgentTickets: 10 },
+      urgentTickets: ten,
+    });
+    const section = await screen.findByTestId("urgent-section");
+    const box = section.querySelector(".dashboard-urgent-body") as HTMLElement;
+    expect(within(box).getAllByRole("listitem")).toHaveLength(10);
+    // Past 5 rows the box scrolls, so it is a labelled, focusable region.
+    expect(box).toHaveAttribute("role", "region");
+    expect(box).toHaveAttribute("aria-label", "Urgent tickets, scrollable");
+    expect(box).toHaveAttribute("tabindex", "0");
+  });
+
+  it("an Urgent list within 5 rows is not an extra tab stop", async () => {
+    renderDashboard(staff, base);
+    const section = await screen.findByTestId("urgent-section");
+    const box = section.querySelector(".dashboard-urgent-body") as HTMLElement;
+    expect(box).not.toHaveAttribute("tabindex");
+    expect(box).not.toHaveAttribute("role");
   });
 });

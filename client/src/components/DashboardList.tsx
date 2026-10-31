@@ -51,19 +51,23 @@ export function DashboardListCard<T extends { id: number }>({
   return (
     <div className="dashboard-list-card" data-testid={cardTestId}>
       <h2 className="dashboard-list-title">{title}</h2>
-      {items.length === 0 ? (
-        <ListState testId={emptyTestId} message={emptyMessage}>
-          {emptyAction}
-        </ListState>
-      ) : (
-        <ul className="dashboard-list" aria-label={listAriaLabel}>
-          {items.map((item) => (
-            <li key={item.id} className="dashboard-list-item">
-              {renderItem(item)}
-            </li>
-          ))}
-        </ul>
-      )}
+      {/* Reserves room for the 5 rows the API can return, so loading 0, 3 or 5
+          rows does not move the page (ui-spec section 5.1). */}
+      <div className="dashboard-list-body">
+        {items.length === 0 ? (
+          <ListState testId={emptyTestId} message={emptyMessage}>
+            {emptyAction}
+          </ListState>
+        ) : (
+          <ul className="dashboard-list" aria-label={listAriaLabel}>
+            {items.map((item) => (
+              <li key={item.id} className="dashboard-list-item">
+                {renderItem(item)}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }
@@ -182,12 +186,13 @@ export function DashboardSkeleton({
     Array.from({ length: count }, (_, row) => (
       <span key={row} className="skeleton-bar skeleton-bar--row" />
     ));
+  // The API returns up to 5 rows per list, so the skeleton reserves 5.
   const listCards = (
     <div className="dashboard-lists">
       {[0, 1].map((i) => (
         <div key={i} className="dashboard-list-card">
           <span className="skeleton-bar skeleton-bar--title" />
-          {rows(3)}
+          <div className="dashboard-list-body">{rows(5)}</div>
         </div>
       ))}
     </div>
@@ -230,7 +235,7 @@ export function DashboardSkeleton({
               <span className="skeleton-bar skeleton-bar--title skeleton-bar--flush" />
               <span className="skeleton-bar skeleton-bar--links" />
             </div>
-            {rows(3)}
+            <div className="dashboard-urgent-body">{rows(5)}</div>
           </div>
         </>
       )}

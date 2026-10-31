@@ -2333,6 +2333,26 @@
   .dashboard-container {
     padding-top: 24px;
     padding-bottom: 48px;
+    /* List rows are one line of summary plus a meta line, so every row has the
+       same height. A list reserves room for the 5 rows the API can return
+       (api-spec section 3), so the page does not move whether 0, 3 or 5 rows
+       arrive, and the skeleton reserves exactly the same box. */
+    --dash-row: 62px;
+    --dash-gap: 8px;
+    --dash-rows-height: calc(5 * var(--dash-row) + 4 * var(--dash-gap));
+  }
+
+  .dashboard-list-body {
+    min-height: var(--dash-rows-height);
+  }
+
+  /* The Urgent list can return up to 10 rows. Reserving all ten would leave a
+     large empty block for the usual 0-3, so the list is a fixed-height box of
+     5 rows that scrolls inside itself: the page never changes height. */
+  .dashboard-urgent-body {
+    min-height: var(--dash-rows-height);
+    max-height: var(--dash-rows-height);
+    overflow-y: auto;
   }
 
   .dashboard-header {
@@ -2698,10 +2718,10 @@
     margin-bottom: 16px;
   }
 
-  /* Rows are 62px with an 8px gap between them, like the real list. */
+  /* Rows match the real list's row height and gap (--dash-row, --dash-gap). */
   .skeleton-bar--row {
-    height: 62px;
-    margin-bottom: 8px;
+    height: var(--dash-row);
+    margin-bottom: var(--dash-gap);
   }
 
   .skeleton-bar--row:last-child {
@@ -2747,8 +2767,8 @@
   /* Below 768px list rows stack their meta line under the summary, so they
      are taller than on desktop. */
   @media (max-width: 768px) {
-    .skeleton-bar--row {
-      height: 88px;
+    .dashboard-container {
+      --dash-row: 88px;
     }
 
     .dashboard-urgent-header--skeleton {

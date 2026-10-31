@@ -194,6 +194,19 @@ export default function StaffDashboard() {
             </div>
           </div>
 
+          {/* Fixed-height box of 5 rows (up to 10 can arrive), so the page keeps
+              its height whatever the count; past 5 rows it scrolls inside and
+              becomes a keyboard-focusable region. */}
+          <div
+            className="dashboard-urgent-body"
+            {...(urgentTickets.length > 5
+              ? {
+                  role: "region",
+                  "aria-label": "Urgent tickets, scrollable",
+                  tabIndex: 0,
+                }
+              : {})}
+          >
           {urgentTickets.length === 0 ? (
             <ListState
               testId="urgent-tickets-empty"
@@ -242,6 +255,7 @@ export default function StaffDashboard() {
               ))}
             </ul>
           )}
+          </div>
         </section>
 
         {/* Two columns: Recently Updated | My Recent Actions */}
