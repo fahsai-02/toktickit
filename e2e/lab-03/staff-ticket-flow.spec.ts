@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
-import { STAFF_EMAIL, STAFF_PASSWORD, loginViaUi, useLab3DbHooks } from "./helpers.js";
+import { STAFF_EMAIL, STAFF_PASSWORD, loginViaUi, useLab3DbHooks,
+  gotoStaffQueue,
+} from "./helpers.js";
 
 useLab3DbHooks();
 
@@ -12,7 +14,9 @@ test.describe("E2E-03 staff ticket flow (AC-08, AC-09)", () => {
 
     // IT Staff has a real password (mustChangePassword=false) -> straight in.
     await loginViaUi(page, STAFF_EMAIL, STAFF_PASSWORD);
-    await expect(page).toHaveURL(/\/staff\/queue/);
+    await expect(page).toHaveURL(/\/staff\/dashboard/);
+    // Lab 4 ui-spec section 4.1: staff land on the Dashboard; open the queue from there.
+    await gotoStaffQueue(page);
 
     // Focus the queue on a NEW, unassigned ticket.
     await page.click('[data-testid="filters-toggle"]');

@@ -25,7 +25,7 @@ test.describe("E2E-04 user administration (AC-10, AC-11, AC-12)", () => {
 
     // ── Sign in as the seeded Administrator (mustChangePassword=false) ─────
     await loginViaUi(page, ADMIN_EMAIL, ADMIN_PASSWORD);
-    await expect(page).toHaveURL(/\/staff\/queue/);
+    await expect(page).toHaveURL(/\/staff\/dashboard/);
 
     // Admins see "User Management" in the navbar (ui-spec 4.1).
     await page.click('a[href="/admin/users"]');
@@ -50,17 +50,17 @@ test.describe("E2E-04 user administration (AC-10, AC-11, AC-12)", () => {
     await loginViaUi(page, requesterEmail, NEW_USER_INITIAL_PASSWORD);
     await expect(page).toHaveURL(/\/change-password/);
     // Complete the mandatory change so the account is left in a known state,
-    // then confirm a Requester lands on the requester home (ui-spec 4.2).
+    // then confirm a Requester lands on the Dashboard (Lab 4 ui-spec section 4.1).
     await page.fill("#change-current", NEW_USER_INITIAL_PASSWORD);
     await page.fill("#change-new", "E2ECreated1!");
     await page.fill("#change-confirm", "E2ECreated1!");
     await page.click('[data-testid="change-password-submit"]');
-    await expect(page).toHaveURL(/\/my-tickets/);
+    await expect(page).toHaveURL(/\/dashboard/);
     await logoutViaUi(page);
 
     // ── Back as Administrator: search, edit the name, deactivate ───────────
     await loginViaUi(page, ADMIN_EMAIL, ADMIN_PASSWORD);
-    await expect(page).toHaveURL(/\/staff\/queue/);
+    await expect(page).toHaveURL(/\/staff\/dashboard/);
     await page.click('a[href="/admin/users"]');
     await expect(page).toHaveURL(/\/admin\/users/);
 
@@ -119,7 +119,7 @@ test.describe("E2E-04 user administration (AC-10, AC-11, AC-12)", () => {
     await page.fill("#change-new", "E2ESecondAdmin1!");
     await page.fill("#change-confirm", "E2ESecondAdmin1!");
     await page.click('[data-testid="change-password-submit"]');
-    await expect(page).toHaveURL(/\/staff\/queue/);
+    await expect(page).toHaveURL(/\/staff\/dashboard/);
 
     // Self-deactivation is refused while the seeded admin is still active.
     await page.click('a[href="/admin/users"]');

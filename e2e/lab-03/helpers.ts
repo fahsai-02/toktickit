@@ -151,6 +151,15 @@ export async function loginViaUi(page: Page, email: string, password: string) {
   await page.click('[data-testid="login-submit"]');
 }
 
+/**
+ * Staff and Administrators land on the Dashboard after login (Lab 4 ui-spec
+ * section 4.1); the queue specs open the queue explicitly from there.
+ */
+export async function gotoStaffQueue(page: Page) {
+  await page.goto("/staff/queue");
+  await expect(page.locator('[data-testid="staff-queue-page"]')).toBeVisible();
+}
+
 /** Log out from the profile menu (Navbar) and wait for the /login redirect. */
 export async function logoutViaUi(page: Page) {
   await page.click('button[aria-haspopup="menu"]');

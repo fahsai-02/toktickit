@@ -188,6 +188,7 @@ export interface TicketListParams {
   search?: string;
   categoryId?: number;
   currentStatus?: string;
+  statusGroup?: string;
   requestedPriority?: string;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
@@ -205,6 +206,8 @@ export async function fetchTickets(
     url.searchParams.set("categoryId", String(params.categoryId));
   if (params.currentStatus)
     url.searchParams.set("currentStatus", params.currentStatus);
+  if (params.statusGroup)
+    url.searchParams.set("statusGroup", params.statusGroup);
   if (params.requestedPriority)
     url.searchParams.set("requestedPriority", params.requestedPriority);
   if (params.sortBy) url.searchParams.set("sortBy", params.sortBy);
@@ -241,6 +244,7 @@ export interface StaffTicketListParams {
   search?: string;
   categoryId?: number;
   currentStatus?: string;
+  statusGroup?: string;
   requestedPriority?: string;
   itPriority?: string;
   /** "me" | "unassigned" | an integer owner id (api-spec section 5.1). */
@@ -261,6 +265,8 @@ export async function fetchStaffTickets(
     url.searchParams.set("categoryId", String(params.categoryId));
   if (params.currentStatus)
     url.searchParams.set("currentStatus", params.currentStatus);
+  if (params.statusGroup)
+    url.searchParams.set("statusGroup", params.statusGroup);
   if (params.requestedPriority)
     url.searchParams.set("requestedPriority", params.requestedPriority);
   if (params.itPriority)
@@ -983,4 +989,83 @@ export async function updateActionTaken(
   const { data } = (await res.json()) as { data: ActionTaken };
   return data;
 }
+
+// ── Role Dashboards (Issue 28, api-spec section 3) ──────────────────────────
+
+export type DashboardTicketRow = {
+  id: number;
+  ticketNumber: string;
+  summary: string;
+  currentStatus: TicketStatus;
+  itPriority: RequestedPriority | null;
+  updatedAt: string;
+};
+
+export type StaffDashboardTicketRow = DashboardTicketRow & {
+  owner: { id: number; name: string } | null;
+};
+
+export type MyRecentAction = {
+  id: number;
+  ticketId: number;
+  ticketNumber: string;
+  actionDate: string;
+  description: string;
+  result: string;
+  performedById: number;
+  updatedAt: string;
+};
+
+export type RequesterDashboard = {
+  counts: {
+    open: number;
+    inProgress: number;
+    waitingForRequester: number;
+    resolved: number;
+    closed: number;
+    attentionRequired: number;
+  };
+  recentTickets: DashboardTicketRow[];
+  recentlyResolved: DashboardTicketRow[];
+};
+
+export type StaffDashboard = {
+  counts: {
+    new: number;
+    open: number;
+    inProgress: number;
+    waitingForRequester: number;
+    unassigned: number;
+    myAssigned: number;
+    urgentTickets: number;
+  };
+  byItPriority: Array<{ itPriority: RequestedPriority | null; count: number }>;
+  recentTickets: StaffDashboardTicketRow[];
+  urgentTickets: StaffDashboardTicketRow[];
+  myRecentActions: MyRecentAction[];
+  userCounts?: { total: number; active: number; inactive: number };
+};
+
+export async function fetchRequesterDashboard(): Promise<RequesterDashboard> {
+  const base = API_URL || window.location.origin;
+  const url = new URL("/api/dashboards/requester", base);
+  const res = await fetch(url, { credentials: "include" });
+  if (!res.ok) {
+    await handleApiError(res, `Failed to fetch requester dashboard: ${res.status}`);
+  }
+  const json = (await res.json()) as { data: RequesterDashboard };
+  return json.data;
+}
+
+export async function fetchStaffDashboard(): Promise<StaffDashboard> {
+  const base = API_URL || window.location.origin;
+  const url = new URL("/api/dashboards/staff", base);
+  const res = await fetch(url, { credentials: "include" });
+  if (!res.ok) {
+    await handleApiError(res, `Failed to fetch staff dashboard: ${res.status}`);
+  }
+  const json = (await res.json()) as { data: StaffDashboard };
+  return json.data;
+}
+
 

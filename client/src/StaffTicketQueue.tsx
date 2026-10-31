@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Inbox, SearchX, SlidersHorizontal } from "lucide-react";
 import { useAuth } from "./AuthContext.js";
 import {
@@ -23,6 +23,7 @@ type ListState = "loading" | "empty" | "no-results" | "error" | "idle";
 interface Filters {
   search: string;
   status: string;
+  statusGroup: string;
   requestedPriority: string;
   itPriority: string;
   categoryId: string;
@@ -32,6 +33,7 @@ interface Filters {
 const EMPTY_FILTERS: Filters = {
   search: "",
   status: "",
+  statusGroup: "",
   requestedPriority: "",
   itPriority: "",
   categoryId: "",
@@ -76,6 +78,8 @@ export default function StaffTicketQueue() {
   const isStaff =
     user != null && (STAFF_ROLES as readonly string[]).includes(user.role);
 
+  const [searchParams] = useSearchParams();
+
   const [tickets, setTickets] = useState<StaffTicketListItem[]>([]);
   const [meta, setMeta] = useState<TicketListMeta>({
     total: 0,
@@ -83,24 +87,57 @@ export default function StaffTicketQueue() {
     pageSize: 10,
     totalPages: 0,
   });
-  const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
-  const [filtersOpen, setFiltersOpen] = useState(false);
-  const [sortBy, setSortBy] = useState("updatedAt");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [filters, setFilters] = useState<Filters>(() => ({
+    search: searchParams.get("search") || "",
+    status: searchParams.get("currentStatus") || searchParams.get("status") || "",
+    statusGroup: searchParams.get("statusGroup") || "",
+    requestedPriority: searchParams.get("requestedPriority") || "",
+    itPriority: searchParams.get("itPriority") || "",
+    categoryId: searchParams.get("categoryId") || "",
+    ownerId: searchParams.get("ownerId") || "",
+  }));
+  const [filtersOpen, setFiltersOpen] = useState(() => {
+    return Boolean(
+      searchParams.get("search") ||
+      searchParams.get("currentStatus") ||
+      searchParams.get("status") ||
+      searchParams.get("statusGroup") ||
+      searchParams.get("requestedPriority") ||
+      searchParams.get("itPriority") ||
+      searchParams.get("categoryId") ||
+      searchParams.get("ownerId")
+    );
+  });
+  const [sortBy, setSortBy] = useState(() => {
+    const s = searchParams.get("sortBy");
+    return s && (SORT_WHITELIST as readonly string[]).includes(s as (typeof SORT_WHITELIST)[number]) ? s : "updatedAt";
+  });
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">(() => {
+    const o = searchParams.get("sortOrder");
+    return o === "asc" || o === "desc" ? o : "desc";
+  });
+  const [page, setPage] = useState(() => {
+    const p = Number(searchParams.get("page"));
+    return Number.isInteger(p) && p >= 1 ? p : 1;
+  });
+  const [pageSize, setPageSize] = useState(() => {
+    const ps = Number(searchParams.get("pageSize"));
+    return Number.isInteger(ps) && ps >= 1 && ps <= 50 ? ps : 10;
+  });
   const [listState, setListState] = useState<ListState>("loading");
   const [errorMessage, setErrorMessage] = useState("");
   const [categories, setCategories] = useState<Category[]>([]);
-  const [searchInput, setSearchInput] = useState("");
+  const [searchInput, setSearchInput] = useState(() => searchParams.get("search") || "");
 
-  const hasActiveFilters =
+  const hasActiveFilters = Boolean(
     filters.search ||
     filters.categoryId ||
     filters.status ||
+    filters.statusGroup ||
     filters.requestedPriority ||
     filters.itPriority ||
-    filters.ownerId;
+    filters.ownerId
+  );
 
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef(0);
@@ -133,6 +170,7 @@ export default function StaffTicketQueue() {
       if (filters.search) params.search = filters.search;
       if (filters.categoryId) params.categoryId = Number(filters.categoryId);
       if (filters.status) params.currentStatus = filters.status;
+      if (filters.statusGroup) params.statusGroup = filters.statusGroup;
       if (filters.requestedPriority) params.requestedPriority = filters.requestedPriority;
       if (filters.itPriority) params.itPriority = filters.itPriority;
       if (filters.ownerId) params.ownerId = filters.ownerId;
@@ -269,6 +307,25 @@ export default function StaffTicketQueue() {
                     {opt.label}
                   </option>
                 ))}
+              </select>
+            </div>
+            <div className="filter-select">
+              <label htmlFor="filter-status-group" className="field-label">
+                Status Group
+              </label>
+              <select
+                id="filter-status-group"
+                className="field-select"
+                value={filters.statusGroup}
+                onChange={(e) =>
+                  handleFilterChange("statusGroup", e.target.value)
+                }
+                data-testid="filter-status-group"
+              >
+                <option value="">All</option>
+                <option value="open">Open</option>
+                <option value="attention">Needs attention</option>
+                <option value="closed">Closed</option>
               </select>
             </div>
             <div className="filter-select">

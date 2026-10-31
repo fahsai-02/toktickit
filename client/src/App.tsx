@@ -11,6 +11,8 @@ import TicketDetail from "./TicketDetail.js";
 import StaffTicketQueue from "./StaffTicketQueue.js";
 import StaffTicketDetail from "./StaffTicketDetail.js";
 import UserManagement from "./UserManagement.js";
+import RequesterDashboard from "./RequesterDashboard.js";
+import StaffDashboard from "./StaffDashboard.js";
 import Spinner from "./components/Spinner.js";
 
 /** Landing page: sends each user to the default screen for their state. */
@@ -25,11 +27,10 @@ function HomeRedirect() {
   }
   if (!user) return <Navigate to="/login" replace />;
   if (user.mustChangePassword) return <Navigate to="/change-password" replace />;
-  if (user.role === "REQUESTER") return <Navigate to="/my-tickets" replace />;
-  // ui-spec section 4.1: IT Staff and Admins land on the staff queue; the
-  // admin user-management screen is added at release time (ui-spec 4.4).
+  // ui-spec section 4.1: each role's Dashboard is its landing page.
+  if (user.role === "REQUESTER") return <Navigate to="/dashboard" replace />;
   if (user.role === "IT_STAFF" || user.role === "ADMINISTRATOR") {
-    return <Navigate to="/staff/queue" replace />;
+    return <Navigate to="/staff/dashboard" replace />;
   }
   return <Navigate to="/create-ticket" replace />;
 }
@@ -153,6 +154,18 @@ export default function App() {
           </RequireAuth>
         }
       >
+        {/* Role Dashboards (Issue 28, ui-spec section 4.2). /dashboard is
+            accessible to any authenticated caller; /staff/dashboard is
+            restricted to IT Staff and Administrators. */}
+        <Route path="/dashboard" element={<RequesterDashboard />} />
+        <Route
+          path="/staff/dashboard"
+          element={
+            <RequireRole roles={["IT_STAFF", "ADMINISTRATOR"]}>
+              <StaffDashboard />
+            </RequireRole>
+          }
+        />
         <Route
           path="/my-tickets"
           element={

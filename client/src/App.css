@@ -2326,4 +2326,516 @@
     align-items: stretch;
   }
 }
+
+  /* =====================================================================
+     Role Dashboards (Issue 28, ui-spec section 5 & 6)
+     ===================================================================== */
+  .dashboard-container {
+    padding-top: 24px;
+    padding-bottom: 48px;
+    /* List rows are one line of summary plus a meta line, so every row has the
+       same height. A list reserves room for the 5 rows the API can return
+       (api-spec section 3), so the page does not move whether 0, 3 or 5 rows
+       arrive, and the skeleton reserves exactly the same box. */
+    --dash-row: 62px;
+    --dash-gap: 8px;
+    --dash-rows-height: calc(5 * var(--dash-row) + 4 * var(--dash-gap));
+  }
+
+  .dashboard-list-body {
+    min-height: var(--dash-rows-height);
+  }
+
+  /* The Urgent list can return up to 10 rows. Reserving all ten would leave a
+     large empty block for the usual 0-3, so the list is a fixed-height box of
+     5 rows that scrolls inside itself: the page never changes height. */
+  .dashboard-urgent-body {
+    min-height: var(--dash-rows-height);
+    max-height: var(--dash-rows-height);
+    overflow-y: auto;
+  }
+
+  .dashboard-header {
+    margin-bottom: 24px;
+  }
+
+  .dashboard-header .page-title {
+    margin-bottom: 4px;
+  }
+
+  .dashboard-greeting {
+    font-size: 16px;
+    color: var(--color-text-muted);
+    margin: 0;
+  }
+
+  /* Metric cards grid */
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .dashboard-grid--staff {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .dashboard-ownership {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .metric-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 1px 3px var(--color-shadow);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .metric-card:hover {
+    border-color: var(--color-secondary);
+    box-shadow: 0 2px 6px rgba(0, 107, 60, 0.12);
+  }
+
+  .metric-card__value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--color-text);
+    line-height: 1.2;
+    margin-bottom: 4px;
+  }
+
+  .metric-card__label {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-text-muted);
+  }
+
+  .metric-card__subtext {
+    font-size: 12px;
+    color: var(--color-text-muted);
+    margin-top: 4px;
+  }
+
+  .metric-card--attention {
+    background: #FFFBEB;
+    border-color: #FCD34D;
+    border-left: 4px solid var(--color-warning);
+  }
+
+  .metric-card--attention .metric-card__value {
+    color: #92400E;
+  }
+
+  .metric-card--attention .metric-card__label {
+    color: #B45309;
+    font-weight: 600;
+  }
+
+  .metric-card--users {
+    border-left: 4px solid var(--color-info);
+  }
+
+  /* Attention section full-width */
+  .dashboard-attention {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .dashboard-attention .metric-card--attention {
+    flex: 1;
+  }
+
+  .dashboard-quick-actions {
+    display: flex;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+
+  /* Priority Strip */
+  .priority-strip {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 3px var(--color-shadow);
+  }
+
+  .priority-strip__title {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0 0 12px 0;
+    color: var(--color-text);
+  }
+
+  .priority-strip__buckets {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .priority-strip__item {
+    flex: 1;
+    min-width: 90px;
+    background: var(--color-page);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+  }
+
+  .priority-strip__item:hover {
+    border-color: var(--color-primary);
+    background-color: var(--color-pale);
+  }
+
+  .priority-strip__label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+  }
+
+  .priority-strip__count {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--color-text);
+    margin-top: 2px;
+  }
+
+  /* Urgent section */
+  .dashboard-urgent-section {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 3px var(--color-shadow);
+  }
+
+  .dashboard-urgent-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .dashboard-urgent-links {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .dashboard-filter-link {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-primary);
+    text-decoration: none;
+  }
+
+  .dashboard-filter-link:hover {
+    text-decoration: underline;
+  }
+
+  /* Lists section */
+  .dashboard-lists {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 24px;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .dashboard-list-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: 0 1px 3px var(--color-shadow);
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  .dashboard-list-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 16px 0;
+    color: var(--color-text);
+  }
+
+  .dashboard-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .dashboard-list-item {
+    margin: 0;
+    padding: 0;
+  }
+
+  .dashboard-list-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    text-decoration: none;
+    color: inherit;
+    gap: 12px;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .dashboard-list-link:hover {
+    background-color: var(--color-pale);
+    border-color: var(--color-primary);
+  }
+
+  .dashboard-list-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+    gap: 2px;
+  }
+
+  .dashboard-ticket-number {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-primary);
+  }
+
+  .dashboard-ticket-summary {
+    font-size: 13px;
+    color: var(--color-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .dashboard-list-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .dashboard-ticket-owner {
+    font-size: 12px;
+    color: var(--color-text-muted);
+  }
+
+  .dashboard-ticket-time {
+    font-size: 12px;
+    color: var(--color-text-muted);
+  }
+
+  .dashboard-action-result {
+    font-size: 12px;
+    color: var(--color-text-muted);
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .dashboard-admin-section {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 3px var(--color-shadow);
+  }
+
+  /* Dashboard loading skeleton (ui-spec section 5.1 "Loading"). The cards and
+     list cards are the real ones, so only the contents are placeholders. */
+  .metric-card--skeleton,
+  .metric-card--skeleton:hover {
+    background: var(--color-surface);
+    border-color: var(--color-border);
+    box-shadow: 0 1px 3px var(--color-shadow);
+  }
+
+  .skeleton-bar {
+    display: block;
+    border-radius: 4px;
+    background: var(--color-field-readonly);
+    animation: skeleton-pulse 1.4s ease-in-out infinite;
+  }
+
+  /* Bar sizes are the line boxes of the text they stand in for, measured from
+     the loaded page, so loading and loaded occupy the same space. */
+  .skeleton-bar--value {
+    height: 34px;
+    width: 40%;
+    margin-bottom: 4px;
+  }
+
+  .skeleton-bar--label {
+    height: 21px;
+    width: 70%;
+  }
+
+  .skeleton-bar--sub {
+    height: 18px;
+    width: 55%;
+    margin-top: 4px;
+  }
+
+  .skeleton-bar--title {
+    height: 19px;
+    width: 40%;
+    margin-bottom: 16px;
+  }
+
+  /* Rows match the real list's row height and gap (--dash-row, --dash-gap). */
+  .skeleton-bar--row {
+    height: var(--dash-row);
+    margin-bottom: var(--dash-gap);
+  }
+
+  .skeleton-bar--row:last-child {
+    margin-bottom: 0;
+  }
+
+  /* Create Ticket button beside the attention card. */
+  .skeleton-bar--button {
+    height: 40px;
+    width: 140px;
+  }
+
+  .skeleton-bar--links {
+    height: 14px;
+    width: 30%;
+  }
+
+  /* A title bar that sits in a flex header supplies its own spacing. */
+  .skeleton-bar--flush {
+    margin-bottom: 0;
+  }
+
+  .priority-strip .skeleton-bar--title {
+    height: 18px;
+    margin-bottom: 12px;
+  }
+
+  .priority-strip__item .skeleton-bar--label {
+    height: 18px;
+  }
+
+  .priority-strip__item .skeleton-bar--count {
+    height: 30px;
+    width: 30%;
+    margin-top: 2px;
+  }
+
+  /* The real header is 35px tall (it wraps to 67px on a phone). */
+  .dashboard-urgent-header--skeleton {
+    min-height: 35px;
+  }
+
+  /* Below 768px list rows stack their meta line under the summary, so they
+     are taller than on desktop. */
+  @media (max-width: 768px) {
+    .dashboard-container {
+      --dash-row: 88px;
+    }
+
+    .dashboard-urgent-header--skeleton {
+      min-height: 67px;
+    }
+  }
+
+  @keyframes skeleton-pulse {
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .skeleton-bar {
+      animation: none;
+    }
+  }
+
+  /* Responsive breakpoints: 1200 / 992 / 768 */
+  @media (max-width: 1199px) {
+    .dashboard-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .dashboard-grid--staff {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 991px) {
+    .dashboard-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .dashboard-lists {
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .dashboard-grid,
+    .dashboard-grid--staff,
+    .dashboard-ownership {
+      grid-template-columns: 1fr;
+    }
+    .dashboard-attention {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .priority-strip__buckets {
+      flex-direction: column;
+    }
+    .dashboard-lists {
+      gap: 12px;
+    }
+    .dashboard-list-card {
+      padding: 16px;
+    }
+    .dashboard-list-link {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 6px;
+    }
+    .dashboard-list-meta {
+      width: 100%;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+  }
 }

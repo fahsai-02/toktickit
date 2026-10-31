@@ -12,8 +12,13 @@ import { buildNextTicketNumber } from './lib/ticketNumber.js';
 import { validateAttachmentType } from './lib/attachmentValidation.js';
 import { sendError, validationError } from './lib/httpErrors.js';
 import { requireAuth, requireRole } from './middleware/auth.js';
-import { ownerUserIdFor, parsePositiveInt } from './lib/requestHelpers.js';
+import {
+  ownerUserIdFor,
+  ownershipWhereFor,
+  parsePositiveInt,
+} from './lib/requestHelpers.js';
 import { runTicketListQuery, STAFF_SORT_WHITELIST } from './lib/ticketListQuery.js';
+import { isStatusGroup, STATUS_GROUPS, type StatusGroup } from './lib/dashboardQueries.js';
 import {
   canTransition,
   transitionViolationMessage,
@@ -22,6 +27,7 @@ import {
 import { resolutionGateViolation } from './lib/resolutionGate.js';
 import authRouter from './routes/auth.js';
 import actionsTakenRouter from './routes/actionsTaken.js';
+import dashboardsRouter from './routes/dashboards.js';
 import bcrypt from 'bcryptjs';
 import { validateNewPassword } from './lib/passwordValidation.js';
 import { BCRYPT_ROUNDS } from './lib/seedCredentials.js';
@@ -209,19 +215,8 @@ async function resolveLegacyRequesterIdForUser(name: string, email: string): Pro
 
 /** Effective owning User.id for a ticket. Backfills the legacy link by email
  *  when `requesterUserId` is still NULL (rows created pre-Issue 18). */
-// ownerUserIdFor now lives in ./lib/requestHelpers.ts (shared with the Lab 4
-// actionsTaken router). See the import at the top of this file.
-
-/** Ownership `where` clause for list queries: session user owns the ticket
- *  via `requesterUserId`, or (pre-backfill rows) via their mapped email. */
-function ownershipWhereFor(user: { id: number; email: string }): Record<string, unknown> {
-  return {
-    OR: [
-      { requesterUserId: user.id },
-      { requesterUserId: null, requester: { email: user.email } },
-    ],
-  };
-}
+// ownerUserIdFor and ownershipWhereFor now live in ./lib/requestHelpers.ts
+// (shared with the Lab 4 actionsTaken & dashboard routers). See imports.
 
 app.get("/api/tickets", requireAuth, async (req: Request, res: Response) => {
   const fields: Record<string, string> = {};
@@ -247,6 +242,16 @@ app.get("/api/tickets", requireAuth, async (req: Request, res: Response) => {
       currentStatus = currentStatusParam;
     } else {
       fields.currentStatus = `currentStatus must be one of: ${STATUSES.join(", ")}.`;
+    }
+  }
+
+  const statusGroupParam = req.query.statusGroup;
+  let statusGroup: StatusGroup | undefined;
+  if (statusGroupParam !== undefined) {
+    if (isStatusGroup(statusGroupParam)) {
+      statusGroup = statusGroupParam;
+    } else {
+      fields.statusGroup = "statusGroup must be one of: open, attention, closed.";
     }
   }
 
@@ -319,6 +324,9 @@ app.get("/api/tickets", requireAuth, async (req: Request, res: Response) => {
     }
     if (currentStatus !== undefined) {
       and.push({ currentStatus });
+    }
+    if (statusGroup !== undefined) {
+      and.push({ currentStatus: { in: [...STATUS_GROUPS[statusGroup]] } });
     }
     if (requestedPriority !== undefined) {
       and.push({ requestedPriority });
@@ -402,6 +410,16 @@ app.get(
         currentStatus = currentStatusParam;
       } else {
         fields.currentStatus = `currentStatus must be one of: ${STATUSES.join(", ")}.`;
+      }
+    }
+
+    const statusGroupParam = req.query.statusGroup;
+    let statusGroup: StatusGroup | undefined;
+    if (statusGroupParam !== undefined) {
+      if (isStatusGroup(statusGroupParam)) {
+        statusGroup = statusGroupParam;
+      } else {
+        fields.statusGroup = "statusGroup must be one of: open, attention, closed.";
       }
     }
 
@@ -517,6 +535,9 @@ app.get(
     }
     if (currentStatus !== undefined) {
       and.push({ currentStatus });
+    }
+    if (statusGroup !== undefined) {
+      and.push({ currentStatus: { in: [...STATUS_GROUPS[statusGroup]] } });
     }
     if (requestedPriority !== undefined) {
       and.push({ requestedPriority });
@@ -2301,6 +2322,7 @@ app.post(
   }
 );
 
+app.use("/api/dashboards", dashboardsRouter);
 app.use("/api", actionsTakenRouter);
 
 app.use((_req: Request, res: Response) => {

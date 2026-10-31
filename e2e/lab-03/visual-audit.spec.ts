@@ -9,6 +9,7 @@ import {
   isMobileProject,
   loginAndUnlock,
   useLab3DbHooks,
+  gotoStaffQueue,
 } from "./helpers.js";
 
 /**
@@ -198,6 +199,7 @@ test.describe("STYLE-05 focus indicators (ui-spec section 7, checklist 25)", () 
     page,
   }, testInfo) => {
     await loginAndUnlock(page, STAFF_EMAIL, STAFF_PASSWORD);
+    await gotoStaffQueue(page);
     await expect(
       page.locator(
         isMobileProject(testInfo.project.name)
@@ -239,6 +241,7 @@ test.describe("STYLE-06 editable vs read-only fields (ui-spec section 3)", () =>
     page,
   }, testInfo) => {
     await loginAndUnlock(page, STAFF_EMAIL, STAFF_PASSWORD);
+    await gotoStaffQueue(page);
     await openStaffTicket(page, testInfo.project.name);
 
     // The same screen shows both kinds side by side: Ticket No / Requester are
@@ -371,7 +374,7 @@ test.describe("STYLE-08 no element overlap (ui-spec section 6, checklist 9)", ()
     page,
   }, testInfo) => {
     await loginAndUnlock(page, STAFF_EMAIL, STAFF_PASSWORD);
-    await expect(page.locator('[data-testid="staff-queue-page"]')).toBeVisible();
+    await gotoStaffQueue(page);
     expect(await overlappingControls(page), "staff queue overlaps").toEqual([]);
 
     // Open the filter card too: the densest layout on the screen.
@@ -429,12 +432,12 @@ test.describe("STYLE-09 role-based navigation (ui-spec section 4.1, checklist 12
     );
   }
 
-  test("REQUESTER sees only My Tickets and Create Ticket, and is denied /admin/users", async ({
+  test("REQUESTER sees only Dashboard, My Tickets and Create Ticket, and is denied /admin/users", async ({
     page,
   }, testInfo) => {
     await loginAndUnlock(page, REQ_EMAIL, REQ_INITIAL_PASSWORD);
     await openNavIfCollapsed(page, testInfo.project.name);
-    expect((await navHrefs(page)).sort()).toEqual(["/create-ticket", "/my-tickets"]);
+    expect((await navHrefs(page)).sort()).toEqual(["/create-ticket", "/dashboard", "/my-tickets"]);
 
     // The nav must not be the only guard: typing the URL directly is refused
     // by the backend role check and rendered as the forbidden state.
@@ -442,18 +445,22 @@ test.describe("STYLE-09 role-based navigation (ui-spec section 4.1, checklist 12
     await expect(page.locator('[data-testid="forbidden-state"]')).toBeVisible();
   });
 
-  test("IT_STAFF sees only My Queue and Create Ticket, and is denied /admin/users", async ({
+  test("IT_STAFF sees only Dashboard, My Queue and Create Ticket, and is denied /admin/users", async ({
     page,
   }, testInfo) => {
     await loginAndUnlock(page, STAFF_EMAIL, STAFF_PASSWORD);
     await openNavIfCollapsed(page, testInfo.project.name);
-    expect((await navHrefs(page)).sort()).toEqual(["/create-ticket", "/staff/queue"]);
+    expect((await navHrefs(page)).sort()).toEqual([
+      "/create-ticket",
+      "/staff/dashboard",
+      "/staff/queue",
+    ]);
 
     await page.goto("/admin/users");
     await expect(page.locator('[data-testid="forbidden-state"]')).toBeVisible();
   });
 
-  test("ADMINISTRATOR sees My Queue, Create Ticket and User Management", async ({
+  test("ADMINISTRATOR sees Dashboard, My Queue, Create Ticket and User Management", async ({
     page,
   }, testInfo) => {
     await loginAndUnlock(page, ADMIN_EMAIL, ADMIN_PASSWORD);
@@ -461,6 +468,7 @@ test.describe("STYLE-09 role-based navigation (ui-spec section 4.1, checklist 12
     expect((await navHrefs(page)).sort()).toEqual([
       "/admin/users",
       "/create-ticket",
+      "/staff/dashboard",
       "/staff/queue",
     ]);
   });
@@ -473,7 +481,7 @@ test.describe("STYLE-10 long-text clamping (ui-spec section 3/5.4, checklist 24)
     page,
   }, testInfo) => {
     await loginAndUnlock(page, STAFF_EMAIL, STAFF_PASSWORD);
-    await expect(page.locator('[data-testid="staff-queue-page"]')).toBeVisible();
+    await gotoStaffQueue(page);
     // Measure rendered rows, not the loading skeleton.
     await expect(
       page.locator(

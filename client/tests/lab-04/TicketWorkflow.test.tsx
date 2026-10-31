@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
-import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { MemoryRouter, Route, Routes, Link } from "react-router-dom";
 import { AuthProvider } from "../../src/AuthContext.js";
 import StaffTicketDetail from "../../src/StaffTicketDetail.js";
 import * as api from "../../src/api.js";
@@ -44,12 +44,22 @@ function makeTicket(overrides: Partial<api.StaffTicketDetail> = {}) {
   return { ...baseTicket, ...overrides };
 }
 
-function renderDetail() {
+function renderDetail(path = "/staff/tickets/101") {
   return render(
     <AuthProvider>
-      <MemoryRouter initialEntries={["/staff/tickets/101"]}>
+      <MemoryRouter initialEntries={[path]}>
         <Routes>
-          <Route path="/staff/tickets/:ticketId" element={<StaffTicketDetail />} />
+          <Route
+            path="/staff/tickets/:ticketId"
+            element={
+              <>
+                <Link to="/staff/tickets/101?tab=actions" data-testid="to-actions">
+                  to actions
+                </Link>
+                <StaffTicketDetail />
+              </>
+            }
+          />
           <Route path="/staff/queue" element={<div data-testid="queue-route" />} />
         </Routes>
       </MemoryRouter>
@@ -204,5 +214,41 @@ describe("TicketWorkflow — status gate, matrix and confirmation (UI-17..UI-20,
     expect(screen.getByTestId("resolution-input")).toHaveValue(
       "Newer summary saved by another staff member"
     );
+  });
+
+  // ui-spec section 5.2: dashboard "My Recent Actions" rows link with ?tab=actions.
+  it("opens the Actions Taken tab when the URL carries ?tab=actions", async () => {
+    vi.spyOn(api, "fetchStaffTicket").mockResolvedValue(makeTicket());
+    renderDetail("/staff/tickets/101?tab=actions");
+    await screen.findByTestId("staff-ticket-detail");
+    const tab = await screen.findByRole("tab", { name: /Actions Taken/ });
+    expect(tab).toHaveAttribute("aria-selected", "true");
+  });
+
+  // ui-spec section 5.2: a tab-only URL change selects the tab; it must not
+  // reload the ticket or reset the screen's state.
+  it("a tab-only URL change switches the tab without reloading the ticket", async () => {
+    const ticketSpy = vi
+      .spyOn(api, "fetchStaffTicket")
+      .mockResolvedValue(makeTicket());
+    renderDetail("/staff/tickets/101");
+    await screen.findByTestId("staff-ticket-detail");
+    expect(screen.getByRole("tab", { name: /Public Comments/ })).toHaveAttribute(
+      "aria-selected",
+      "true"
+    );
+    expect(ticketSpy).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByTestId("to-actions"));
+
+    await waitFor(() =>
+      expect(screen.getByRole("tab", { name: /Actions Taken/ })).toHaveAttribute(
+        "aria-selected",
+        "true"
+      )
+    );
+    expect(ticketSpy).toHaveBeenCalledTimes(1);
+    // The detail never went back to its loading state.
+    expect(screen.getByTestId("staff-ticket-detail")).toBeInTheDocument();
   });
 });

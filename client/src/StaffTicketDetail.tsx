@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, type ChangeEvent } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, useSearchParams, Link } from "react-router-dom";
 import {
   fetchStaffTicket,
   fetchStaffComments,
@@ -72,6 +72,23 @@ type DetailState = "loading" | "error" | "not-found" | "access-denied" | "idle";
 type CommsState = "loading" | "idle" | "error";
 type ActiveTab = "comments" | "notes" | "attachments" | "actions";
 
+/**
+ * Dashboard rows link into the Actions Taken area (ui-spec section 5.2), so
+ * `?tab=actions` must select that tab on load. Unknown values fall back to the
+ * default Comments tab rather than inventing a tab.
+ */
+function tabFromQuery(value: string | null): ActiveTab | null {
+  switch (value) {
+    case "comments":
+    case "notes":
+    case "attachments":
+    case "actions":
+      return value;
+    default:
+      return null;
+  }
+}
+
 interface ActionFormErrors {
   actionDate?: string;
   description?: string;
@@ -125,6 +142,12 @@ function sortActions(list: ActionTaken[]): ActionTaken[] {
 export default function StaffTicketDetail() {
   const { ticketId } = useParams<{ ticketId: string }>();
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const requestedTab = tabFromQuery(searchParams.get("tab"));
+  // The ticket-load effect below must not re-run just because the tab query
+  // changed, so it reads the latest value through a ref.
+  const requestedTabRef = useRef(requestedTab);
+  requestedTabRef.current = requestedTab;
 
   const [ticket, setTicket] = useState<StaffTicketDetailType | null>(null);
   const [state, setState] = useState<DetailState>("loading");
@@ -145,7 +168,7 @@ export default function StaffTicketDetail() {
   const [noteText, setNoteText] = useState("");
   const [creatingNote, setCreatingNote] = useState(false);
 
-  const [tab, setTab] = useState<ActiveTab>("comments");
+  const [tab, setTab] = useState<ActiveTab>(requestedTab ?? "comments");
 
   // Actions Taken (FR-01..FR-07, ui-spec 5.3). The list is read from the
   // server; the create/edit form lives in a Drawer and always keeps the user's
@@ -215,7 +238,7 @@ export default function StaffTicketDetail() {
     let cancelled = false;
     setState("loading");
     setErrorMessage("");
-    setTab("comments");
+    setTab(requestedTabRef.current ?? "comments");
     setFormOpen(false);
     setEditingAction(null);
     setConflictLatest(null);
@@ -298,6 +321,14 @@ export default function StaffTicketDetail() {
       cancelled = true;
     };
   }, [ticketId]);
+
+  // Keep the visible tab in sync when a dashboard link changes `?tab=` on an
+  // already-mounted detail screen (ui-spec section 5.2). This is separate from
+  // the ticket-load effect above, so a tab-only URL change never reloads or
+  // resets the ticket.
+  useEffect(() => {
+    setTab(requestedTab ?? "comments");
+  }, [requestedTab]);
 
   // Actions Taken load independently so Retry can refetch only this list
   // without reloading the Ticket and the other tabs (ui-spec 5.1, 5.3).

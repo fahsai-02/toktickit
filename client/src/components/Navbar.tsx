@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../AuthContext.js";
 import Badge, { roleBadgeVariant } from "./Badge.js";
-import { Clock3, FileText, CirclePlus, ListTodo, Users, ChevronDown } from "lucide-react";
+import { Clock3, FileText, CirclePlus, ListTodo, Users, ChevronDown, LayoutDashboard } from "lucide-react";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -54,6 +54,7 @@ export default function Navbar() {
   const showMyQueue =
     user?.role === "IT_STAFF" || user?.role === "ADMINISTRATOR";
   const showUserManagement = user?.role === "ADMINISTRATOR";
+  const dashboardPath = user?.role === "REQUESTER" ? "/dashboard" : "/staff/dashboard";
 
   return (
     <header className="app-header">
@@ -67,6 +68,18 @@ export default function Navbar() {
             className={`nav ${mobileOpen ? "nav--open" : ""}`}
             aria-label="Primary"
           >
+            {user && (
+              <NavLink
+                to={dashboardPath}
+                className={({ isActive }) =>
+                  `nav-link ${isActive ? "nav-link--active" : ""}`
+                }
+                onClick={closeMobile}
+              >
+                <LayoutDashboard size={16} />
+                Dashboard
+              </NavLink>
+            )}
             {showMyTickets && (
               <NavLink
                 to="/my-tickets"

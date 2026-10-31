@@ -37,3 +37,15 @@ export async function ownerUserIdFor(ticket: {
   });
   return user?.id ?? null;
 }
+
+/** Ownership `where` clause for list and dashboard queries: session user owns
+ *  the ticket via `requesterUserId`, or (pre-backfill rows) via their mapped email. */
+export function ownershipWhereFor(user: { id: number; email: string }): Record<string, unknown> {
+  return {
+    OR: [
+      { requesterUserId: user.id },
+      { requesterUserId: null, requester: { email: user.email } },
+    ],
+  };
+}
+
