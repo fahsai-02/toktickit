@@ -48,8 +48,8 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
-    height: 40px;
-    padding: 0 20px;
+    height: 36px;
+    padding: 0 16px;
     font-size: 14px;
     font-weight: 500;
     color: var(--color-secondary);
@@ -92,5 +92,15 @@
   .btn-ghost:active {
     background: var(--color-pale);
     color: var(--color-text);
+  }
+
+  /* ui-spec section 6 (Mobile): tap targets are at least 36px. min-height, not
+     height, so it also wins over page-level `height: 36px/40px` overrides. */
+  @media (max-width: 768px) {
+    .btn-primary,
+    .btn-secondary,
+    .btn-ghost {
+      min-height: 36px;
+    }
   }
 }

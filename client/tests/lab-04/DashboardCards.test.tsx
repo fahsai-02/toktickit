@@ -54,6 +54,10 @@ describe("Dashboard cards (UI-24, UI-29)", () => {
   afterEach(() => vi.restoreAllMocks());
 
   // UI-24 — api-spec section 3.1 documents these URLs.
+  // A11Y-02 — ui-spec section 7: every card is a real anchor (tagName "A" with
+  // an href, which a div+onClick cannot satisfy) whose accessible name carries
+  // both its label and its count. The wording is "Open: 7. View all" rather than
+  // the "Open tickets, 7" example in tests.md; the criterion is label + number.
   it("UI-24: requester cards are real links with the number in the accessible name", async () => {
     vi.spyOn(api, "fetchRequesterDashboard").mockResolvedValue(requesterData);
     renderAt("/dashboard", requester);
