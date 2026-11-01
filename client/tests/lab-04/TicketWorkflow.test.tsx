@@ -225,7 +225,7 @@ describe("TicketWorkflow — status gate, matrix and confirmation (UI-17..UI-20,
     expect(tab).toHaveAttribute("aria-selected", "true");
   });
 
-  // ui-spec section 5.2: a tab-only URL change selects the tab; it must not
+  // UI-33 — docs/lab-04/tests.md. ui-spec section 5.2: a tab-only URL change selects the tab; it must not
   // reload the ticket or reset the screen's state.
   it("a tab-only URL change switches the tab without reloading the ticket", async () => {
     const ticketSpy = vi

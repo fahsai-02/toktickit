@@ -158,7 +158,7 @@ describe("updateStaffTicketStatus", () => {
     });
   });
 
-  // docs/lab-04/api-spec.md section 5.1 and FR-12: `version` is optional on the
+  // UI-31 — docs/lab-04/tests.md. docs/lab-04/api-spec.md section 5.1 and FR-12: `version` is optional on the
   // status endpoint, and when it is absent the property must not be sent at all
   // (an explicit `null` is a 400, not last-write-wins).
   it("omits version from the body when the caller has none", async () => {

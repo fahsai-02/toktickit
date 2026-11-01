@@ -8,6 +8,15 @@ Administrator.** The Lab 2 "pick who you are" demo mode is gone: you sign in
 with an email and password, and the backend derives everything from your
 session, so you can never act as someone else by editing a request.
 
+**Lab 4 adds Actions Taken, a ticket resolution gate and role dashboards.**
+IT Staff and Administrators record each piece of work on a ticket as an
+*Action Taken*; a ticket can only be set to Resolved once it has a written
+resolution summary **and** at least one Action Taken (enforced by the backend,
+not just the UI). Every role now lands on a dashboard whose numbers are computed
+on the server, and each card links to the exact list of tickets it counted.
+Status changes and Action edits carry a `version`, so two people editing the
+same record get a `409` conflict instead of silently overwriting each other.
+
 **Requester** — file and track tickets, own end to end:
 
 - **Sign in / sign out**, and change your password (forced on first login).
@@ -18,14 +27,22 @@ session, so you can never act as someone else by editing a request.
 - **Ticket detail**: view the ticket, download attachments, soft-remove an
   attachment with a required reason, post Public Comments, and tell IT that the
   problem appears resolved (an indication — a Requester can never formally
-  resolve or close a ticket).
+  resolve or close a ticket). **Lab 4:** a read-only Actions Taken section shows
+  the work IT has recorded.
+- **Dashboard** (Lab 4): your ticket counts by status group (including the ones
+  needing your attention), recent tickets and recently resolved tickets, each
+  count linking to the matching My Tickets list.
 
 **IT Staff** — work the shared queue:
 
+- **Dashboard** (Lab 4): ticket counts, your own recent Actions Taken, recent
+  and urgent tickets, each card drilling down to the matching queue.
 - **My Queue**: every ticket, with search, filters, sorting and pagination.
 - **Ticket detail**: claim or reassign ownership, set IT Priority, perform only
   the status changes the transition matrix allows, post Public Comments, and
-  write Internal Notes that Requesters can never see.
+  write Internal Notes that Requesters can never see. **Lab 4:** create, edit,
+  complete or cancel Actions Taken on the ticket (a new Actions Taken tab), and
+  resolve it through the resolution gate with a confirmation dialog.
 
 **Administrator** — manage accounts:
 
@@ -50,16 +67,18 @@ session, so you can never act as someone else by editing a request.
 toktickit/
 ├── client/            # React + Vite frontend (port 5173)
 │   ├── src/           # auth, requester, staff and admin screens
-│   └── tests/         # Vitest UI tests: lab-01/, lab-02/, lab-03/
+│   └── tests/         # Vitest UI tests: lab-01/ … lab-04/
 ├── server/            # Express backend (port 5000)
 │   └── src/           # app.ts, routes (auth, tickets, staff, admin), middleware, lib
-│   └── tests/         # Vitest API tests: lab-01/, lab-02/, lab-03/
+│   └── tests/         # Vitest API tests: lab-01/ … lab-04/
 ├── e2e/               # Playwright E2E, visual and design-audit specs
 │   ├── lab-02/        # (Lab 2 specs — skipped against the Lab 3 app)
-│   └── lab-03/        # authentication, staff flow, admin flow, visual, audit
+│   ├── lab-03/        # authentication, staff flow, admin flow, visual, audit
+│   └── lab-04/        # dashboards, Actions Taken, resolution flow, visual, audit
 ├── artifacts/         # Screenshot deliverables from the visual specs
 │   ├── lab-02/screenshots/…
-│   └── lab-03/screenshots/{10 screens, states}/{desktop,tablet,mobile}.png
+│   ├── lab-03/screenshots/{10 screens, states}/{desktop,tablet,mobile}.png
+│   └── lab-04/screenshots/{dashboards, actions-taken, workflow, states}/…
 ├── docs/              # per-lab specifications, test plans, evidence & review records
 ├── docker-compose.yml # PostgreSQL 17
 ├── playwright.config.ts  # 3 viewport projects + system Chrome
@@ -130,9 +149,9 @@ only):
 
 | Role | What you can reach |
 |------|--------------------|
-| Requester | `/my-tickets`, `/create-ticket`, own ticket detail |
-| IT Staff | `/staff/queue`, `/staff/tickets/:id`, `/create-ticket` |
-| Administrator | `/staff/queue`, `/create-ticket`, `/admin/users` |
+| Requester | `/dashboard`, `/my-tickets`, `/create-ticket`, own ticket detail |
+| IT Staff | `/staff/dashboard`, `/staff/queue`, `/staff/tickets/:id`, `/create-ticket` |
+| Administrator | `/staff/dashboard`, `/staff/queue`, `/create-ticket`, `/admin/users` |
 
 The navigation shows only the links your role is allowed to use, and the backend
 re-checks every one of them — a hidden button is not authorization.
@@ -166,12 +185,17 @@ Sara Patel and James Wilson. The per-account list, with the password and its
 | PUT | `/api/staff/tickets/:id/claim` · `/assign` | Claim or reassign ticket ownership |
 | PUT | `/api/staff/tickets/:id/priority` · `/status` | Set IT Priority · perform a permitted status change |
 | GET/POST | `/api/staff/tickets/:id/comments` · `/notes` | Public Comments · Internal Notes (IT Staff and Administrator only) |
+| GET/POST | `/api/tickets/:id/actions` | **Lab 4:** list / create Actions Taken (IT Staff and Administrator write; the ticket's Requester reads) |
+| PUT | `/api/actions/:id` | **Lab 4:** edit, complete or cancel an Action Taken (`version` required; stale → `409`) |
+| PUT | `/api/staff/tickets/:id/status` | **Lab 4:** also enforces the resolution gate and the optional `version` check |
+| GET | `/api/dashboards/requester` · `/api/dashboards/staff` | **Lab 4:** server-computed dashboard metrics and lists |
+| GET | `/api/tickets` · `/api/staff/tickets` with `statusGroup=` | **Lab 4:** the exact rows a dashboard card counted |
 | GET/POST | `/api/admin/users` | List (search + role filter) · create a user |
 | PUT | `/api/admin/users/:id` | Edit name, email, role, activation |
 | POST | `/api/admin/users/:id/reset-password` | Set a new initial password (must change at next login) |
 
-The full contract, including every error code, is in
-`docs/lab-03/api-spec.md`.
+The full contracts, including every error code, are in
+`docs/lab-03/api-spec.md` and `docs/lab-04/api-spec.md`.
 
 ## Tests
 
@@ -181,11 +205,10 @@ The full contract, including every error code, is in
 cd server && pnpm test
 ```
 
-Tests live in `server/tests/lab-01/`, `server/tests/lab-02/` and
-`server/tests/lab-03/`. The tests that touch the database require PostgreSQL to
+Tests live in `server/tests/lab-01/` … `server/tests/lab-04/`. The tests that touch the database require PostgreSQL to
 be running and seeded — start it and run the seed step above first. Lab 3
 suites share one database, so the files run one at a time; the current result
-is **20 files / 286 tests**.
+is **29 files / 376 tests**.
 
 ### Client UI tests (Vitest + jsdom)
 
@@ -193,9 +216,9 @@ is **20 files / 286 tests**.
 cd client && pnpm test
 ```
 
-Tests live in `client/tests/lab-01/`, `client/tests/lab-02/` and
-`client/tests/lab-03/` (not colocated with source; configured in
-`client/vite.config.ts`). Current result: **18 files / 201 tests**.
+Tests live in `client/tests/lab-01/` … `client/tests/lab-04/` (not colocated
+with source; configured in `client/vite.config.ts`). Current result:
+**26 files / 286 tests**.
 
 ### E2E + Responsive visual tests (Playwright)
 
@@ -212,7 +235,8 @@ Then, from the repo root:
 
 ```sh
 pnpm test:e2e:lab3     # Lab 3 functional E2E (desktop project, workers = 1)
-pnpm test:e2e          # every spec
+pnpm test:e2e:lab4     # Lab 4 E2E (desktop project, workers = 1)
+pnpm test:e2e          # every spec (lab-02, lab-03, lab-04)
 pnpm test:e2e:headed   # same, with a visible browser
 ```
 
@@ -241,6 +265,23 @@ spec re-seeds and cleans up through the `useLab3DbHooks()` helper.
   every visible control to catch overlap, asserts the exact nav link set per
   role plus a denied destination, and measures the 2-line clamp on long
   summaries.
+
+The Lab 4 specs live in `e2e/lab-04/` and follow the same rules (one shared
+database, `workers: 1`). `dashboards`, `actions-taken-flow` and
+`ticket-resolution` are the functional journeys; `responsive.visual`,
+`states.visual` and `visual-audit` write the screenshots in
+`artifacts/lab-04/screenshots/` and measure the design rules (tap-target floor
+of 36px at 375px, no layout shift when a dashboard finishes loading). Every Lab 4
+journey also fails on an unexpected console error or HTTP error response. The
+three `e2e/lab-02` specs drive the Development Requester selector that Lab 3
+removed, so they stay skipped on purpose (recorded as AD-21 in
+`docs/lab-04/specification.md`).
+
+After an E2E run, return the shared dev database to the seed state:
+
+```sh
+cd server && pnpm exec tsx prisma/cleanup-e2e.ts
+```
 
 ### Viewport projects
 
