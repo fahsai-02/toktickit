@@ -52,6 +52,7 @@ The client uses CSS Layers to manage style priority without `!important`. Layer 
 - `layout` layer always wins over `components` — use this for page-specific overrides
 - To override a component variant (e.g. `.btn-primary`), put the override in `App.css` (layout layer), NOT with `!important`
 - Bootstrap is imported via `@import "bootstrap/dist/css/bootstrap.min.css" layer(bootstrap);` in `index.css` — do NOT import Bootstrap in `main.tsx`
+- Mobile (≤768px) tap targets are **≥36px tall app-wide** (Lab 4 `ui-spec.md` v1.4 section 6; older Lab 2/3 specs say 44px and are superseded). `STYLE-11` in `e2e/lab-04/visual-audit.spec.ts` enforces it.
 - When a Button needs custom styling (no variant class), omit the `variant` prop and use `className` directly
 
 ## Client Routing

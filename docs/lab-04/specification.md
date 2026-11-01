@@ -4,8 +4,8 @@
 | :--- | :--- |
 | **Project** | Tok TickIT — IT Service Desk |
 | **Sprint** | Lab 4: Actions Taken, Ticket Workflow, and Role Dashboards |
-| **Version** | v1.3 (Approved 2026-10-30) |
-| **Date** | 2026-10-30 |
+| **Version** | v1.4 (Approved 2026-11-01) |
+| **Date** | 2026-11-01 |
 | **Sources** | Derived from the CPE 334 Lab 4 labsheet (course-provided handout), the Lab 3 approved increment, and the completed Lab 1–2 increments |
 | **Related docs** | `api-spec.md`, `ui-spec.md`, `tests.md` |
 | **Contract role** | This file is the single source of truth for Issues 25–30. Every FR, BR, and AC below is traceable from code and tests back to this document. |
@@ -678,7 +678,11 @@ response shape. `GET /api/health` continues to return exactly `{ "status": "ok",
   first request is still in flight, then exactly one record exists.
 - **AC-17:** Given the whole Lab 1–3 surface, when the regression suites and the
   E2E specs run, then they pass unchanged, and `GET /api/health` returns exactly
-  `{ "status": "ok", "service": "TokTickIT API" }`.
+  `{ "status": "ok", "service": "TokTickIT API" }`. **Recorded exception (AD-21):**
+  the three `e2e/lab-02/*.spec.ts` files are kept as-is and stay skipped; they
+  drive the Development Requester selector that Lab 3 removed, and the instructor
+  told the student to keep previous-lab code. The requester journey they covered
+  is exercised by `e2e/lab-03/requester-regression.spec.ts`.
 - **AC-18:** Given all new and changed screens, when rendered at 1440×900,
   820×1180, and 375×844, then layouts are correct with no horizontal overflow,
   clipping, or overlap, and every checklist item in `ui-spec.md` is marked pass
@@ -695,7 +699,9 @@ response shape. `GET /api/health` continues to return exactly `{ "status": "ok",
 - [ ] All Included scope implemented; no Excluded features present.
 - [ ] Every AC above verified by at least one automated test traced in `tests.md`.
 - [ ] All unit, API, UI, and E2E tests pass from the documented commands.
-- [ ] No test skipped, disabled, or commented out.
+- [ ] No test skipped, disabled, or commented out, **except** the recorded AD-21
+      exception (the three obsolete `e2e/lab-02` files) and the by-design
+      project-scoped skips (desktop-only functional specs, Mobile-only `STYLE-11`).
 - [ ] Backend enforces authentication and role-based authorization on every new endpoint.
 - [ ] Backend enforces the resolution gate and the transition matrix; a raw request bypassing the UI is still rejected.
 - [ ] Backend enforces ownership on the requester dashboard and on Action Taken reads.
@@ -801,6 +807,21 @@ response shape. `GET /api/health` continues to return exactly `{ "status": "ok",
 
 ---
 
+### AD-21 — Lab 2 E2E specs stay skipped (instructor instruction)
+
+**Context.** `e2e/lab-02/requester-ticket-flow`, `responsive.visual` and
+`states.visual` call `test.skip()` for the whole file because they select a
+Development Requester, which Lab 3 replaced with real login. Un-skipping them
+means rewriting Lab 1–3 specs, which AC-17 / REG-01 forbid "to accommodate" later
+work, and deleting them is ruled out by the instructor's instruction to keep
+previous-lab code.
+
+**Decision.** Keep the files untouched and skipped. Coverage of the same
+requester journey is carried by `e2e/lab-03/requester-regression.spec.ts`
+(E2E-05). The exception is listed in `tests.md` section 7 so it is visible, not
+hidden. This handout (section 13) leaves the Definition of Done to the student,
+so the "No test skipped" line is amended here rather than the tests.
+
 ## 12. Amendment Log
 
 | Version | Date | Change | Approved by |
@@ -817,3 +838,4 @@ response shape. `GET /api/health` continues to return exactly `{ "status": "ok",
 **Approval:** v1.3 approved by the student on 2026-10-30. v1.2 was approved on
 2026-10-24. This approves the contract only — no FR, BR, AC, endpoint, screen, or checklist row is verified by
 it, because nothing has been built or run yet.
+| v1.4 | 2026-11-01 | **Issue 29 (#82) review follow-up.** AC-17 and the Definition of Done line "No test skipped" now name one recorded exception, **AD-21**: the three obsolete `e2e/lab-02` specs stay skipped because the instructor said to keep previous-lab code; their journey is covered by `e2e/lab-03/requester-regression.spec.ts`. No test or code changed. | Approved (student, 2026-11-01) |

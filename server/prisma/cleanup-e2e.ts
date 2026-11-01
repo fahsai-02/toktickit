@@ -23,6 +23,23 @@ const e2eTickets = await prisma.ticket.findMany({
 });
 const ticketIds = e2eTickets.map((t) => t.id);
 
+// Lab 4 (Issue 29): the Lab 4 E2E specs write ONLY to throwaway tickets whose
+// summary starts "E2E lab4", plus Actions Taken whose description starts "E2E "
+// (never on seed tickets' version/status). ActionTaken has onDelete: Restrict,
+// so its rows must go BEFORE their tickets, sequentially like the deletes below.
+const lab4Tickets = await prisma.ticket.findMany({
+  where: { summary: { startsWith: "E2E lab4" } },
+  select: { id: true },
+});
+const lab4TicketIds = lab4Tickets.map((t) => t.id);
+ticketIds.push(...lab4TicketIds);
+const lab4ActionsOnTickets = await prisma.actionTaken.deleteMany({
+  where: { ticketId: { in: lab4TicketIds } },
+});
+const lab4StrayActions = await prisma.actionTaken.deleteMany({
+  where: { description: { startsWith: "E2E " } },
+});
+
 // Sequential, children before parents. These deletes MUST NOT run in parallel:
 // Postgres has no ON DELETE CASCADE on these relations, so a ticket delete that
 // commits before its Public Comments are gone fails with
@@ -44,6 +61,16 @@ const tickets = await prisma.ticket.deleteMany({
 const users = await prisma.user.deleteMany({
   where: { email: { startsWith: "e2e." } },
 });
+// Creating an e2e.* account also leaves a legacy Requester row behind. MIG-01
+// requires every Requester to map to a User, so drop the orphaned e2e.* ones
+// (only those with no tickets/uploads, so seed data is never touched).
+const requesters = await prisma.requester.deleteMany({
+  where: {
+    email: { startsWith: "e2e." },
+    tickets: { none: {} },
+    uploads: { none: {} },
+  },
+});
 
 // E2E-03 posts a Public Comment and an Internal Note on a SEED ticket, and
 // E2E-05 attaches one to its own ticket (deleted above); the seed recreates its
@@ -60,7 +87,8 @@ const ticketCount = await prisma.ticket.count();
 console.log(
   `cleanup-e2e: deleted ${tickets.count} tickets (${attachments.count} attachments, ` +
     `${comments.count} comments, ${notes.count} notes), ${strayComments.count} stray ` +
-    `comments, ${strayNotes.count} stray notes, ${users.count} users; ` +
+    `comments, ${strayNotes.count} stray notes, ${users.count} users, ${requesters.count} requesters, ` +
+    `${lab4ActionsOnTickets.count + lab4StrayActions.count} actions taken; ` +
     `users now ${userCount}, tickets ${ticketCount}`
 );
 await prisma.$disconnect();

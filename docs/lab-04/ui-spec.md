@@ -4,8 +4,8 @@
 | :--- | :--- |
 | **Project** | Tok TickIT — IT Service Desk |
 | **Sprint** | Lab 4: Actions Taken, Ticket Workflow, and Role Dashboards |
-| **Version** | v1.3 (Approved 2026-10-31) |
-| **Date** | 2026-10-31 |
+| **Version** | v1.4 (Approved 2026-11-01) |
+| **Date** | 2026-11-01 |
 | **Contract source** | `specification.md` v1.0; request and response shapes in `api-spec.md` |
 | **Predecessor** | `docs/lab-03/ui-spec.md` — Lab 4 inherits its tokens, states, and accessibility rules unchanged |
 
@@ -381,7 +381,7 @@ not change.
 | Desktop ≥1200px | Five plain count cards in one row; `Needs your attention` full-width beneath, with the `Create Ticket` button beside it; two-column dashboard lists; Actions Taken as a compact one-entry-per-action list; create/edit form in a right-side drawer; container max 1200px |
 | Small desktop 992–1199px | Three plain count cards per row, attention card still full-width; two-column dashboard lists |
 | Tablet 768–991px | Two plain count cards per row, attention card still full-width; dashboard lists stack full-width; Actions Taken list stays one entry per action, full width; form drawer goes full-width from the right (see the deviation note below) |
-| Mobile <768px | Everything stacks vertically; cards full-width; **Actions Taken list keeps all six fields per entry** with a narrower label column, because a six-column table cannot be read at 375px; form becomes a full-screen overlay; tap targets ≥44px; **zero horizontal page scrolling** |
+| Mobile <768px | Everything stacks vertically; cards full-width; **Actions Taken list keeps all six fields per entry** with a narrower label column, because a six-column table cannot be read at 375px; form becomes a full-screen overlay; tap targets ≥36px (app-wide, amended in v1.4; Lab 2 and Lab 3 specs still say 44px and are superseded for this rule by this row); **zero horizontal page scrolling** |
 | All sizes | No clipped labels, overlapping messages, hidden buttons, or truncated-unreadable text |
 
 **Tablet is 820px, not 768px** (AD-12). `client/src/App.css` switches to the
@@ -490,6 +490,8 @@ artifacts/lab-04/screenshots/states/dashboard-loading/{desktop,tablet,mobile}.pn
 artifacts/lab-04/screenshots/states/dashboard-zero-metrics/{desktop,tablet,mobile}.png
 artifacts/lab-04/screenshots/states/dashboard-error-retry/{desktop,tablet,mobile}.png
 artifacts/lab-04/screenshots/states/action-tab-keyboard-focus/{desktop,tablet,mobile}.png
+artifacts/lab-04/screenshots/states/gate-blocked-both-unmet/{desktop,tablet,mobile}.png
+artifacts/lab-04/screenshots/states/confirm-dialog-open/{desktop,tablet,mobile}.png
 ```
 
 `actions-taken/` is the parent folder handout section 12 names. The four
@@ -587,6 +589,7 @@ of a Lab 4 test rig, not of the Lab 3 screens.
 | v1.1 | 2026-10-04 | Section 4 card layout and section 6 responsive rules said three different things — a five-card wireframe, "Six count cards in one row", and "three per row from 1200px down". All three now describe one named grid: five plain cards 5/3/2/full-width per row, `Needs your attention` full-width at every size, with the `Create Ticket` button beside it. Added the `actions-taken/` parent folder handout section 12 requires, keeping the four per-screen sub-folders. Checklist row 34 now cites `REG-01` only, with a note on where its visual half is proven. | Approved (student, 2026-10-04) |
 | v1.2 | 2026-10-24 | **Actions Taken is a list, not a table.** Section 5.3's six-column read mode left each column too narrow in the staff Ticket Detail side column (about 540px at 1440), where the area shares the column with the conversation tabs. Read mode is now one compact entry per action showing the same six fields, and the same markup serves every viewport with only the label column narrowing on mobile. Updated section 5.3, 5.4, section 6 desktop/tablet/mobile rows, section 7's accessible-name rule, section 8 (the construct is now the shared `ActionList` component rather than the inline `ActionTable`), and checklist rows 10, 15, 25, 28. | Approved (student, 2026-10-24) |
 | v1.3 | 2026-10-31 | **Issue 28 (#81) review decisions.** Section 5.2 now describes the Urgent list as a fixed five-row box that scrolls inside itself (a keyboard-focusable, labelled region past five rows), and states that every dashboard list reserves its five-row cap, so loading and loaded layouts match (section 5.1 "no layout shift"). Section 8 records the shared dashboard list components in `DashboardList.tsx` as a deviation from "stay inline". Both were choices made while building Issue 28 and are written down here rather than left as undocumented behavior. | Approved (student, 2026-10-31) |
+| v1.4 | 2026-11-01 | **Mobile tap-target floor is 36px for the whole app.** Section 6, Mobile row: "tap targets ≥44px" becomes "≥36px", measured as rendered height at 375px. Reason: at 44px the pagination bar wrapped onto two lines once more than three page numbers showed; the student chose 36px as the floor everywhere so every screen follows one rule. 36px is still above the WCAG 2.2 AA minimum target size (24px). The Lab 2 and Lab 3 `ui-spec.md` files keep their historical 44px text; for Lab 4 and the shipped app this row wins. Section 9 also lists two state-evidence folders the Issue 29 specs write, `gate-blocked-both-unmet` and `confirm-dialog-open`. | Approved (student, 2026-11-01) |
 
 ---
 

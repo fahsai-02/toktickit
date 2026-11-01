@@ -374,13 +374,13 @@
       width: 100%;
       text-align: left;
       padding: 10px 12px;
-      min-height: 44px;
+      min-height: 36px;
     }
 
     .hamburger {
       display: block;
-      min-width: 44px;
-      min-height: 44px;
+      min-width: 36px;
+      min-height: 36px;
     }
 
     .profile-name {
@@ -415,7 +415,7 @@
 
     /* ui-spec section 4.1 (line 93): on mobile the header keeps the brand and
        the truncated user name only. Brand (117px) + full name + role badge +
-       44px hamburger no longer fit a mobile row, and the flex children refuse
+       36px hamburger no longer fit a mobile row, and the flex children refuse
        to shrink, so the hamburger was pushed up to 19px past the viewport edge
        (409px document width with the "Administrator" account). The role still
        reads from the profile dropdown header, which repeats name + role badge
@@ -423,6 +423,11 @@
     .profile-menu,
     .profile-button {
       min-width: 0;
+    }
+
+    /* Tap target >= 36px (ui-spec section 6, Mobile). */
+    .profile-button {
+      min-height: 36px;
     }
 
     .profile-role {
@@ -451,13 +456,13 @@
       text-align: left;
       padding: 10px 12px;
       border-bottom: none;
-      min-height: 44px;
+      min-height: 36px;
     }
 
     .hamburger {
       display: block;
-      min-width: 44px;
-      min-height: 44px;
+      min-width: 36px;
+      min-height: 36px;
     }
 
     .profile-name {
@@ -761,7 +766,7 @@
     font-family: var(--font-sans);
     font-size: 14px;
     color: var(--color-text);
-    min-height: 44px;
+    min-height: 36px;
   }
 
   .ticket-card:hover {
@@ -867,7 +872,7 @@
   .pagination-pages {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 4px;
   }
 
   .pagination-btn {
@@ -915,6 +920,16 @@
     min-width: 32px;
     height: 32px;
     color: var(--color-text-muted);
+  }
+
+  /* Mobile tap targets are at least 36px app-wide (Lab 4 ui-spec section 6). */
+  @media (max-width: 768px) {
+    .pagination-page-size select,
+    .pagination-btn,
+    .pagination-ellipsis {
+      height: 36px;
+      min-width: 36px;
+    }
   }
 
   /* ── List States ───────────────────────────────────────────────────── */
@@ -1643,8 +1658,11 @@
      "Tablet: stacked layout — info on top, tabs below" and section 6
      "Tablet 768–991px … stacked layout for staff detail". */
   @media (max-width: 991px) {
+    /* minmax(0, 1fr), not 1fr: a bare 1fr track has an automatic minimum equal
+       to its content, so the four-tab bar (Issue 26 added Actions Taken)
+       stretched the column to 458px and the page scrolled sideways at 375px. */
     .staff-detail-layout {
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 1fr);
     }
 
     .staff-detail-comms {
@@ -1722,9 +1740,13 @@
     .detail-tab {
       flex: 1 1 0;
       min-width: 0;
-      white-space: nowrap;
+      /* Four tabs share 375px, so labels wrap onto two lines instead of being
+         clipped ("blic Comments"); min-height keeps the 36px tap target. */
+      white-space: normal;
+      line-height: 1.25;
+      min-height: 36px;
       text-align: center;
-      padding: 10px 6px;
+      padding: 8px 4px;
       font-size: 12px;
       border: none;
       border-bottom: 2px solid transparent;
@@ -1910,6 +1932,13 @@
   border-radius: var(--radius);
 }
 
+@media (max-width: 768px) {
+  .drawer-close {
+    width: 36px;
+    height: 36px;
+  }
+}
+
 .drawer-close:hover {
   color: var(--color-text);
 }
@@ -2005,6 +2034,42 @@
 
 .toggle--on .toggle-thumb {
   transform: translateX(20px);
+}
+
+/* ui-spec section 6 (Mobile): tap targets >= 36px. The button grows to 36px
+   tall while the visible track stays 24px (drawn by ::before). */
+@media (max-width: 768px) {
+  .toggle,
+  .toggle:hover:not(:disabled),
+  .toggle--on {
+    height: 36px;
+    background: transparent;
+  }
+
+  .toggle::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 6px;
+    height: 24px;
+    border-radius: 999px;
+    background: var(--color-border);
+    transition: background 0.15s ease;
+  }
+
+  .toggle:hover:not(:disabled)::before {
+    background: var(--color-text-muted);
+  }
+
+  .toggle--on::before,
+  .toggle--on:hover:not(:disabled)::before {
+    background: var(--color-primary);
+  }
+
+  .toggle-thumb {
+    top: 8px;
+  }
 }
 
 /* ── Confirm Dialog (ui-spec section 5.6) ───────────────────────────── */
@@ -2426,18 +2491,22 @@
     margin-top: 4px;
   }
 
+  /* ui-spec section 1: no new colour in Lab 4, and section 5.1 says this card
+     uses the attention/warning token. The amber tints it first shipped with
+     (#FFFBEB, #FCD34D, #92400E, #B45309) were not tokens; STYLE-01 caught them.
+     It stays distinct by more than colour (checklist row 5): the 4px warning
+     bar, the warning outline and the "Needs your attention" label. */
   .metric-card--attention {
-    background: #FFFBEB;
-    border-color: #FCD34D;
+    border-color: var(--color-warning);
     border-left: 4px solid var(--color-warning);
   }
 
   .metric-card--attention .metric-card__value {
-    color: #92400E;
+    color: var(--color-text);
   }
 
   .metric-card--attention .metric-card__label {
-    color: #B45309;
+    color: var(--color-text);
     font-weight: 600;
   }
 
@@ -2734,6 +2803,7 @@
     width: 140px;
   }
 
+
   .skeleton-bar--links {
     height: 14px;
     width: 30%;
@@ -2831,6 +2901,12 @@
       flex-direction: column;
       align-items: flex-start;
       gap: 6px;
+    }
+    /* In a column with align-items: flex-start the info block sizes to its
+       text, so a long one-line summary pushed the row to ~400px and the Urgent
+       box (a scroll container) scrolled sideways at 375px. Pin it to the row. */
+    .dashboard-list-info {
+      width: 100%;
     }
     .dashboard-list-meta {
       width: 100%;
