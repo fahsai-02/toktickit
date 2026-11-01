@@ -140,7 +140,7 @@ describe("RequesterDashboard (UI-21..UI-23, UI-29)", () => {
     expect(within(empty).queryByRole("button", { name: "Create Ticket" })).toBeNull();
   });
 
-  // ui-spec section 5.1 "Loading" (card skeletons + list placeholders) and
+  // UI-32 — docs/lab-04/tests.md. ui-spec section 5.1 "Loading" (card skeletons + list placeholders) and
   // section 7 "Live regions" (loading -> loaded is announced politely).
   it("loading shows card/list skeletons and announces loading, then loaded", async () => {
     let resolve!: (v: api.RequesterDashboard) => void;

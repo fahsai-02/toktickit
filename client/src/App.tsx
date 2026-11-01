@@ -194,8 +194,8 @@ export default function App() {
             </RequireRole>
           }
         />
-        {/* Placeholder so a row click lands somewhere instead of bouncing
-            back to the queue (Issue 19). Full staff detail: later issue. */}
+        {/* IT Staff / Administrator Ticket Detail (Issue 20): a queue row
+            click lands here. */}
         <Route
           path="/staff/tickets/:ticketId"
           element={

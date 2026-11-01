@@ -147,7 +147,7 @@ describe("StaffDashboard (UI-25..UI-28)", () => {
     );
   });
 
-  // ui-spec section 5.1/5.2 "Loading" and section 7 "Live regions".
+  // UI-32 — docs/lab-04/tests.md. ui-spec section 5.1/5.2 "Loading" and section 7 "Live regions".
   it("loading shows card/list skeletons and announces loading, then loaded", async () => {
     let resolve!: (v: api.StaffDashboard) => void;
     vi.spyOn(api, "fetchMe").mockResolvedValue(staff);
@@ -213,7 +213,7 @@ describe("StaffDashboard (UI-25..UI-28)", () => {
     expect(skeleton.querySelectorAll(".dashboard-admin-section .metric-card--skeleton")).toHaveLength(1);
   });
 
-  // ui-spec section 5.1 "no layout shift" with the cap from api-spec section
+  // UI-35 — docs/lab-04/tests.md. ui-spec section 5.1 "no layout shift" with the cap from api-spec section
   // 3.3: up to 10 urgent Tickets come back, and they must not grow the page.
   it("a full 10-row Urgent list scrolls inside a fixed box and is keyboard-reachable", async () => {
     const ten = Array.from({ length: 10 }, (_, i) => ticket(100 + i));
