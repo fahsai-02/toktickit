@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import {
   API_BASE, STAFF_EMAIL, STAFF_PASSWORD, STAFF_NAME,
-  collectConsoleErrors, createTempTicket, loginAndUnlock, loginViaUi,
+  collectConsoleErrors, createTempTicket, expectedHttpError, loginAndUnlock, loginViaUi,
   recordActionViaApi, staffSessionCookie, useLab3DbHooks,
 } from "./helpers.js";
 
@@ -9,9 +9,12 @@ import {
 // Every write goes to a throw-away ticket ("E2E lab4 ..."), never a seed ticket.
 useLab3DbHooks();
 
-// A deliberate 4xx makes Chrome log "Failed to load resource"; that is the
-// handled path under test, not an unhandled error (E2E-06).
-const EXPECTED_4XX = [/Failed to load resource: the server responded with a status of 4\d\d/];
+// A deliberate 4xx makes Chrome log "Failed to load resource"; only the exact
+// responses each journey provokes are whitelisted (E2E-06), any other 4xx fails.
+const ACTION_ITEM = /\/api\/actions\/\d+$/;
+const ACTION_LIST = /\/api\/tickets\/\d+\/actions$/;
+const CONFLICT_409 = [expectedHttpError(409, ACTION_ITEM)];
+const FORBIDDEN_403 = [expectedHttpError(403, ACTION_ITEM), expectedHttpError(403, ACTION_LIST)];
 
 test.describe("Actions Taken journeys", () => {
   test.beforeEach(({}, testInfo) => {
@@ -21,7 +24,7 @@ test.describe("Actions Taken journeys", () => {
   // E2E-01 — AC-01, AC-02; specification.md FR-01, FR-02, FR-04, BR-04.
   test("E2E-01: staff records an action, sees the performer, and a stale second edit is refused with 409", async ({ page, request }) => {
     test.setTimeout(120_000);
-    const errors = collectConsoleErrors(page, EXPECTED_4XX);
+    const errors = collectConsoleErrors(page, CONFLICT_409);
     const staffCookie = await staffSessionCookie(request);
     const ticket = await createTempTicket(request, "actions flow", staffCookie, ["OPEN", "IN_PROGRESS"]);
 
@@ -70,7 +73,7 @@ test.describe("Actions Taken journeys", () => {
   // E2E-02 — AC-05; FR-03, BR-08, FR-24, FR-25.
   test("E2E-02: a requester reads all six fields, has no write controls, and the API refuses them with 403", async ({ page, request }) => {
     test.setTimeout(120_000);
-    const errors = collectConsoleErrors(page, EXPECTED_4XX);
+    const errors = collectConsoleErrors(page, FORBIDDEN_403);
     const staffCookie = await staffSessionCookie(request);
     const ticket = await createTempTicket(request, "requester read", staffCookie, ["OPEN", "IN_PROGRESS"]);
     const res = await request.post(`${API_BASE}/api/tickets/${ticket.id}/actions`, {

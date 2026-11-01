@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import {
-  STAFF_EMAIL, STAFF_PASSWORD, collectConsoleErrors, createTempTicket,
+  STAFF_EMAIL, STAFF_PASSWORD, collectConsoleErrors, createTempTicket, expectedHttpError,
   loginViaUi, staffSessionCookie, useLab3DbHooks,
 } from "./helpers.js";
 
@@ -8,7 +8,7 @@ import {
 // docs/lab-04/tests.md E2E-03, E2E-05, E2E-06. Throw-away tickets only.
 useLab3DbHooks();
 
-const EXPECTED_4XX = [/Failed to load resource: the server responded with a status of 4\d\d/];
+const GATE_REFUSAL = [expectedHttpError(400, /\/api\/staff\/tickets\/\d+\/status$/)]; // the resolution gate refusal
 
 test.describe("Ticket resolution journeys", () => {
   test.beforeEach(({}, testInfo) => {
@@ -18,7 +18,7 @@ test.describe("Ticket resolution journeys", () => {
   // E2E-03 — AC-07, AC-08, AC-09; specification.md BR-11, BR-12, BR-13, FR-09, FR-10.
   test("E2E-03: RESOLVED is blocked until a summary and an action exist, then succeeds after a named confirmation", async ({ page, request }) => {
     test.setTimeout(150_000);
-    const errors = collectConsoleErrors(page, EXPECTED_4XX);
+    const errors = collectConsoleErrors(page, GATE_REFUSAL);
     const staffCookie = await staffSessionCookie(request);
     const ticket = await createTempTicket(request, "resolution gate", staffCookie, ["OPEN", "IN_PROGRESS"]);
 
@@ -72,7 +72,7 @@ test.describe("Ticket resolution journeys", () => {
   // E2E-05 — AC-13, AC-14; Part 6 traceability: assign/status/complete/cancel are Ticket-level.
   test("E2E-05: owner and status controls live on the Ticket, none on an action, and cancel reaches CANCELLED", async ({ page, request }) => {
     test.setTimeout(150_000);
-    const errors = collectConsoleErrors(page, EXPECTED_4XX);
+    const errors = collectConsoleErrors(page);
     const staffCookie = await staffSessionCookie(request);
     const ticket = await createTempTicket(request, "traceability", staffCookie, ["OPEN"]);
 

@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import {
   ADMIN_EMAIL, ADMIN_PASSWORD, NEW_USER_INITIAL_PASSWORD, REQ_EMAIL, REQ_INITIAL_PASSWORD,
   adminSessionCookie, assertNoHorizontalScroll, capture, collectConsoleErrors,
-  createTempTicket, createUserViaAdminApi, loginAndUnlock, newApi, recordActionViaApi,
+  createTempTicket, expectedHttpError, createUserViaAdminApi, loginAndUnlock, newApi, recordActionViaApi,
   seedTicketWithMostActions, seedTicketWithoutActions, staffLogin, staffSessionCookie,
   ticketIdByNumber, useLab3DbHooks,
 } from "./helpers.js";
@@ -21,7 +21,7 @@ import {
  */
 useLab3DbHooks({ allProjects: true });
 
-const EXPECTED_4XX = [/Failed to load resource: the server responded with a status of 4\d\d/];
+const GATE_REFUSAL = [expectedHttpError(400, /\/api\/staff\/tickets\/\d+\/status$/)]; // the resolution gate refusal
 
 async function finish(page: import("@playwright/test").Page, screen: string, project: string, fullPage = true) {
   await assertNoHorizontalScroll(page);
@@ -169,7 +169,7 @@ test.describe("RESP-19..21 requester ticket: Actions Taken, read-only", () => {
 test.describe("RESP-22..27 workflow gate and confirmation dialog", () => {
   test("RESP-22..24: the gate message sits at the status control and the badge is unchanged", async ({ page }, testInfo) => {
     test.setTimeout(120_000);
-    const errors = collectConsoleErrors(page, EXPECTED_4XX);
+    const errors = collectConsoleErrors(page, GATE_REFUSAL);
     const staffCookie = await staffSessionCookie();
     const ticket = await createTempTicket(undefined, "resp gate", staffCookie, ["OPEN", "IN_PROGRESS"]);
     await staffLogin(page);

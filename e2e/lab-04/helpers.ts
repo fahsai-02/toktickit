@@ -43,7 +43,20 @@ export async function capture(
  * `assertClean()` at the end. Expected failures a test provokes on purpose
  * (a 409 conflict, a stubbed 500) are filtered with `ignore`.
  */
-export function collectConsoleErrors(page: Page, ignore: RegExp[] = []) {
+export type ConsoleIgnore = RegExp | ((text: string, url: string) => boolean);
+
+/**
+ * Chrome logs every non-2xx fetch as "Failed to load resource: ... status of N".
+ * Whitelist ONE known response: that status on a URL matching `urlPattern`.
+ * Any other 4xx/5xx (a 401, a 404, a different endpoint) still fails the journey.
+ */
+export function expectedHttpError(status: number, urlPattern: RegExp): ConsoleIgnore {
+  return (text, url) =>
+    new RegExp(`Failed to load resource: the server responded with a status of ${status}\\b`).test(text) &&
+    urlPattern.test(url);
+}
+
+export function collectConsoleErrors(page: Page, ignore: ConsoleIgnore[] = []) {
   const errors: string[] = [];
   page.on("console", (msg) => {
     if (msg.type() !== "error") return;
@@ -53,7 +66,7 @@ export function collectConsoleErrors(page: Page, ignore: RegExp[] = []) {
     // logs any non-2xx fetch as a console error, so that one probe is not a
     // defect. Anything else on that URL still fails.
     if (msg.location().url.endsWith("/api/auth/me") && /status of 401/.test(text)) return;
-    if (ignore.some((re) => re.test(text))) return;
+    if (ignore.some((i) => (typeof i === "function" ? i(text, msg.location().url) : i.test(text)))) return;
     errors.push(`console.error: ${text} @ ${msg.location().url}`);
   });
   page.on("pageerror", (err) => errors.push(`pageerror: ${err.message}`));

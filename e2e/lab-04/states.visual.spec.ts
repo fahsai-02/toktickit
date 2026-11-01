@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import {
   ADMIN_EMAIL, ADMIN_PASSWORD, NEW_USER_INITIAL_PASSWORD, API_BASE,
-  assertNoHorizontalScroll, capture, collectConsoleErrors, createTempTicket,
+  assertNoHorizontalScroll, capture, collectConsoleErrors, createTempTicket, expectedHttpError,
   createUserViaAdminApi, loginAndUnlock, newApi, seedTicketWithMostActions,
   seedTicketWithoutActions, staffLogin, staffSessionCookie, ticketIdByNumber,
   useLab3DbHooks,
@@ -20,8 +20,12 @@ import {
  */
 useLab3DbHooks({ allProjects: true });
 
-const EXPECTED_4XX = [/Failed to load resource: the server responded with a status of 4\d\d/];
-const EXPECTED_5XX = [/Failed to load resource: the server responded with a status of 5\d\d/];
+const GATE_REFUSAL = [expectedHttpError(400, /\/api\/staff\/tickets\/\d+\/status$/)];
+const SAVE_CONFLICT = [expectedHttpError(409, /\/api\/actions\/\d+$/)];
+const STUBBED_500 = [expectedHttpError(500, /\/api\/tickets\/\d+\/actions$/)];
+// The aborted dashboard request: the network error, and only for that URL.
+const ABORTED_DASHBOARD = [(text: string, url: string) =>
+  /net::ERR_FAILED|Failed to load resource/.test(text) && /\/api\/dashboards\/staff$/.test(url)];
 const shot = (page: Page, folder: string, project: string, fullPage = false) =>
   capture(page, `states/${folder}`, project, { fullPage });
 
@@ -35,7 +39,7 @@ async function openForm(page: Page, ticketId: number) {
 test.describe("STATE-01..03 action save conflict (real 409)", () => {
   test("the callout offers Refresh and the typed value stays on screen", async ({ page }, testInfo) => {
     test.setTimeout(120_000);
-    const errors = collectConsoleErrors(page, EXPECTED_4XX);
+    const errors = collectConsoleErrors(page, SAVE_CONFLICT);
     const staffCookie = await staffSessionCookie();
     const ticket = await createTempTicket(undefined, "state conflict", staffCookie, ["OPEN", "IN_PROGRESS"]);
     const api = await newApi();
@@ -89,7 +93,7 @@ test.describe("STATE-04..06 action form validation errors (real, client side)", 
 
 test.describe("STATE-07..09 form retained after a safe failure (STUB: forced 500)", () => {
   test("every value survives, the callout is safe, no raw error text", async ({ page }, testInfo) => {
-    const errors = collectConsoleErrors(page, EXPECTED_5XX);
+    const errors = collectConsoleErrors(page, STUBBED_500);
     const id = await ticketIdByNumber(await staffSessionCookie(), seedTicketWithoutActions());
     // The real global handler answers { code, message: "Internal server error" }; any extra
     // raw fields a faulty proxy or future change adds must still never reach the screen.
@@ -169,7 +173,7 @@ test.describe("STATE-13..15 dashboard zero metrics (STUB: all-zero staff payload
 
 test.describe("STATE-16..18 dashboard error and retry (STUB: aborted request)", () => {
   test("an error block with a working Retry, and no stale numbers while it shows", async ({ page }, testInfo) => {
-    const errors = collectConsoleErrors(page, [/net::ERR_FAILED/, /Failed to load resource/]);
+    const errors = collectConsoleErrors(page, ABORTED_DASHBOARD);
     await staffLogin(page);
     await page.route("**/api/dashboards/staff", (route) => route.abort("failed"));
     await page.goto("/staff/dashboard");
@@ -224,7 +228,7 @@ test.describe("STATE-19..21 Actions Taken keyboard focus (real data)", () => {
 test.describe("STATE-22..27 gate and dialog (real data, throw-away ticket)", () => {
   test("STATE-22..24: both unmet conditions are named and the badge holds", async ({ page }, testInfo) => {
     test.setTimeout(120_000);
-    const errors = collectConsoleErrors(page, EXPECTED_4XX);
+    const errors = collectConsoleErrors(page, GATE_REFUSAL);
     const staffCookie = await staffSessionCookie();
     const ticket = await createTempTicket(undefined, "state gate", staffCookie, ["OPEN", "IN_PROGRESS"]);
     await staffLogin(page);
