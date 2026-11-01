@@ -55,6 +55,9 @@ export default function CreateTicket() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const requester = user ? { id: user.id, name: user.name } : null;
+  // /tickets/:id and /my-tickets are Requester-only routes (App.tsx), so the
+  // success buttons send IT Staff and Administrators to their own screens.
+  const isStaffRole = user?.role === "IT_STAFF" || user?.role === "ADMINISTRATOR";
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [relatedSystems, setRelatedSystems] = useState<RelatedSystem[]>([]);
@@ -337,17 +340,33 @@ export default function CreateTicket() {
         <div className="create-actions">
           <Button
             variant="secondary"
-            onClick={() => navigate(`/tickets/${successTicket.id}`)}
+            onClick={() =>
+              navigate(
+                isStaffRole
+                  ? `/staff/tickets/${successTicket.id}`
+                  : `/tickets/${successTicket.id}`
+              )
+            }
           >
             View ticket
           </Button>
-          <Button
-            variant="primary"
-            onClick={() => navigate("/my-tickets")}
-            data-testid="go-to-my-tickets"
-          >
-            Go to My Tickets
-          </Button>
+          {isStaffRole ? (
+            <Button
+              variant="primary"
+              onClick={() => navigate("/staff/queue")}
+              data-testid="go-to-my-queue"
+            >
+              Go to My Queue
+            </Button>
+          ) : (
+            <Button
+              variant="primary"
+              onClick={() => navigate("/my-tickets")}
+              data-testid="go-to-my-tickets"
+            >
+              Go to My Tickets
+            </Button>
+          )}
         </div>
       </div>
     );

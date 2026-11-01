@@ -12,6 +12,7 @@ import {
   loginAndUnlock,
   setUserActiveViaAdminApi,
   useLab3DbHooks,
+  gotoStaffQueue,
 } from "./helpers.js";
 
 /**
@@ -138,7 +139,7 @@ test.describe("STATE-04..06 login busy", () => {
       // reported as an unrelated 60s timeout.
       release();
     }
-    await expect(page).toHaveURL(/\/staff\/queue/, { timeout: 15_000 });
+    await expect(page).toHaveURL(/\/staff\/dashboard/, { timeout: 15_000 });
   });
 });
 
@@ -194,7 +195,8 @@ test.describe("STATE-07..09 change password validation", () => {
 test.describe("STATE-10..12 queue empty", () => {
   test("queue with no tickets at all renders the empty state", async ({ page }, testInfo) => {
     await loginAndUnlock(page, STAFF_EMAIL, STAFF_PASSWORD);
-    await expect(page).toHaveURL(/\/staff\/queue/);
+    await expect(page).toHaveURL(/\/staff\/dashboard/);
+    await gotoStaffQueue(page);
 
     // The IT Staff queue is GLOBAL — api-spec section 5.1 lists search,
     // status, priority, category and owner filters but no requester scope, so
@@ -232,7 +234,8 @@ test.describe("STATE-13..15 queue no results", () => {
     page,
   }, testInfo) => {
     await loginAndUnlock(page, STAFF_EMAIL, STAFF_PASSWORD);
-    await expect(page).toHaveURL(/\/staff\/queue/);
+    await expect(page).toHaveURL(/\/staff\/dashboard/);
+    await gotoStaffQueue(page);
 
     // Real API, impossible ticket number: this is the genuine no-results path
     // (an active filter returned zero rows), not a stub.
@@ -256,6 +259,7 @@ test.describe("STATE-16..18 staff detail comments", () => {
     page,
   }, testInfo) => {
     await loginAndUnlock(page, STAFF_EMAIL, STAFF_PASSWORD);
+    await gotoStaffQueue(page);
     await openStaffTicket(page, STAFF_TICKET, testInfo.project.name);
 
     await page.click('[data-testid="tab-comments"]');
@@ -276,6 +280,7 @@ test.describe("STATE-19..21 staff detail notes", () => {
     page,
   }, testInfo) => {
     await loginAndUnlock(page, STAFF_EMAIL, STAFF_PASSWORD);
+    await gotoStaffQueue(page);
     await openStaffTicket(page, STAFF_TICKET, testInfo.project.name);
 
     await page.click('[data-testid="tab-notes"]');
@@ -336,6 +341,7 @@ test.describe("STATE-37..39 internal note button contrast", () => {
     page,
   }, testInfo) => {
     await loginAndUnlock(page, STAFF_EMAIL, STAFF_PASSWORD);
+    await gotoStaffQueue(page);
     await openStaffTicket(page, STAFF_TICKET, testInfo.project.name);
     await page.click('[data-testid="tab-notes"]');
     await expect(page.locator('[data-testid="create-note-btn"]')).toBeVisible();
@@ -512,7 +518,7 @@ test.describe("STATE-31..33 queue filters open", () => {
     page,
   }, testInfo) => {
     await loginAndUnlock(page, STAFF_EMAIL, STAFF_PASSWORD);
-    await expect(page.locator('[data-testid="staff-queue-page"]')).toBeVisible();
+    await gotoStaffQueue(page);
 
     // Closed by default — prove it, so the screenshot below is known to be the
     // expanded state rather than a card that was always on screen.
@@ -583,7 +589,7 @@ test.describe("STATE-34..36 queue filter applied", () => {
     page,
   }, testInfo) => {
     await loginAndUnlock(page, STAFF_EMAIL, STAFF_PASSWORD);
-    await expect(page.locator('[data-testid="staff-queue-page"]')).toBeVisible();
+    await gotoStaffQueue(page);
     const totalBefore = await readQueueTotal(page);
 
     // Filter by the status of a ticket that is on screen right now, so the
@@ -653,7 +659,7 @@ test.describe("STATE-40..42 queue sort applied", () => {
     page,
   }, testInfo) => {
     await loginAndUnlock(page, STAFF_EMAIL, STAFF_PASSWORD);
-    await expect(page.locator('[data-testid="staff-queue-page"]')).toBeVisible();
+    await gotoStaffQueue(page);
     const before = await readVisibleTicketNumbers(page, testInfo.project.name);
     expect(before.length).toBeGreaterThan(1);
 

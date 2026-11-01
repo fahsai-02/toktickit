@@ -29,8 +29,8 @@ test.describe("E2E-01 login + forced password change (AC-01, AC-02)", () => {
 
     // First-login password change (BR-02).
     await changePasswordViaUi(page, SARAH_INITIAL_PASSWORD, SARAH_NEW_PASSWORD);
-    // After saving, the app is unlocked and a requester lands on /my-tickets.
-    await expect(page).toHaveURL(/\/my-tickets/);
+    // After saving, the app is unlocked and a requester lands on /dashboard (Lab 4 ui-spec section 4.1).
+    await expect(page).toHaveURL(/\/dashboard/);
 
     // Logout from the profile menu returns to /login.
     await logoutViaUi(page);

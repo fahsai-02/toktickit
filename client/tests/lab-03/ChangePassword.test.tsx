@@ -83,6 +83,11 @@ describe("ChangePassword", () => {
     vi.spyOn(api, "fetchMe")
       .mockResolvedValueOnce(freshUser)
       .mockResolvedValue(changedUser);
+    vi.spyOn(api, "fetchRequesterDashboard").mockResolvedValue({
+      counts: { open: 0, inProgress: 0, waitingForRequester: 0, resolved: 0, closed: 0, attentionRequired: 0 },
+      recentTickets: [],
+      recentlyResolved: [],
+    });
     vi.spyOn(api, "fetchCategories").mockResolvedValue([]);
     vi.spyOn(api, "fetchTickets").mockResolvedValue({
       data: [],
@@ -190,6 +195,11 @@ describe("ChangePassword", () => {
 
   it("Cancel from a voluntary visit returns the user to their role home", async () => {
     vi.spyOn(api, "fetchMe").mockResolvedValue(changedUser);
+    vi.spyOn(api, "fetchRequesterDashboard").mockResolvedValue({
+      counts: { open: 0, inProgress: 0, waitingForRequester: 0, resolved: 0, closed: 0, attentionRequired: 0 },
+      recentTickets: [],
+      recentlyResolved: [],
+    });
     vi.spyOn(api, "fetchCategories").mockResolvedValue([]);
     vi.spyOn(api, "fetchTickets").mockResolvedValue({
       data: [],
@@ -199,11 +209,9 @@ describe("ChangePassword", () => {
     await screen.findByText("Change Your Password");
 
     fireEvent.click(screen.getByTestId("change-password-cancel"));
-    // Requester home is /my-tickets (HomeRedirect role default); the empty
-    // ticket list is its idle state.
-    expect(
-      await screen.findByText("You haven't created any tickets yet.")
-    ).toBeInTheDocument();
+    // Requester home is /dashboard (Lab 4 ui-spec section 4.1); the cancel
+    // link goes to "/", which HomeRedirect sends to the Dashboard.
+    expect(await screen.findByTestId("requester-dashboard")).toBeInTheDocument();
     expect(
       screen.queryByText("Change Your Password")
     ).not.toBeInTheDocument();

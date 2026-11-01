@@ -12,13 +12,22 @@ import { buildNextTicketNumber } from './lib/ticketNumber.js';
 import { validateAttachmentType } from './lib/attachmentValidation.js';
 import { sendError, validationError } from './lib/httpErrors.js';
 import { requireAuth, requireRole } from './middleware/auth.js';
+import {
+  ownerUserIdFor,
+  ownershipWhereFor,
+  parsePositiveInt,
+} from './lib/requestHelpers.js';
 import { runTicketListQuery, STAFF_SORT_WHITELIST } from './lib/ticketListQuery.js';
+import { isStatusGroup, STATUS_GROUPS, type StatusGroup } from './lib/dashboardQueries.js';
 import {
   canTransition,
   transitionViolationMessage,
   isTicketStatus,
 } from './lib/statusTransitions.js';
+import { resolutionGateViolation } from './lib/resolutionGate.js';
 import authRouter from './routes/auth.js';
+import actionsTakenRouter from './routes/actionsTaken.js';
+import dashboardsRouter from './routes/dashboards.js';
 import bcrypt from 'bcryptjs';
 import { validateNewPassword } from './lib/passwordValidation.js';
 import { BCRYPT_ROUNDS } from './lib/seedCredentials.js';
@@ -184,17 +193,6 @@ const PRIORITIES = ["LOW", "MEDIUM", "HIGH", "URGENT"];
 
 const COMMENT_MAX_LENGTH = 2000;
 
-function parsePositiveInt(value: unknown): number | null {
-  if (typeof value === "number") {
-    return Number.isInteger(value) && value > 0 ? value : null;
-  }
-  if (typeof value === "string" && /^\d+$/.test(value)) {
-    const n = Number(value);
-    return Number.isSafeInteger(n) && n > 0 ? n : null;
-  }
-  return null;
-}
-
 // ── Session-identity helper (Issue 18) ─────────────────────────────────────
 // `requesterId` (legacy FK → Requester) is no longer the identity transport:
 // the authenticated User is. A helper resolves the legacy row so the non-null
@@ -217,33 +215,8 @@ async function resolveLegacyRequesterIdForUser(name: string, email: string): Pro
 
 /** Effective owning User.id for a ticket. Backfills the legacy link by email
  *  when `requesterUserId` is still NULL (rows created pre-Issue 18). */
-async function ownerUserIdFor(ticket: {
-  requesterUserId: number | null;
-  requesterId: number;
-}): Promise<number | null> {
-  if (ticket.requesterUserId !== null) return ticket.requesterUserId;
-  const requester = await db.requester.findUnique({
-    where: { id: ticket.requesterId },
-    select: { email: true },
-  });
-  if (!requester) return null;
-  const user = await db.user.findUnique({
-    where: { email: requester.email },
-    select: { id: true },
-  });
-  return user?.id ?? null;
-}
-
-/** Ownership `where` clause for list queries: session user owns the ticket
- *  via `requesterUserId`, or (pre-backfill rows) via their mapped email. */
-function ownershipWhereFor(user: { id: number; email: string }): Record<string, unknown> {
-  return {
-    OR: [
-      { requesterUserId: user.id },
-      { requesterUserId: null, requester: { email: user.email } },
-    ],
-  };
-}
+// ownerUserIdFor and ownershipWhereFor now live in ./lib/requestHelpers.ts
+// (shared with the Lab 4 actionsTaken & dashboard routers). See imports.
 
 app.get("/api/tickets", requireAuth, async (req: Request, res: Response) => {
   const fields: Record<string, string> = {};
@@ -269,6 +242,16 @@ app.get("/api/tickets", requireAuth, async (req: Request, res: Response) => {
       currentStatus = currentStatusParam;
     } else {
       fields.currentStatus = `currentStatus must be one of: ${STATUSES.join(", ")}.`;
+    }
+  }
+
+  const statusGroupParam = req.query.statusGroup;
+  let statusGroup: StatusGroup | undefined;
+  if (statusGroupParam !== undefined) {
+    if (isStatusGroup(statusGroupParam)) {
+      statusGroup = statusGroupParam;
+    } else {
+      fields.statusGroup = "statusGroup must be one of: open, attention, closed.";
     }
   }
 
@@ -341,6 +324,9 @@ app.get("/api/tickets", requireAuth, async (req: Request, res: Response) => {
     }
     if (currentStatus !== undefined) {
       and.push({ currentStatus });
+    }
+    if (statusGroup !== undefined) {
+      and.push({ currentStatus: { in: [...STATUS_GROUPS[statusGroup]] } });
     }
     if (requestedPriority !== undefined) {
       and.push({ requestedPriority });
@@ -424,6 +410,16 @@ app.get(
         currentStatus = currentStatusParam;
       } else {
         fields.currentStatus = `currentStatus must be one of: ${STATUSES.join(", ")}.`;
+      }
+    }
+
+    const statusGroupParam = req.query.statusGroup;
+    let statusGroup: StatusGroup | undefined;
+    if (statusGroupParam !== undefined) {
+      if (isStatusGroup(statusGroupParam)) {
+        statusGroup = statusGroupParam;
+      } else {
+        fields.statusGroup = "statusGroup must be one of: open, attention, closed.";
       }
     }
 
@@ -539,6 +535,9 @@ app.get(
     }
     if (currentStatus !== undefined) {
       and.push({ currentStatus });
+    }
+    if (statusGroup !== undefined) {
+      and.push({ currentStatus: { in: [...STATUS_GROUPS[statusGroup]] } });
     }
     if (requestedPriority !== undefined) {
       and.push({ requestedPriority });
@@ -1236,6 +1235,7 @@ const staffDetailSelect = {
   itPriority: true,
   currentStatus: true,
   ticketDate: true,
+  version: true,
   resolutionSummary: true,
   requesterIndicatedResolved: true,
   indicatedResolvedAt: true,
@@ -1438,6 +1438,21 @@ app.put(
   }
 );
 
+const TICKET_CONFLICT_MESSAGE =
+  "This ticket was updated by someone else. Refresh to load the latest version.";
+
+/**
+ * The 409 body for a stale Ticket version keeps the Lab 3 `error` envelope and
+ * adds the server's latest copy under `data` (api-spec 5.1, AD-03). Shared so
+ * the pre-write and race-loss paths cannot drift apart.
+ */
+function sendTicketConflict(res: Response, latest: unknown): void {
+  res.status(409).json({
+    error: { code: "CONFLICT", message: TICKET_CONFLICT_MESSAGE },
+    data: latest,
+  });
+}
+
 app.put(
   "/api/staff/tickets/:id/status",
   requireAuth,
@@ -1446,30 +1461,69 @@ app.put(
     const ticketId = parsePositiveInt(req.params.id);
     const raw =
       typeof req.body?.currentStatus === "string" ? req.body.currentStatus : "";
+    // BR-15, FR-12, AD-20: `version` is optional on this endpoint. Only an
+    // omitted (`undefined`) value means "no concurrency check"; a present
+    // `null` is invalid like any other non-integer and must be a 400, not a
+    // silent last-write-wins (api-spec 5.1, API-44).
+    const hasVersion = req.body?.version !== undefined;
+    const version = hasVersion ? (req.body.version as number) : undefined;
 
     const fields: Record<string, string> = {};
     if (ticketId === null) {
       fields.id = "Ticket id must be a positive integer.";
-    }
-    if (!isTicketStatus(raw)) {
-      fields.currentStatus = "Invalid status value.";
     }
     if (Object.keys(fields).length > 0) {
       validationError(res, fields);
       return;
     }
 
+    // The 409 body carries the server's latest copy (AD-03, api-spec 5.1).
+    const conflictSelect = {
+      id: true,
+      currentStatus: true,
+      resolutionSummary: true,
+      version: true,
+    } as const;
+
     try {
       const to = raw as TicketStatus;
       const ticket = await db.ticket.findUnique({
         where: { id: ticketId! },
-        select: { id: true, currentStatus: true },
+        select: {
+          id: true,
+          currentStatus: true,
+          resolutionSummary: true,
+          version: true,
+        },
       });
       if (!ticket) {
         sendError(res, 404, "NOT_FOUND", "Ticket not found");
         return;
       }
 
+      // Order of checks per api-spec 5.1: the ticket is looked up first (404
+      // before any payload error), then the payload enum and version are
+      // validated (400), then concurrency (409), the matrix, and the gate.
+      const payloadFields: Record<string, string> = {};
+      if (!isTicketStatus(raw)) {
+        payloadFields.currentStatus = "Invalid status value.";
+      }
+      if (hasVersion && !Number.isInteger(version)) {
+        payloadFields.version = "version must be an integer.";
+      }
+      if (Object.keys(payloadFields).length > 0) {
+        validationError(res, payloadFields);
+        return;
+      }
+
+      // Order of checks per api-spec 5.1: concurrency before the matrix, the
+      // gate last. A stale version is 409 regardless of the transition.
+      if (hasVersion && version !== ticket.version) {
+        sendTicketConflict(res, ticket);
+        return;
+      }
+
+      // BR-12: transition matrix, unchanged from Lab 3.
       if (!canTransition(ticket.currentStatus, to)) {
         sendError(
           res,
@@ -1480,10 +1534,50 @@ app.put(
         return;
       }
 
-      const updated = await db.ticket.update({
-        where: { id: ticketId! },
-        data: { currentStatus: to },
-        select: { currentStatus: true },
+      // BR-11 / AD-01: the resolution gate, RESOLVED and CLOSED only. It reads
+      // the summary written by PUT /api/staff/tickets/:id/resolution-summary and
+      // counts the Ticket's Action Taken rows, so a raw request that bypasses
+      // the UI is rejected exactly like a UI-driven one (FR-10).
+      if (to === "RESOLVED" || to === "CLOSED") {
+        const actionCount = await db.actionTaken.count({
+          where: { ticketId: ticket.id },
+        });
+        const violation = resolutionGateViolation({
+          resolutionSummary: ticket.resolutionSummary,
+          actionCount,
+        });
+        if (violation) {
+          sendError(res, 400, "BUSINESS_RULE_VIOLATION", violation);
+          return;
+        }
+      }
+
+      // BR-15: apply and increment the version atomically. When a version was
+      // supplied it is part of the WHERE clause, so two concurrent writers
+      // cannot both win; count === 0 means the row changed under us.
+      const where = hasVersion
+        ? { id: ticket.id, version: version as number }
+        : { id: ticket.id };
+      const write = await db.ticket.updateMany({
+        where,
+        data: { currentStatus: to, version: { increment: 1 } },
+      });
+      if (write.count === 0) {
+        const latest = await db.ticket.findUnique({
+          where: { id: ticket.id },
+          select: conflictSelect,
+        });
+        if (!latest) {
+          sendError(res, 404, "NOT_FOUND", "Ticket not found");
+          return;
+        }
+        sendTicketConflict(res, latest);
+        return;
+      }
+
+      const updated = await db.ticket.findUnique({
+        where: { id: ticket.id },
+        select: { currentStatus: true, version: true },
       });
       res.json({ data: updated });
     } catch {
@@ -2227,6 +2321,9 @@ app.post(
     }
   }
 );
+
+app.use("/api/dashboards", dashboardsRouter);
+app.use("/api", actionsTakenRouter);
 
 app.use((_req: Request, res: Response) => {
   res.status(404).json({

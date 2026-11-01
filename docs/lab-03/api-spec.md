@@ -4,8 +4,8 @@
 | :--- | :--- |
 | **Project** | Tok TickIT — IT Service Desk |
 | **Sprint** | Lab 3: Users, Roles, IT Staff Ticketing, and Admin Screens |
-| **Version** | v1.1 — amended 2026-09-29 on top of v1.0 (approved 2026-09-10); see section 9 |
-| **Date** | 2026-09-29 |
+| **Version** | v1.2 — amended 2026-10-03 on top of v1.1 (2026-09-29) and v1.0 (approved 2026-09-10); see section 9 |
+| **Date** | 2026-10-03 |
 | **Contract source** | `specification.md` v1.0 (BR/FR/AC references below trace to it) |
 
 ---
@@ -13,7 +13,7 @@
 ## 1. Conventions
 
 - **Base URL:** `http://localhost:5000` in development. The port comes from the `PORT` environment variable of `server/.env` and defaults to `5000` when unset. The Vite client runs on `http://localhost:5173` and reaches the API via the dev proxy (`client/vite.config.ts` forwards `/api` to the backend). When `VITE_API_URL` is set in `client/.env`, the client makes direct cross-origin calls.
-- **Authentication:** Session-based via `express-session`. After successful login, a `connect.sid` cookie is set. All protected endpoints require this cookie; unauthenticated requests receive `401` (the append-only `405` guards are the one documented exception).
+- **Authentication:** Session-based via `express-session`. After successful login, a `connect.sid` cookie is set. All protected endpoints require this cookie; unauthenticated requests receive `401`. There are exactly two documented exceptions, both deliberate: the append-only `405` guards answer `405` even without a session (see below), and `POST /api/auth/logout` is idempotent — it returns `200` whether or not a session exists, so a client can always clear its cookie without first having to distinguish "already logged out" from "session expired".
 - **Session store:** In-memory `MemoryStore` from `express-session` (see `server/src/app.ts` and `specification.md` AD-02). Acceptable for local development; does not survive server restart. Production deployment is excluded from Lab 3 scope.
 - **Identity transport:** `requesterId` is NO LONGER sent by the client on ticket/attachment endpoints. The server derives the user identity from the session (AD-04). The client-supplied `requesterId` in `POST /api/tickets` is ignored.
 - **Content types:** `application/json` for all requests/responses except attachment upload (`multipart/form-data`) and attachment download, which returns a binary stream whose `Content-Type` is the attachment's **stored mime type** (`image/jpeg`, `image/png`, `image/webp`, `application/pdf`) plus `Content-Disposition: attachment; filename="<originalFileName>"`. The download is never served as `application/octet-stream`.
@@ -87,7 +87,7 @@ Authenticate with email and password (FR-01, FR-02, FR-03, AC-01, AC-05, AC-06).
     "email": "jennifer.anderson@toktickit.dev",
     "role": "REQUESTER",
     "isActive": true,
-    "mustChangePassword": false
+    "mustChangePassword": true
   }
 }
 ```
@@ -138,7 +138,7 @@ Return the current authenticated user (FR-05, AC-01).
     "email": "jennifer.anderson@toktickit.dev",
     "role": "REQUESTER",
     "isActive": true,
-    "mustChangePassword": false
+    "mustChangePassword": true
   }
 }
 ```
@@ -428,7 +428,7 @@ Download an active attachment's binary content. Access rules are in section 4.12
 
 **Query:** the Lab 2 `requesterId` query parameter is **REMOVED** — the session is the only identity.
 
-**200 Response:** binary stream with `Content-Type: <stored mimeType>`, `Content-Disposition: attachment; filename="<originalFileName>"`, and `Content-Length: <fileSize>`.
+**200 Response:** binary stream with `Content-Type: <stored mimeType>`, `Content-Length: <fileSize>`, and `Content-Disposition: attachment; filename="<originalFileName>"; filename*=UTF-8''<percent-encoded originalFileName>` — the second parameter is the RFC 5987 form, sent so non-ASCII file names survive; CR/LF and `"` are stripped from the first parameter.
 
 Behavior matrix: unknown id → `404`; soft-removed (`isRemoved = true`) → `410`; active file on a foreign ticket → `403` **for a Requester** (IT Staff/Administrator receive `200`, section 4.12); active file on a permitted ticket whose stored file is missing from disk → `404`.
 
@@ -710,7 +710,7 @@ Set the current user as ticket owner (FR-27). Ticket must be unassigned or owned
 }
 ```
 
-**Errors:** `400` (malformed id), `403`, `404`, `409` (already claimed by the same user), `500`
+**Errors:** `400` (malformed id), `403`, `404`, `409` (`CONFLICT`, "You already own this ticket."), `500`
 
 ---
 
@@ -789,7 +789,9 @@ Permitted status transition (FR-30, AC-09, BR-12).
 | :--- | :--- |
 | `currentStatus` | Required; must be a valid enum value; must be a permitted transition from the current status per the matrix in `specification.md` BR-12 |
 
-**Transition enforcement:** The backend checks the current status of the ticket, verifies the requested target status is in the permitted transition list for the current status, and rejects disallowed transitions.
+**Transition enforcement:** The backend checks the current status of the ticket, verifies the requested target status is in the permitted transition list for the current status, and rejects disallowed transitions. The authoritative matrix — permitted from→to pairs, allowed roles, and confirmation requirements — is `specification.md` BR-12; the server and the client dropdown both read it from `server/src/lib/statusTransitions.ts`, so the enforced rules and the offered options cannot drift.
+
+**Confirmation requirement (BR-12):** two transitions require an explicit confirmation step in the UI *before* the client sends the request — `OPEN → CANCELLED` and `IN_PROGRESS → RESOLVED`. The endpoint does not treat them differently: it applies exactly the same permission check, so a client that skipped the confirmation would still receive `200`. The confirmation is therefore a client obligation, not a server-enforced one.
 
 **200 Response**
 ```json
@@ -803,6 +805,7 @@ Permitted status transition (FR-30, AC-09, BR-12).
 | :--- | :--- | :--- |
 | 400 | VALIDATION_ERROR | `fields.currentStatus`: "Invalid status value." |
 | 400 | BUSINESS_RULE_VIOLATION | "Cannot transition from OPEN to RESOLVED. Permitted transitions: IN_PROGRESS, WAITING_FOR_REQUESTER, CANCELLED." |
+| 400 | BUSINESS_RULE_VIOLATION | Terminal current status (`CANCELLED` has no onward transitions): "Cannot transition from CANCELLED to OPEN. This status is terminal; no further transitions are permitted." |
 | 403 | FORBIDDEN | — |
 | 404 | NOT_FOUND | — |
 | 500 | INTERNAL_ERROR | — |
@@ -950,7 +953,7 @@ List active IT Staff and Administrator users for the owner assignment dropdown (
 }
 ```
 
-Only active users with role `IT_STAFF` or `ADMINISTRATOR` are returned.
+Only active users with role `IT_STAFF` or `ADMINISTRATOR` are returned, ordered by `name` ascending.
 
 **Errors:** `403`, `500`
 
@@ -1041,6 +1044,8 @@ List users with optional search and role filter (FR-40).
   ]
 }
 ```
+
+Users are ordered by `name` ascending. An unsupported `role` value → `400` with `fields.role`; a `search` that is not a string → `400` with `fields.search`.
 
 **Errors:** `400`, `403`, `500`
 
@@ -1231,7 +1236,7 @@ Sets `mustChangePassword = true` on the target user.
 | 5.3 Claim | — | FR-27 |
 | 5.4 Assign | — | FR-28 |
 | 5.5 IT Priority | — | FR-29 |
-| 5.6 Status transition | AC-09 | FR-30 |
+| 5.6 Status transition | AC-09 | FR-30, FR-38 (dropdown built from the same matrix) |
 | 5.7 Resolution summary | — | FR-31 |
 | 5.8–5.9 Staff comments | — | FR-32 |
 | 5.10–5.11 Internal notes | AC-04 | FR-33, FR-35, FR-36 |
@@ -1251,10 +1256,11 @@ Sets `mustChangePassword = true` on the target user.
 | Version | Date | Change | Reason |
 | :--- | :--- | :--- | :--- |
 | v1.0 | 2026-09-10 | Initial contract. Session-based auth, append-only enforcement, status-transition matrix, and admin safety rules approved by the student. | Lab 3 implementation baseline |
+| v1.2 | 2026-10-03 | **Documentation only — no endpoint, status code, request shape, or business rule changed, and no test was touched.** Corrections: the `login` and `me` examples now show `mustChangePassword: true`, which is what the documented initial-password login actually returns; the status endpoint records the BR-12 confirmation requirement (`OPEN → CANCELLED`, `IN_PROGRESS → RESOLVED` are client-confirmed, not server-enforced) and the terminal-status variant of the `400` message; `claim` documents its `409` message; the two user lists document their `name`-ascending order and the `400` field names; the download endpoint documents the RFC 5987 `filename*` parameter it also sends; section 1 records the second authentication exception (idempotent `logout`); section 8 traces FR-38. The cross-reference comment in `server/src/lib/ticketListQuery.ts` was corrected from "4.4" to "4.2". | A second audit of this contract against `server/src/**` and `specification.md` found 9 remaining points where the document was silent or its example contradicted the shipped code. |
 | v1.1 | 2026-09-29 | **Documentation only — no endpoint, status code, request shape, or business rule changed, and no test was touched.** Corrections: download `Content-Type` (section 1); trimming rule scoped to exclude passwords; added the `ticketNumber DESC` tie-break, the un-guarded `405` handlers, the client-side `mustChangePassword` gate, and the "400 on malformed id applies everywhere" rule (section 1); added `GET /api/health` (section 3.3); documented the 5-active-attachment limit and check order, the 400 for malformed ids, the removed `requesterId` query parameter, the missing-file-on-disk and already-removed cases, and the IT Staff/Administrator attachment access matrix (sections 4.4–4.6, new 4.12); fixed the section 5.6 → 5.7 cross-reference in 4.10; stated the queue's global scope (section 5.1); documented admin guard precedence and its AC-11/AC-12 consequence (section 6.3); completed the section 8 traceability table. | A line-by-line audit of this contract against `server/src/**`, `specification.md`, `ui-spec.md`, and `tests.md` found 12 points where the document was silent or contradicted the shipped code. |
 
 ---
 
 *Changes to this contract require a matching change to `specification.md` and student approval.*
 
-**Approval:** Reviewed and approved by the student on 2026-09-10 (v1.0). Session-based auth, append-only enforcement, status-transition matrix, and admin safety rules confirmed. **Amended 2026-09-29 (v1.1)** — documentation-only alignment with the shipped implementation, approved by the student as the correction of that audit's findings; the implementation baseline is unchanged.
+**Approval:** Reviewed and approved by the student on 2026-09-10 (v1.0). Session-based auth, append-only enforcement, status-transition matrix, and admin safety rules confirmed. **Amended 2026-09-29 (v1.1)** and **2026-10-03 (v1.2)** — documentation-only alignment with the shipped implementation, approved by the student as the correction of those audits' findings; the implementation baseline is unchanged.

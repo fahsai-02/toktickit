@@ -66,6 +66,9 @@ describe("TicketDetail", () => {
     // Auth identity now comes from GET /api/auth/me (Lab 3) instead of
     // localStorage (removed Dev Requester selector, Issue 17).
     vi.spyOn(api, "fetchMe").mockResolvedValue(authUser);
+    // Issue 26: TicketDetail also loads Actions Taken (empty here). Mocked so
+    // these read-only-view assertions stay offline and deterministic.
+    vi.spyOn(api, "fetchTicketActions").mockResolvedValue([]);
   });
 
   afterEach(() => {

@@ -46,28 +46,36 @@ The client uses CSS Layers to manage style priority without `!important`. Layer 
 |-------|------|----------------|
 | `reset` | `index.css` | CSS variables, box-sizing, focus/active neutralize |
 | `bootstrap` | (imported) | Bootstrap styles |
-| `components` | `index.css`, `Button.css`, `Spinner.css` | Typography, fields, reusable component styles |
+| `components` | `index.css`, `Button.css`, `Badge.css` | Typography, fields, reusable component styles |
 | `layout` | `App.css` | Header, nav, shell, page-level styles (highest priority) |
 
 - `layout` layer always wins over `components` — use this for page-specific overrides
 - To override a component variant (e.g. `.btn-primary`), put the override in `App.css` (layout layer), NOT with `!important`
 - Bootstrap is imported via `@import "bootstrap/dist/css/bootstrap.min.css" layer(bootstrap);` in `index.css` — do NOT import Bootstrap in `main.tsx`
+- Mobile (≤768px) tap targets are **≥36px tall app-wide** (Lab 4 `ui-spec.md` v1.4 section 6; older Lab 2/3 specs say 44px and are superseded). `STYLE-11` in `e2e/lab-04/visual-audit.spec.ts` enforces it.
 - When a Button needs custom styling (no variant class), omit the `variant` prop and use `className` directly
 
 ## Client Routing
 
 React Router v7 with `BrowserRouter` in `main.tsx`. Routes:
 
-| Path | Component | Notes |
-|------|-----------|-------|
-| `/` | Redirect → `/my-tickets` | If requester selected |
-| `/select-requester` | `RequesterSelection` | Redirect → `/my-tickets` if requester exists |
-| `/my-tickets` | `MyTickets` | Full screen with search, filter, sort, pagination (Issue 9) |
-| `/create-ticket` | `CreateTicket` | Placeholder until Issue 8 |
+| Path | Component | Access |
+|------|-----------|--------|
+| `/` and unknown paths | Redirect → role landing page | Requester → `/dashboard`; IT Staff / Administrator → `/staff/dashboard`; anonymous → `/login` |
+| `/login` | `Login` | Unauthenticated |
+| `/change-password` | `ChangePassword` | Authenticated; forced while `mustChangePassword` |
+| `/dashboard` | `RequesterDashboard` | Any authenticated user (own data only) |
+| `/staff/dashboard` | `StaffDashboard` | IT Staff, Administrator |
+| `/my-tickets` | `MyTickets` | Requester |
+| `/tickets/:ticketId` | Requester ticket detail | Requester (own tickets) |
+| `/create-ticket` | `CreateTicket` | Any authenticated user; success buttons are role-aware |
+| `/staff/queue` | `StaffTicketQueue` | IT Staff, Administrator |
+| `/staff/tickets/:ticketId` | `StaffTicketDetail` | IT Staff, Administrator (`?tab=actions` opens Actions Taken) |
+| `/admin/users` | `UserManagement` | Administrator (others see a forbidden page) |
 
 - `AppShell` uses `<Outlet />` for nested routes
-- `Navbar` uses React Router `<NavLink>` with `className` callback for active state
-- Guard: if no requester in context, all routes redirect to `/select-requester`
+- `Navbar` uses React Router `<NavLink>` with `className` callback for active state and shows only links the role may use
+- Guard: unauthenticated users redirect to `/login`; `RequireRole` redirects a signed-in user away from another role's screens. `/select-requester` was removed in Lab 3.
 
 ## Tests
 

@@ -5,9 +5,11 @@ import {
   fetchTicketComments,
   postPublicComment,
   indicateResolved,
+  fetchTicketActions,
   type TicketDetail as TicketDetailType,
   type Attachment,
   type PublicComment,
+  type ActionTaken,
   ApiError,
 } from "./api.js";
 import Badge, {
@@ -20,6 +22,7 @@ import ListState from "./components/ListState.js";
 import TextArea from "./components/TextArea.js";
 import Button from "./components/Button.js";
 import AttachmentSection from "./components/AttachmentSection.js";
+import ActionList from "./components/ActionList.js";
 import { ArrowLeft, CheckCircle2 } from "lucide-react";
 import { formatDate } from "./lib/format.js";
 
@@ -42,6 +45,15 @@ export default function TicketDetail() {
 
   const [toggling, setToggling] = useState(false);
   const [toggleError, setToggleError] = useState("");
+
+  // Actions Taken (read-only for the Requester — ui-spec 5.4). No write path
+  // exists for this role, so the panel is rendered without any controls.
+  const [actions, setActions] = useState<ActionTaken[]>([]);
+  const [actionsState, setActionsState] = useState<CommentsState>("loading");
+  const [actionError, setActionError] = useState("");
+  // Bumped by the error block's Retry button so the read-only list reloads
+  // without refetching the Ticket and comments (ui-spec 5.1/5.3).
+  const [actionsReloadKey, setActionsReloadKey] = useState(0);
 
   useEffect(() => {
     if (!ticketId) return;
@@ -102,6 +114,38 @@ export default function TicketDetail() {
     };
   }, [ticketId]);
 
+  // Actions Taken load independently so Retry can refetch only this read-only
+  // list without reloading the Ticket and comments (ui-spec 5.1, 5.3).
+  // A 403 is an expected failure and must render the visible error block
+  // (FR-22); it must never be mistaken for "no actions have been recorded".
+  useEffect(() => {
+    if (!ticketId) return;
+    const id = Number(ticketId);
+    if (!Number.isFinite(id) || id <= 0) return;
+
+    let cancelled = false;
+    setActions([]);
+    setActionsState("loading");
+    setActionError("");
+
+    fetchTicketActions(id)
+      .then((data) => {
+        if (cancelled) return;
+        setActions(data);
+        setActionsState("idle");
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setActionError(
+          err instanceof Error ? err.message : "Could not load actions."
+        );
+        setActionsState("error");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [ticketId, actionsReloadKey]);
   if (state === "loading") {
     return (
       <div className="container ticket-detail">
@@ -321,6 +365,46 @@ export default function TicketDetail() {
         attachments={ticket.attachments}
         onUpdate={handleAttachmentsUpdate}
       />
+
+      {/* Actions Taken — read-only (ui-spec 5.4): below the details card and
+          above Public Comments. No Record/Edit/Delete control, no assignee,
+          no per-action status control (FR-03, BR-08, FR-24, FR-25). */}
+      <section className="actions-section" data-testid="requester-actions">
+        <h2 className="ticket-detail-section-title">
+          Actions Taken ({actions.length})
+        </h2>
+
+        {actionsState === "loading" && (
+          <ListState testId="actions-loading" loading message="Loading actions..." />
+        )}
+
+        {actionsState === "error" && (
+          <ListState
+            testId="actions-error"
+            variant="error"
+            message={<p className="error-banner">{actionError}</p>}
+          >
+            <Button
+              variant="secondary"
+              onClick={() => setActionsReloadKey((key) => key + 1)}
+              data-testid="actions-retry-btn"
+            >
+              Retry
+            </Button>
+          </ListState>
+        )}
+
+        {actionsState === "idle" && actions.length === 0 && (
+          <ListState
+            testId="actions-empty"
+            message="No actions have been recorded yet."
+          />
+        )}
+
+        {actionsState === "idle" && actions.length > 0 && (
+          <ActionList actions={actions} />
+        )}
+      </section>
 
       {/* Public Comments (ui-spec 5.3, api-spec 4.7-4.8) */}
       <section className="comments-section" data-testid="public-comments">

@@ -73,6 +73,8 @@ describe("TicketDetail — Public Comments (Issue 18, ui-spec 5.3)", () => {
     vi.spyOn(api, "fetchMe").mockResolvedValue(authUser);
     vi.spyOn(api, "fetchTicket").mockResolvedValue(ticketDetail);
     vi.spyOn(api, "fetchTicketComments").mockResolvedValue(comments);
+    // Issue 26: the detail screen also loads Actions Taken (empty here).
+    vi.spyOn(api, "fetchTicketActions").mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -156,6 +158,8 @@ describe("TicketDetail — Problem Appears Resolved (Issue 18, ui-spec 5.3, api-
     vi.spyOn(api, "fetchMe").mockResolvedValue(authUser);
     vi.spyOn(api, "fetchTicket").mockResolvedValue(ticketDetail);
     vi.spyOn(api, "fetchTicketComments").mockResolvedValue([]);
+    // Issue 26: the detail screen also loads Actions Taken (empty here).
+    vi.spyOn(api, "fetchTicketActions").mockResolvedValue([]);
   });
 
   afterEach(() => {

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Inbox, SearchX } from "lucide-react";
 import { useAuth } from "./AuthContext.js";
 import {
@@ -26,6 +26,7 @@ interface Filters {
   search: string;
   categoryId: string;
   currentStatus: string;
+  statusGroup: string;
   requestedPriority: string;
 }
 
@@ -33,8 +34,15 @@ const EMPTY_FILTERS: Filters = {
   search: "",
   categoryId: "",
   currentStatus: "",
+  statusGroup: "",
   requestedPriority: "",
 };
+
+export const STATUS_GROUP_OPTIONS = [
+  { value: "open", label: "Open" },
+  { value: "attention", label: "Needs attention" },
+  { value: "closed", label: "Closed" },
+];
 
 const SORT_WHITELIST = [
   "updatedAt",
@@ -57,6 +65,7 @@ const MOBILE_SORT_OPTIONS = [
 export default function MyTickets() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [tickets, setTickets] = useState<TicketListItem[]>([]);
   const [meta, setMeta] = useState<TicketListMeta>({
@@ -65,15 +74,33 @@ export default function MyTickets() {
     pageSize: 10,
     totalPages: 0,
   });
-  const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
-  const [sortBy, setSortBy] = useState("updatedAt");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [filters, setFilters] = useState<Filters>(() => ({
+    search: searchParams.get("search") || "",
+    categoryId: searchParams.get("categoryId") || "",
+    currentStatus: searchParams.get("currentStatus") || "",
+    statusGroup: searchParams.get("statusGroup") || "",
+    requestedPriority: searchParams.get("requestedPriority") || "",
+  }));
+  const [sortBy, setSortBy] = useState(() => {
+    const s = searchParams.get("sortBy");
+    return s && (SORT_WHITELIST as readonly string[]).includes(s) ? s : "updatedAt";
+  });
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">(() => {
+    const o = searchParams.get("sortOrder");
+    return o === "asc" || o === "desc" ? o : "desc";
+  });
+  const [page, setPage] = useState(() => {
+    const p = Number(searchParams.get("page"));
+    return Number.isInteger(p) && p >= 1 ? p : 1;
+  });
+  const [pageSize, setPageSize] = useState(() => {
+    const ps = Number(searchParams.get("pageSize"));
+    return Number.isInteger(ps) && ps >= 1 && ps <= 50 ? ps : 10;
+  });
   const [listState, setListState] = useState<ListState>("loading");
   const [errorMessage, setErrorMessage] = useState("");
   const [categories, setCategories] = useState<Category[]>([]);
-  const [searchInput, setSearchInput] = useState("");
+  const [searchInput, setSearchInput] = useState(() => searchParams.get("search") || "");
 
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef(0);
@@ -108,6 +135,7 @@ export default function MyTickets() {
       if (filters.search) params.search = filters.search;
       if (filters.categoryId) params.categoryId = Number(filters.categoryId);
       if (filters.currentStatus) params.currentStatus = filters.currentStatus;
+      if (filters.statusGroup) params.statusGroup = filters.statusGroup;
       if (filters.requestedPriority)
         params.requestedPriority = filters.requestedPriority;
 
@@ -122,6 +150,7 @@ export default function MyTickets() {
           filters.search ||
           filters.categoryId ||
           filters.currentStatus ||
+          filters.statusGroup ||
           filters.requestedPriority;
         setListState(hasFilters ? "no-results" : "empty");
       } else {
@@ -179,6 +208,7 @@ export default function MyTickets() {
     filters.search ||
     filters.categoryId ||
     filters.currentStatus ||
+    filters.statusGroup ||
     filters.requestedPriority;
 
   const handleRetry = () => {
@@ -234,6 +264,16 @@ export default function MyTickets() {
             onChange={(e) => handleFilterChange("currentStatus", e.target.value)}
             data-testid="filter-status"
             options={TICKET_STATUSES}
+          />
+          <SelectField
+            id="filter-status-group"
+            label="Status Group"
+            className="filter-select"
+            placeholder="All"
+            value={filters.statusGroup}
+            onChange={(e) => handleFilterChange("statusGroup", e.target.value)}
+            data-testid="filter-status-group"
+            options={STATUS_GROUP_OPTIONS}
           />
           <SelectField
             id="filter-priority"

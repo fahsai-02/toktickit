@@ -151,6 +151,13 @@
     box-shadow: 0 0 0 2px var(--color-secondary), 0 0 0 4px rgba(11, 122, 70, 0.15);
   }
 
+  @media (max-width: 768px) {
+    .field-select,
+    .field-input {
+      min-height: 36px;
+    }
+  }
+
   .field-readonly {
     display: flex;
     align-items: center;
@@ -222,6 +229,16 @@
     color: var(--color-text-muted);
     white-space: nowrap;
     margin-left: auto;
+  }
+
+  .field-counter-warn {
+    color: var(--color-warning);
+    font-weight: 600;
+  }
+
+  .field-counter-error {
+    color: var(--color-error);
+    font-weight: 600;
   }
 
   .callout {

@@ -188,6 +188,7 @@ export interface TicketListParams {
   search?: string;
   categoryId?: number;
   currentStatus?: string;
+  statusGroup?: string;
   requestedPriority?: string;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
@@ -205,6 +206,8 @@ export async function fetchTickets(
     url.searchParams.set("categoryId", String(params.categoryId));
   if (params.currentStatus)
     url.searchParams.set("currentStatus", params.currentStatus);
+  if (params.statusGroup)
+    url.searchParams.set("statusGroup", params.statusGroup);
   if (params.requestedPriority)
     url.searchParams.set("requestedPriority", params.requestedPriority);
   if (params.sortBy) url.searchParams.set("sortBy", params.sortBy);
@@ -241,6 +244,7 @@ export interface StaffTicketListParams {
   search?: string;
   categoryId?: number;
   currentStatus?: string;
+  statusGroup?: string;
   requestedPriority?: string;
   itPriority?: string;
   /** "me" | "unassigned" | an integer owner id (api-spec section 5.1). */
@@ -261,6 +265,8 @@ export async function fetchStaffTickets(
     url.searchParams.set("categoryId", String(params.categoryId));
   if (params.currentStatus)
     url.searchParams.set("currentStatus", params.currentStatus);
+  if (params.statusGroup)
+    url.searchParams.set("statusGroup", params.statusGroup);
   if (params.requestedPriority)
     url.searchParams.set("requestedPriority", params.requestedPriority);
   if (params.itPriority)
@@ -282,8 +288,14 @@ export async function fetchStaffTickets(
 
 // ── IT Staff Ticket Detail (Issue 20, api-spec section 5.2-5.13) ────────────
 
-/** Same shape as the requester detail (api-spec 5.2 "same as 4.3"). */
-export type StaffTicketDetail = TicketDetail;
+/**
+ * The staff detail is the requester detail plus the optimistic-locking
+ * `version` (api-spec 5.1, FR-12). The requester contract is unchanged and
+ * carries no `version`, so it stays on `TicketDetail` only here.
+ */
+export interface StaffTicketDetail extends TicketDetail {
+  version: number;
+}
 
 export interface StaffUser {
   id: number;
@@ -367,18 +379,51 @@ export async function updateStaffTicketPriority(
 
 export async function updateStaffTicketStatus(
   ticketId: number,
-  currentStatus: TicketStatus
-): Promise<{ currentStatus: TicketStatus }> {
+  currentStatus: TicketStatus,
+  version?: number
+): Promise<{ currentStatus: TicketStatus; version: number }> {
   const res = await fetch(`${API_URL}/api/staff/tickets/${ticketId}/status`, {
     method: "PUT",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ currentStatus }),
+    // FR-12 / api-spec 5.1: `version` is optional. Omit the property entirely
+    // when the caller has none so the request is a documented last-write-wins
+    // transition, not an explicit `null` (which the server rejects as 400).
+    body: JSON.stringify({
+      currentStatus,
+      ...(version === undefined ? {} : { version }),
+    }),
   });
+
+  // The conflict body keeps the Lab 3 `error` shape and adds the server's
+  // latest copy under `data` (api-spec 5.1, AD-03). `handleApiError` only reads
+  // `error`, so a 409 is handled here to preserve `data` for the UI.
+  if (res.status === 409) {
+    let message =
+      "This ticket was updated by someone else. Refresh to load the latest version.";
+    let latest: TicketConflictError["latest"] | null = null;
+    try {
+      const body = (await res.json()) as {
+        error?: { message?: string };
+        data?: TicketConflictError["latest"];
+      };
+      message = body.error?.message ?? message;
+      latest = body.data ?? null;
+    } catch {
+      // Malformed conflict body — fall through to a plain CONFLICT.
+    }
+    if (latest) {
+      throw new TicketConflictError(message, latest);
+    }
+    throw new ApiError(message, "CONFLICT");
+  }
+
   if (!res.ok) {
     await handleApiError(res, "Failed to update ticket status");
   }
-  const { data } = (await res.json()) as { data: { currentStatus: TicketStatus } };
+  const { data } = (await res.json()) as {
+    data: { currentStatus: TicketStatus; version: number };
+  };
   return data;
 }
 
@@ -804,4 +849,223 @@ export async function removeAttachment(
   const { data } = (await res.json()) as { data: Attachment };
   return data;
 }
+
+// ── Actions Taken (Issue 26, api-spec section 2) ──────────────────────────
+// Append-only "what did we actually do" log on a Ticket. The server owns the
+// performer identity (performedById from the session) and the concurrency
+// guard (`version`), so the client only ever sends the editable fields.
+
+export interface ActionTaken {
+  id: number;
+  ticketId: number;
+  actionDate: string;
+  description: string;
+  result: string;
+  performedById: number;
+  performedBy: { id: number; name: string; role: UserRole };
+  followUpRequired: boolean;
+  followUpNote: string | null;
+  attachmentNotes: string | null;
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ActionTakenInput {
+  actionDate: string;
+  description: string;
+  result: string;
+  followUpRequired: boolean;
+  followUpNote: string | null;
+  attachmentNotes: string | null;
+}
+
+/** PUT body: the editable fields plus the `version` being replaced (FR-12). */
+export type ActionTakenUpdateInput = ActionTakenInput & { version: number };
+
+/**
+ * Thrown by `updateStaffTicketStatus` on `409` (FR-12, api-spec 5.1, AD-03).
+ * Carries the server's latest Ticket copy so the screen can refresh and retry
+ * without guessing the new `version`.
+ */
+export class TicketConflictError extends ApiError {
+  latest: {
+    id: number;
+    currentStatus: TicketStatus;
+    resolutionSummary: string | null;
+    version: number;
+  };
+
+  constructor(message: string, latest: TicketConflictError["latest"]) {
+    super(message, "CONFLICT");
+    this.name = "TicketConflictError";
+    this.latest = latest;
+  }
+}
+
+/**
+ * Thrown by `updateActionTaken` on `409`. Carries the server's current copy
+ * (`latest`) so the screen can offer a one-click refresh without a second
+ * request (api-spec section 2.3 conflict body, AD-03).
+ */
+export class ActionConflictError extends ApiError {
+  latest: ActionTaken;
+
+  constructor(message: string, latest: ActionTaken) {
+    super(message, "CONFLICT");
+    this.name = "ActionConflictError";
+    this.latest = latest;
+  }
+}
+
+export async function fetchTicketActions(
+  ticketId: number
+): Promise<ActionTaken[]> {
+  const base = API_URL || window.location.origin;
+  const url = new URL(`/api/tickets/${ticketId}/actions`, base);
+
+  const res = await fetch(url, { credentials: "include" });
+  if (!res.ok) {
+    await handleApiError(res, `Failed to fetch actions: ${res.status}`);
+  }
+  const { data } = (await res.json()) as { data: ActionTaken[] };
+  return data;
+}
+
+export async function createActionTaken(
+  ticketId: number,
+  input: ActionTakenInput
+): Promise<ActionTaken> {
+  const res = await fetch(`${API_URL}/api/tickets/${ticketId}/actions`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    await handleApiError(res, "Failed to record action");
+  }
+  const { data } = (await res.json()) as { data: ActionTaken };
+  return data;
+}
+
+export async function updateActionTaken(
+  actionId: number,
+  input: ActionTakenUpdateInput
+): Promise<ActionTaken> {
+  const res = await fetch(`${API_URL}/api/actions/${actionId}`, {
+    method: "PUT",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+
+  // The conflict body keeps the Lab 3 `error` shape and adds the current
+  // record under `data` (api-spec section 2.3). `handleApiError` only reads
+  // `error`, so a 409 is handled here to preserve `data` for the UI.
+  if (res.status === 409) {
+    let message =
+      "This Action Taken was updated by someone else. Refresh to load the latest version.";
+    let latest: ActionTaken | null = null;
+    try {
+      const body = (await res.json()) as {
+        error?: { message?: string };
+        data?: ActionTaken;
+      };
+      message = body.error?.message ?? message;
+      latest = body.data ?? null;
+    } catch {
+      // Malformed conflict body — fall through to a plain CONFLICT.
+    }
+    if (latest) {
+      throw new ActionConflictError(message, latest);
+    }
+    throw new ApiError(message, "CONFLICT");
+  }
+
+  if (!res.ok) {
+    await handleApiError(res, "Failed to update action");
+  }
+  const { data } = (await res.json()) as { data: ActionTaken };
+  return data;
+}
+
+// ── Role Dashboards (Issue 28, api-spec section 3) ──────────────────────────
+
+export type DashboardTicketRow = {
+  id: number;
+  ticketNumber: string;
+  summary: string;
+  currentStatus: TicketStatus;
+  itPriority: RequestedPriority | null;
+  updatedAt: string;
+};
+
+export type StaffDashboardTicketRow = DashboardTicketRow & {
+  owner: { id: number; name: string } | null;
+};
+
+export type MyRecentAction = {
+  id: number;
+  ticketId: number;
+  ticketNumber: string;
+  actionDate: string;
+  description: string;
+  result: string;
+  performedById: number;
+  updatedAt: string;
+};
+
+export type RequesterDashboard = {
+  counts: {
+    open: number;
+    inProgress: number;
+    waitingForRequester: number;
+    resolved: number;
+    closed: number;
+    attentionRequired: number;
+  };
+  recentTickets: DashboardTicketRow[];
+  recentlyResolved: DashboardTicketRow[];
+};
+
+export type StaffDashboard = {
+  counts: {
+    new: number;
+    open: number;
+    inProgress: number;
+    waitingForRequester: number;
+    unassigned: number;
+    myAssigned: number;
+    urgentTickets: number;
+  };
+  byItPriority: Array<{ itPriority: RequestedPriority | null; count: number }>;
+  recentTickets: StaffDashboardTicketRow[];
+  urgentTickets: StaffDashboardTicketRow[];
+  myRecentActions: MyRecentAction[];
+  userCounts?: { total: number; active: number; inactive: number };
+};
+
+export async function fetchRequesterDashboard(): Promise<RequesterDashboard> {
+  const base = API_URL || window.location.origin;
+  const url = new URL("/api/dashboards/requester", base);
+  const res = await fetch(url, { credentials: "include" });
+  if (!res.ok) {
+    await handleApiError(res, `Failed to fetch requester dashboard: ${res.status}`);
+  }
+  const json = (await res.json()) as { data: RequesterDashboard };
+  return json.data;
+}
+
+export async function fetchStaffDashboard(): Promise<StaffDashboard> {
+  const base = API_URL || window.location.origin;
+  const url = new URL("/api/dashboards/staff", base);
+  const res = await fetch(url, { credentials: "include" });
+  if (!res.ok) {
+    await handleApiError(res, `Failed to fetch staff dashboard: ${res.status}`);
+  }
+  const json = (await res.json()) as { data: StaffDashboard };
+  return json.data;
+}
+
 

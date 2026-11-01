@@ -32,6 +32,7 @@ const baseTicket: api.StaffTicketDetail = {
   itPriority: "MEDIUM",
   currentStatus: "NEW",
   ticketDate: "2026-09-01T10:00:00.000Z",
+  version: 1,
   requester: { id: 1, name: "Jennifer Anderson" },
   category: { id: 2, name: "Hardware" },
   relatedSystem: { id: 7, name: "Corporate Laptop" },
@@ -93,6 +94,8 @@ describe("StaffTicketDetail — ticket info rendering and editability", () => {
     vi.spyOn(api, "fetchInternalNotes").mockResolvedValue(notes);
     vi.spyOn(api, "fetchCategories").mockResolvedValue(categories);
     vi.spyOn(api, "fetchStaffUsers").mockResolvedValue(staffUsers);
+    // Issue 26: the screen now also loads Actions Taken (empty here).
+    vi.spyOn(api, "fetchTicketActions").mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -318,6 +321,8 @@ describe("StaffTicketDetail — status dropdown shows only permitted next states
     vi.spyOn(api, "fetchInternalNotes").mockResolvedValue(notes);
     vi.spyOn(api, "fetchCategories").mockResolvedValue(categories);
     vi.spyOn(api, "fetchStaffUsers").mockResolvedValue(staffUsers);
+    // Issue 26: the screen now also loads Actions Taken (empty here).
+    vi.spyOn(api, "fetchTicketActions").mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -326,9 +331,10 @@ describe("StaffTicketDetail — status dropdown shows only permitted next states
 
   it("NEW offers only OPEN as a next state (BR-12 matrix)", async () => {
     vi.spyOn(api, "fetchStaffTicket").mockResolvedValue(baseTicket);
+    // Lab 4 FR-12: the status PUT now also carries the loaded `version`.
     const statusSpy = vi
       .spyOn(api, "updateStaffTicketStatus")
-      .mockResolvedValue({ currentStatus: "OPEN" });
+      .mockResolvedValue({ currentStatus: "OPEN", version: 2 });
     renderDetail();
 
     await screen.findByTestId("staff-ticket-detail");
@@ -339,7 +345,7 @@ describe("StaffTicketDetail — status dropdown shows only permitted next states
 
     fireEvent.change(select, { target: { value: "OPEN" } });
     await waitFor(() => {
-      expect(statusSpy).toHaveBeenCalledWith(101, "OPEN");
+      expect(statusSpy).toHaveBeenCalledWith(101, "OPEN", 1);
     });
   });
 
@@ -370,7 +376,7 @@ describe("StaffTicketDetail — status dropdown shows only permitted next states
     );
     const statusSpy = vi
       .spyOn(api, "updateStaffTicketStatus")
-      .mockResolvedValue({ currentStatus: "CANCELLED" });
+      .mockResolvedValue({ currentStatus: "CANCELLED", version: 2 });
     renderDetail();
 
     await screen.findByTestId("staff-ticket-detail");
@@ -385,7 +391,8 @@ describe("StaffTicketDetail — status dropdown shows only permitted next states
 
     fireEvent.click(screen.getByTestId("status-confirm-accept"));
     await waitFor(() => {
-      expect(statusSpy).toHaveBeenCalledWith(101, "CANCELLED");
+      // Lab 4 FR-12: `version` is the third argument now.
+      expect(statusSpy).toHaveBeenCalledWith(101, "CANCELLED", 1);
     });
   });
 
@@ -421,6 +428,8 @@ describe("StaffTicketDetail — comments/notes tabs", () => {
     vi.spyOn(api, "fetchInternalNotes").mockResolvedValue(notes);
     vi.spyOn(api, "fetchCategories").mockResolvedValue(categories);
     vi.spyOn(api, "fetchStaffUsers").mockResolvedValue(staffUsers);
+    // Issue 26: the screen now also loads Actions Taken (empty here).
+    vi.spyOn(api, "fetchTicketActions").mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -604,6 +613,8 @@ describe("StaffTicketDetail — error states", () => {
     vi.spyOn(api, "fetchInternalNotes").mockResolvedValue(notes);
     vi.spyOn(api, "fetchCategories").mockResolvedValue(categories);
     vi.spyOn(api, "fetchStaffUsers").mockResolvedValue(staffUsers);
+    // Issue 26: the screen now also loads Actions Taken (empty here).
+    vi.spyOn(api, "fetchTicketActions").mockResolvedValue([]);
   });
 
   afterEach(() => {

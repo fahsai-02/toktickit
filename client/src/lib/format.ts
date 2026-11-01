@@ -8,6 +8,84 @@ export function formatDate(iso: string): string {
   });
 }
 
+/**
+ * Action Taken timestamps render in the service desk's local zone, not the
+ * viewer's (FR-08, BR-18, ui-spec 5.3). `formatDate` above intentionally keeps
+ * the browser default for Lab 2/3 screens; this one is fixed to Asia/Bangkok
+ * (UTC+7) for the Lab 4 Action Taken views.
+ */
+const BANGKOK_TIME_ZONE = "Asia/Bangkok";
+
+export function formatActionDateTime(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  const wallClock = date.toLocaleString("en-GB", {
+    timeZone: BANGKOK_TIME_ZONE,
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  });
+  return `${wallClock} (Asia/Bangkok)`;
+}
+
+/**
+ * Optional relative hint shown beside the absolute date "when the gap is
+ * large" (ui-spec 5.3). Returns null for recent or future timestamps so the
+ * table never reads "0 days ago". The gap counts calendar days in the service
+ * desk's own zone (Asia/Bangkok), not raw milliseconds, so a timestamp just
+ * before midnight in Bangkok is "yesterday", not "today".
+ */
+function bangkokCalendarDay(date: Date): number {
+  const key = date.toLocaleDateString("en-CA", { timeZone: BANGKOK_TIME_ZONE });
+  const [year, month, day] = key.split("-").map(Number);
+  return Date.UTC(year, month - 1, day) / (24 * 60 * 60 * 1000);
+}
+
+export function relativeDayHint(
+  iso: string,
+  now: Date = new Date()
+): string | null {
+  const then = new Date(iso);
+  if (Number.isNaN(then.getTime())) return null;
+  const days = bangkokCalendarDay(now) - bangkokCalendarDay(then);
+  if (days >= 2) return `${days} days ago`;
+  return null;
+}
+
+/**
+ * Format timestamp as a friendly relative time string (e.g. "2 hours ago", "3 days ago")
+ * for dashboard ticket and action lists (ui-spec section 5.1). Minutes and
+ * hours are elapsed time; days are Asia/Bangkok calendar days (FR-19).
+ */
+export function formatRelativeTime(
+  iso: string,
+  now: Date = new Date()
+): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+
+  const diffMs = now.getTime() - date.getTime();
+  if (diffMs < 0) return "just now";
+
+  const diffSec = Math.floor(diffMs / 1000);
+  if (diffSec < 60) return "just now";
+
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin} minute${diffMin === 1 ? "" : "s"} ago`;
+
+  const diffHour = Math.floor(diffMin / 60);
+  if (diffHour < 24) return `${diffHour} hour${diffHour === 1 ? "" : "s"} ago`;
+
+  // From a day upward the gap counts Asia/Bangkok calendar days, not 24-hour
+  // spans (FR-19, ui-spec section 5.1): 23:00 on the 1st seen at 01:00 on the
+  // 3rd is "2 days ago" even though only 26 hours have passed. At least one
+  // calendar day separates two timestamps 24 hours apart.
+  const diffDays = Math.max(1, bangkokCalendarDay(now) - bangkokCalendarDay(date));
+  return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
+}
+
 export function formatFileSize(bytes: number): string {
   if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   if (bytes >= 1024) return `${(bytes / 1024).toFixed(1)} KB`;

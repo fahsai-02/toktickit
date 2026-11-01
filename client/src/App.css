@@ -374,13 +374,13 @@
       width: 100%;
       text-align: left;
       padding: 10px 12px;
-      min-height: 44px;
+      min-height: 36px;
     }
 
     .hamburger {
       display: block;
-      min-width: 44px;
-      min-height: 44px;
+      min-width: 36px;
+      min-height: 36px;
     }
 
     .profile-name {
@@ -415,7 +415,7 @@
 
     /* ui-spec section 4.1 (line 93): on mobile the header keeps the brand and
        the truncated user name only. Brand (117px) + full name + role badge +
-       44px hamburger no longer fit a mobile row, and the flex children refuse
+       36px hamburger no longer fit a mobile row, and the flex children refuse
        to shrink, so the hamburger was pushed up to 19px past the viewport edge
        (409px document width with the "Administrator" account). The role still
        reads from the profile dropdown header, which repeats name + role badge
@@ -423,6 +423,11 @@
     .profile-menu,
     .profile-button {
       min-width: 0;
+    }
+
+    /* Tap target >= 36px (ui-spec section 6, Mobile). */
+    .profile-button {
+      min-height: 36px;
     }
 
     .profile-role {
@@ -451,13 +456,13 @@
       text-align: left;
       padding: 10px 12px;
       border-bottom: none;
-      min-height: 44px;
+      min-height: 36px;
     }
 
     .hamburger {
       display: block;
-      min-width: 44px;
-      min-height: 44px;
+      min-width: 36px;
+      min-height: 36px;
     }
 
     .profile-name {
@@ -761,7 +766,7 @@
     font-family: var(--font-sans);
     font-size: 14px;
     color: var(--color-text);
-    min-height: 44px;
+    min-height: 36px;
   }
 
   .ticket-card:hover {
@@ -867,7 +872,7 @@
   .pagination-pages {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 4px;
   }
 
   .pagination-btn {
@@ -915,6 +920,16 @@
     min-width: 32px;
     height: 32px;
     color: var(--color-text-muted);
+  }
+
+  /* Mobile tap targets are at least 36px app-wide (Lab 4 ui-spec section 6). */
+  @media (max-width: 768px) {
+    .pagination-page-size select,
+    .pagination-btn,
+    .pagination-ellipsis {
+      height: 36px;
+      min-width: 36px;
+    }
   }
 
   /* ── List States ───────────────────────────────────────────────────── */
@@ -985,11 +1000,28 @@
     margin-bottom: 16px;
   }
 
+  /* The info grid wraps itself: each field claims at least 200px and grows to
+     fill its row, so the layout follows the width of whatever column encloses
+     it. A full-width desktop, the narrower staff split column and a 375px
+     phone all land on the right number of fields per row without a
+     width-specific breakpoint (issue 26 review). */
   .ticket-detail-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    display: flex;
+    flex-wrap: wrap;
     gap: 16px;
     margin-bottom: 16px;
+  }
+
+  .ticket-detail-grid > * {
+    /* 180px is the narrowest a field label plus its value stays readable, and
+       it keeps three fields per row in the desktop split column. `min-width: 0`
+       lets a field shrink to that basis: a native `<select>` reports a wider
+       min-content size and would otherwise force a wrap. */
+    flex: 1 1 180px;
+    min-width: 0;
+    /* Spacing between fields is the container `gap`, so the field's own
+       bottom margin would double it; reset it inside this grid only. */
+    margin-bottom: 0;
   }
 
   .ticket-detail-description {
@@ -1490,13 +1522,39 @@
 
   .detail-tabs {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 4px;
-    border-bottom: 2px solid var(--color-border);
     margin-bottom: 16px;
+    overflow-x: visible;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    position: relative;
+  }
+
+  .detail-tabs::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 2px;
+    background: var(--color-border);
+    z-index: 0;
+  }
+
+  .detail-tabs::-webkit-scrollbar {
+    display: none;
   }
 
   .detail-tab {
+    flex: 1 1 0;
+    min-width: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+    text-align: center;
     border: none;
     background: transparent;
     padding: 10px 14px;
@@ -1505,8 +1563,10 @@
     color: var(--color-text-muted);
     cursor: pointer;
     border-bottom: 2px solid transparent;
-    margin-bottom: -2px;
+    margin-bottom: 0;
     border-radius: var(--radius) var(--radius) 0 0;
+    position: relative;
+    z-index: 1;
   }
 
   .detail-tab:hover {
@@ -1515,7 +1575,10 @@
 
   .detail-tab--active {
     color: var(--color-primary);
-    border-bottom-color: var(--color-primary);
+    border-bottom: 2px solid var(--color-primary);
+    margin-bottom: 0;
+    position: relative;
+    z-index: 2;
     background: var(--color-pale);
   }
 
@@ -1595,8 +1658,11 @@
      "Tablet: stacked layout — info on top, tabs below" and section 6
      "Tablet 768–991px … stacked layout for staff detail". */
   @media (max-width: 991px) {
+    /* minmax(0, 1fr), not 1fr: a bare 1fr track has an automatic minimum equal
+       to its content, so the four-tab bar (Issue 26 added Actions Taken)
+       stretched the column to 458px and the page scrolled sideways at 375px. */
     .staff-detail-layout {
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 1fr);
     }
 
     .staff-detail-comms {
@@ -1609,10 +1675,6 @@
   @media (max-width: 768px) {
     .my-tickets-toolbar .page-title {
       font-size: 18px;
-    }
-
-    .ticket-detail-grid {
-      grid-template-columns: 1fr;
     }
 
     .ticket-detail-card {
@@ -1650,19 +1712,55 @@
       align-items: flex-start;
     }
 
-    /* Mobile: tabs stay one horizontal scrollable strip (ui-spec 5.5
-       "tabs as horizontal scrollable strip"); overflow stays contained so
-       the page itself never scrolls horizontally (section 6). */
+    /* Mobile: tabs fit full width without horizontal scroll */
     .detail-tabs {
       flex-wrap: nowrap;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
+      overflow-x: visible;
+      overflow-y: hidden;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      position: relative;
+    }
+
+    .detail-tabs::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 2px;
+      background: var(--color-border);
+      z-index: 0;
+    }
+
+    .detail-tabs::-webkit-scrollbar {
+      display: none;
     }
 
     .detail-tab {
-      flex: 0 0 auto;
+      flex: 1 1 0;
+      min-width: 0;
+      /* Four tabs share 375px, so labels wrap onto two lines instead of being
+         clipped ("blic Comments"); min-height keeps the 36px tap target. */
+      white-space: normal;
+      line-height: 1.25;
+      min-height: 36px;
       text-align: center;
-      padding: 10px 8px;
+      padding: 8px 4px;
+      font-size: 12px;
+      border: none;
+      border-bottom: 2px solid transparent;
+      margin-bottom: 0;
+      position: relative;
+      z-index: 1;
+      border-radius: var(--radius) var(--radius) 0 0;
+    }
+
+    .detail-tab--active {
+      border-bottom: 2px solid var(--color-primary);
+      margin-bottom: 0;
+      position: relative;
+      z-index: 2;
     }
 
     .notes-section {
@@ -1777,7 +1875,6 @@
       display: none;
     }
   }
-}
 
 /* ── Drawer (ui-spec section 8) ─────────────────────────────────────── */
 
@@ -1833,6 +1930,13 @@
      control (ui-spec section 7 focus indicators, 2px secondary-green).
      Previously the outline traced a square corner. */
   border-radius: var(--radius);
+}
+
+@media (max-width: 768px) {
+  .drawer-close {
+    width: 36px;
+    height: 36px;
+  }
 }
 
 .drawer-close:hover {
@@ -1930,6 +2034,42 @@
 
 .toggle--on .toggle-thumb {
   transform: translateX(20px);
+}
+
+/* ui-spec section 6 (Mobile): tap targets >= 36px. The button grows to 36px
+   tall while the visible track stays 24px (drawn by ::before). */
+@media (max-width: 768px) {
+  .toggle,
+  .toggle:hover:not(:disabled),
+  .toggle--on {
+    height: 36px;
+    background: transparent;
+  }
+
+  .toggle::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 6px;
+    height: 24px;
+    border-radius: 999px;
+    background: var(--color-border);
+    transition: background 0.15s ease;
+  }
+
+  .toggle:hover:not(:disabled)::before {
+    background: var(--color-text-muted);
+  }
+
+  .toggle--on::before,
+  .toggle--on:hover:not(:disabled)::before {
+    background: var(--color-primary);
+  }
+
+  .toggle-thumb {
+    top: 8px;
+  }
 }
 
 /* ── Confirm Dialog (ui-spec section 5.6) ───────────────────────────── */
@@ -2103,4 +2243,675 @@
 .access-denied p {
   margin: 0;
   font-size: 14px;
+}
+
+/* ── Actions Taken (Lab 4, ui-spec 5.3-5.4) ─────────────────────────── */
+
+.actions-section {
+  margin-top: 24px;
+}
+
+.actions-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
+/* One entry per action, stacked (ui-spec section 5.3, AD-16). The list fills
+   whatever column holds it, so the same markup reads correctly in the staff
+   side column and the full-width requester detail. */
+.action-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+}
+
+.actions-date-hint {
+  color: var(--color-text-muted);
+}
+
+.actions-followup {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.actions-followup-note {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.action-card {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 12px;
+  background: var(--color-surface);
+}
+
+.action-card-grid {
+  display: grid;
+  grid-template-columns: minmax(96px, auto) 1fr;
+  gap: 4px 12px;
+  margin: 0;
+}
+
+.action-card-grid dt {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+}
+
+.action-card-grid dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Edit sits bottom-right of the entry, aligned with the read-only text above
+   it rather than pushed to the far edge of the column (issue 26 review). */
+.action-card-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.action-card-actions .btn {
+  height: 32px;
+  padding: 0 12px;
+  font-size: 13px;
+  gap: 4px;
+}
+
+.action-field-hint {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+/* Date input and its "Set to now" shortcut share one row. A two-column grid
+   with the field-group's own bottom margin neutralised lines the two controls
+   up on the same bottom edge by construction, instead of compensating for that
+   margin afterwards (issue 26 review). The container carries the row spacing
+   the field group would normally provide. */
+.action-date-field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.action-date-field .field-group {
+  margin-bottom: 0;
+}
+
+.action-date-field .action-date-now {
+  height: 40px;
+  white-space: nowrap;
+}
+
+.action-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.action-conflict-callout {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.action-conflict-callout p {
+  margin: 0;
+}
+
+.action-form-error {
+  margin-bottom: 12px;
+}
+
+/* Mobile: the same list, one column, with a tighter label column so the values
+   keep their reading width (ui-spec section 6, AC-18). */
+@media (max-width: 768px) {
+  .action-card-grid {
+    grid-template-columns: minmax(80px, auto) 1fr;
+  }
+
+  /* Mobile stacks the date input and its shortcut: one column, the button
+     full width under the input (issue 26 review). */
+  .action-date-field {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+}
+
+  /* =====================================================================
+     Role Dashboards (Issue 28, ui-spec section 5 & 6)
+     ===================================================================== */
+  .dashboard-container {
+    padding-top: 24px;
+    padding-bottom: 48px;
+    /* List rows are one line of summary plus a meta line, so every row has the
+       same height. A list reserves room for the 5 rows the API can return
+       (api-spec section 3), so the page does not move whether 0, 3 or 5 rows
+       arrive, and the skeleton reserves exactly the same box. */
+    --dash-row: 62px;
+    --dash-gap: 8px;
+    --dash-rows-height: calc(5 * var(--dash-row) + 4 * var(--dash-gap));
+  }
+
+  .dashboard-list-body {
+    min-height: var(--dash-rows-height);
+  }
+
+  /* The Urgent list can return up to 10 rows. Reserving all ten would leave a
+     large empty block for the usual 0-3, so the list is a fixed-height box of
+     5 rows that scrolls inside itself: the page never changes height. */
+  .dashboard-urgent-body {
+    min-height: var(--dash-rows-height);
+    max-height: var(--dash-rows-height);
+    overflow-y: auto;
+  }
+
+  .dashboard-header {
+    margin-bottom: 24px;
+  }
+
+  .dashboard-header .page-title {
+    margin-bottom: 4px;
+  }
+
+  .dashboard-greeting {
+    font-size: 16px;
+    color: var(--color-text-muted);
+    margin: 0;
+  }
+
+  /* Metric cards grid */
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .dashboard-grid--staff {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .dashboard-ownership {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .metric-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 1px 3px var(--color-shadow);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .metric-card:hover {
+    border-color: var(--color-secondary);
+    box-shadow: 0 2px 6px rgba(0, 107, 60, 0.12);
+  }
+
+  .metric-card__value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--color-text);
+    line-height: 1.2;
+    margin-bottom: 4px;
+  }
+
+  .metric-card__label {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-text-muted);
+  }
+
+  .metric-card__subtext {
+    font-size: 12px;
+    color: var(--color-text-muted);
+    margin-top: 4px;
+  }
+
+  /* ui-spec section 1: no new colour in Lab 4, and section 5.1 says this card
+     uses the attention/warning token. The amber tints it first shipped with
+     (#FFFBEB, #FCD34D, #92400E, #B45309) were not tokens; STYLE-01 caught them.
+     It stays distinct by more than colour (checklist row 5): the 4px warning
+     bar, the warning outline and the "Needs your attention" label. */
+  .metric-card--attention {
+    border-color: var(--color-warning);
+    border-left: 4px solid var(--color-warning);
+  }
+
+  .metric-card--attention .metric-card__value {
+    color: var(--color-text);
+  }
+
+  .metric-card--attention .metric-card__label {
+    color: var(--color-text);
+    font-weight: 600;
+  }
+
+  .metric-card--users {
+    border-left: 4px solid var(--color-info);
+  }
+
+  /* Attention section full-width */
+  .dashboard-attention {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .dashboard-attention .metric-card--attention {
+    flex: 1;
+  }
+
+  .dashboard-quick-actions {
+    display: flex;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+
+  /* Priority Strip */
+  .priority-strip {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 3px var(--color-shadow);
+  }
+
+  .priority-strip__title {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0 0 12px 0;
+    color: var(--color-text);
+  }
+
+  .priority-strip__buckets {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .priority-strip__item {
+    flex: 1;
+    min-width: 90px;
+    background: var(--color-page);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+  }
+
+  .priority-strip__item:hover {
+    border-color: var(--color-primary);
+    background-color: var(--color-pale);
+  }
+
+  .priority-strip__label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+  }
+
+  .priority-strip__count {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--color-text);
+    margin-top: 2px;
+  }
+
+  /* Urgent section */
+  .dashboard-urgent-section {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 3px var(--color-shadow);
+  }
+
+  .dashboard-urgent-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .dashboard-urgent-links {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .dashboard-filter-link {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-primary);
+    text-decoration: none;
+  }
+
+  .dashboard-filter-link:hover {
+    text-decoration: underline;
+  }
+
+  /* Lists section */
+  .dashboard-lists {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 24px;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .dashboard-list-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: 0 1px 3px var(--color-shadow);
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  .dashboard-list-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 16px 0;
+    color: var(--color-text);
+  }
+
+  .dashboard-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .dashboard-list-item {
+    margin: 0;
+    padding: 0;
+  }
+
+  .dashboard-list-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    text-decoration: none;
+    color: inherit;
+    gap: 12px;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .dashboard-list-link:hover {
+    background-color: var(--color-pale);
+    border-color: var(--color-primary);
+  }
+
+  .dashboard-list-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+    gap: 2px;
+  }
+
+  .dashboard-ticket-number {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-primary);
+  }
+
+  .dashboard-ticket-summary {
+    font-size: 13px;
+    color: var(--color-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .dashboard-list-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .dashboard-ticket-owner {
+    font-size: 12px;
+    color: var(--color-text-muted);
+  }
+
+  .dashboard-ticket-time {
+    font-size: 12px;
+    color: var(--color-text-muted);
+  }
+
+  .dashboard-action-result {
+    font-size: 12px;
+    color: var(--color-text-muted);
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .dashboard-admin-section {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 3px var(--color-shadow);
+  }
+
+  /* Dashboard loading skeleton (ui-spec section 5.1 "Loading"). The cards and
+     list cards are the real ones, so only the contents are placeholders. */
+  .metric-card--skeleton,
+  .metric-card--skeleton:hover {
+    background: var(--color-surface);
+    border-color: var(--color-border);
+    box-shadow: 0 1px 3px var(--color-shadow);
+  }
+
+  .skeleton-bar {
+    display: block;
+    border-radius: 4px;
+    background: var(--color-field-readonly);
+    animation: skeleton-pulse 1.4s ease-in-out infinite;
+  }
+
+  /* Bar sizes are the line boxes of the text they stand in for, measured from
+     the loaded page, so loading and loaded occupy the same space. */
+  .skeleton-bar--value {
+    height: 34px;
+    width: 40%;
+    margin-bottom: 4px;
+  }
+
+  .skeleton-bar--label {
+    height: 21px;
+    width: 70%;
+  }
+
+  .skeleton-bar--sub {
+    height: 18px;
+    width: 55%;
+    margin-top: 4px;
+  }
+
+  .skeleton-bar--title {
+    height: 19px;
+    width: 40%;
+    margin-bottom: 16px;
+  }
+
+  /* Rows match the real list's row height and gap (--dash-row, --dash-gap). */
+  .skeleton-bar--row {
+    height: var(--dash-row);
+    margin-bottom: var(--dash-gap);
+  }
+
+  .skeleton-bar--row:last-child {
+    margin-bottom: 0;
+  }
+
+  /* Create Ticket button beside the attention card. */
+  .skeleton-bar--button {
+    height: 40px;
+    width: 140px;
+  }
+
+
+  .skeleton-bar--links {
+    height: 14px;
+    width: 30%;
+  }
+
+  /* A title bar that sits in a flex header supplies its own spacing. */
+  .skeleton-bar--flush {
+    margin-bottom: 0;
+  }
+
+  .priority-strip .skeleton-bar--title {
+    height: 18px;
+    margin-bottom: 12px;
+  }
+
+  .priority-strip__item .skeleton-bar--label {
+    height: 18px;
+  }
+
+  .priority-strip__item .skeleton-bar--count {
+    height: 30px;
+    width: 30%;
+    margin-top: 2px;
+  }
+
+  /* The real header is 35px tall (it wraps to 67px on a phone). */
+  .dashboard-urgent-header--skeleton {
+    min-height: 35px;
+  }
+
+  /* Below 768px list rows stack their meta line under the summary, so they
+     are taller than on desktop. */
+  @media (max-width: 768px) {
+    .dashboard-container {
+      --dash-row: 88px;
+    }
+
+    .dashboard-urgent-header--skeleton {
+      min-height: 67px;
+    }
+  }
+
+  @keyframes skeleton-pulse {
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .skeleton-bar {
+      animation: none;
+    }
+  }
+
+  /* Responsive breakpoints: 1200 / 992 / 768 */
+  @media (max-width: 1199px) {
+    .dashboard-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .dashboard-grid--staff {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 991px) {
+    .dashboard-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .dashboard-lists {
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .dashboard-grid,
+    .dashboard-grid--staff,
+    .dashboard-ownership {
+      grid-template-columns: 1fr;
+    }
+    .dashboard-attention {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .priority-strip__buckets {
+      flex-direction: column;
+    }
+    .dashboard-lists {
+      gap: 12px;
+    }
+    .dashboard-list-card {
+      padding: 16px;
+    }
+    .dashboard-list-link {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 6px;
+    }
+    /* In a column with align-items: flex-start the info block sizes to its
+       text, so a long one-line summary pushed the row to ~400px and the Urgent
+       box (a scroll container) scrolled sideways at 375px. Pin it to the row. */
+    .dashboard-list-info {
+      width: 100%;
+    }
+    .dashboard-list-meta {
+      width: 100%;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+  }
 }

@@ -22,12 +22,15 @@ interface CalloutProps extends HTMLAttributes<HTMLDivElement> {
 export default function Callout({
   variant = "info",
   children,
+  className,
   ...rest
 }: CalloutProps) {
   return (
     <div
       role={variantRole[variant]}
-      className={`callout ${variantClass[variant]}`.trim()}
+      className={["callout", variantClass[variant], className]
+        .filter(Boolean)
+        .join(" ")}
       {...rest}
     >
       {children}
