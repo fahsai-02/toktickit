@@ -4,7 +4,7 @@
 | :--- | :--- |
 | **Project** | Tok TickIT — IT Service Desk |
 | **Sprint** | Lab 4: Actions Taken, Ticket Workflow, and Role Dashboards |
-| **Version** | v1.4 (Approved 2026-11-01) |
+| **Version** | v1.5 (Approved 2026-11-01) |
 | **Date** | 2026-11-01 |
 | **Sources** | Derived from the CPE 334 Lab 4 labsheet (course-provided handout), the Lab 3 approved increment, and the completed Lab 1–2 increments |
 | **Related docs** | `api-spec.md`, `ui-spec.md`, `tests.md` |
@@ -697,26 +697,32 @@ response shape. `GET /api/health` continues to return exactly `{ "status": "ok",
 ## 10. Definition of Done (Product)
 
 - [ ] All Included scope implemented; no Excluded features present.
-- [ ] Every AC above verified by at least one automated test traced in `tests.md`.
+- [x] Every AC above verified by at least one automated test traced in `tests.md`. *(Evidence: `tests.md` section 3 maps AC-01..18; no row is `Planned`.)*
 - [ ] All unit, API, UI, and E2E tests pass from the documented commands.
-- [ ] No test skipped, disabled, or commented out, **except** the recorded AD-21
+- [x] No test skipped, disabled, or commented out, **except** the recorded AD-21
       exception (the three obsolete `e2e/lab-02` files) and the by-design
       project-scoped skips (desktop-only functional specs, Mobile-only `STYLE-11`).
-- [ ] Backend enforces authentication and role-based authorization on every new endpoint.
-- [ ] Backend enforces the resolution gate and the transition matrix; a raw request bypassing the UI is still rejected.
-- [ ] Backend enforces ownership on the requester dashboard and on Action Taken reads.
-- [ ] Concurrency: a stale `version` on either table returns `409` with the server's latest copy.
-- [ ] Every dashboard metric is computed on the backend, and every card's drill-down returns exactly the counted rows.
-- [ ] Screens conform to `ui-spec.md`; the visual checklist is completed with pass/fail and screenshot evidence.
-- [ ] Implemented endpoints conform to `api-spec.md`; the Prisma schema matches section 8 with committed migrations.
-- [ ] Migration applies cleanly to a database holding all Lab 1–3 data, and MIG-02 verifies it.
-- [ ] Seed runs idempotently and reuses no Lab 1–3 ticket number (BR-24).
-- [ ] Labs 1–3 regression suites pass, including the unchanged `GET /api/health` shape.
-- [ ] Responsive screenshots captured at desktop, tablet, and mobile into `artifacts/lab-04/screenshots/`.
+- [x] Backend enforces authentication and role-based authorization on every new endpoint. *(AUTH-01..06, API-03/04.)*
+- [x] Backend enforces the resolution gate and the transition matrix; a raw request bypassing the UI is still rejected. *(API-19..23, UNIT-01/02/04.)*
+- [x] Backend enforces ownership on the requester dashboard and on Action Taken reads. *(AUTH-02, AUTH-03, AUTH-04, API-07.)*
+- [x] Concurrency: a stale `version` on either table returns `409` with the server's latest copy. *(API-16..18, API-24, API-44.)*
+- [x] Every dashboard metric is computed on the backend, and every card's drill-down returns exactly the counted rows. *(API-29..39, API-42, UI-24.)*
+- [x] Screens conform to `ui-spec.md`; the visual checklist is completed with pass/fail and screenshot evidence. *(`ui-spec.md` v1.5 section 9.1: 34 of 34 `Pass`.)*
+- [x] Implemented endpoints conform to `api-spec.md`; the Prisma schema matches section 8 with committed migrations. *(API suites; `prisma validate` and `prisma migrate status` clean, 5 migrations, 2026-11-01.)*
+- [x] Migration applies cleanly to a database holding all Lab 1–3 data, and MIG-02 verifies it.
+- [x] Seed runs idempotently and reuses no Lab 1–3 ticket number (BR-24). *(MIG-03, MIG-05.)*
+- [x] Labs 1–3 regression suites pass, including the unchanged `GET /api/health` shape. *(REG-01 with the AD-21 exception, REG-02.)*
+- [x] Responsive screenshots captured at desktop, tablet, and mobile into `artifacts/lab-04/screenshots/`.
 - [ ] Peer-review evidence recorded in `docs/lab-04/reviewer.md`.
-- [ ] `docs/lab-04/ai-use.md` records the LLM used, the key prompts retained, and a short reflection.
+- [x] `docs/lab-04/ai-use.md` records the LLM used, the key prompts retained, and a short reflection.
 - [ ] All work merged through reviewed PRs: feature branches → `lab4-staging` → one release PR → `main`.
 - [ ] Student can explain every implementation choice and demonstrate failure cases live.
+
+> **Left unchecked on purpose (2026-11-01):** the "All Included scope implemented" line (not
+> verified line by line against section 3), "All unit, API, UI, and E2E tests pass from the
+> documented commands" (run on the Issue 30 branch; the run on `main` is recorded at release
+> time), "Peer-review evidence" and "All work merged through reviewed PRs" (complete only
+> after the release PR), and the live demonstration.
 
 ## 11. Assumptions and Decisions
 
@@ -837,5 +843,6 @@ so the "No test skipped" line is amended here rather than the tests.
 
 **Approval:** v1.3 approved by the student on 2026-10-30. v1.2 was approved on
 2026-10-24. This approves the contract only — no FR, BR, AC, endpoint, screen, or checklist row is verified by
-it, because nothing has been built or run yet.
+it. *Superseded (2026-11-01): the requirements were built and verified in Issues 25–30; see `tests.md` section 6 and section 10 above.*
 | v1.4 | 2026-11-01 | **Issue 29 (#82) review follow-up.** AC-17 and the Definition of Done line "No test skipped" now name one recorded exception, **AD-21**: the three obsolete `e2e/lab-02` specs stay skipped because the instructor said to keep previous-lab code; their journey is covered by `e2e/lab-03/requester-regression.spec.ts`. No test or code changed. | Approved (student, 2026-11-01) |
+| v1.5 | 2026-11-01 | **Issue 30 (#83) close-out.** Section 10 (Definition of Done) ticked line by line, each with the test IDs that prove it; the lines that cannot be true yet are left unchecked and listed under the list. No requirement, AC, or AD changed. The approval footer no longer says nothing has been built. | Approved (student, 2026-11-01) |

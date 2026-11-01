@@ -4,7 +4,7 @@
 | :--- | :--- |
 | **Project** | Tok TickIT — IT Service Desk |
 | **Sprint** | Lab 4: Actions Taken, Ticket Workflow, and Role Dashboards |
-| **Version** | v1.4 (Approved 2026-11-01) |
+| **Version** | v1.6 (Approved 2026-11-01) |
 | **Date** | 2026-11-01 |
 | **Contract source** | `specification.md` v1.0; request and response shapes in `api-spec.md` |
 | **Predecessor** | `docs/lab-03/ui-spec.md` — Lab 4 inherits its tokens, states, and accessibility rules unchanged |
@@ -75,8 +75,8 @@ Lab 4 adds exactly one navigation link per role, and changes nothing else:
 | Role | Existing links | Lab 4 addition |
 | :--- | :--- | :--- |
 | Requester | My Tickets, Create Ticket | **Dashboard** → `/dashboard` |
-| IT Staff | My Queue | **Dashboard** → `/staff/dashboard` |
-| Administrator | My Queue, User Management | **Dashboard** → `/staff/dashboard` |
+| IT Staff | My Queue, Create Ticket | **Dashboard** → `/staff/dashboard` |
+| Administrator | My Queue, Create Ticket, User Management | **Dashboard** → `/staff/dashboard` |
 
 The rules from Lab 3 still hold: a link is shown only to a role permitted to use
 it, and the Dashboard link is placed **first** in the list because it is the
@@ -501,10 +501,9 @@ screens, and merging them into one folder would make the capture names stop
 describing what is in the picture. The parent folder exists to satisfy handout
 section 12, not to replace the per-screen split.
 
-The four directories exist on disk but hold no files yet — Lab 4 has no captures
-at this point, and git does not track an empty directory, so there is no
-placeholder file to commit. They become real in the repository the moment the
-visual specs write their first PNG, exactly as the Lab 3 folders did.
+The visual specs have run, and the captures are committed under
+`artifacts/lab-04/screenshots/` (each folder holds `desktop.png`, `tablet.png` and
+`mobile.png`).
 
 The responsive, state, and measured-audit specs together produce
 **artifacts/lab-04/screenshots/** — that path is a committed deliverable and is
@@ -512,8 +511,8 @@ negated in `.gitignore`; no bare `*.png` rule may be added above that negation.
 
 ### 9.1 Visual Checklist
 
-Every row starts at **`Pending`**. Issue 30 fills the last column with `Pass` or
-`Fail` after a human looks at the captures and tabs through the running app; the
+Every row started at **`Pending`**. Issue 30 filled the last column with `Pass` or
+`Fail` after a human looked at the captures and tabbed through the running app; the
 `Auto` column names the test that proves the mechanical part of each row so a
 reviewer can re-run it instead of trusting the table.
 
@@ -525,40 +524,40 @@ reviewer can re-run it instead of trusting the table.
 
 | # | Checklist item | Auto (test ID) | Manual pass (student sign-off) |
 |---|----------------|----------------|------------------------------|
-| 1 | Colors match section 1 tokens; no new color introduced in Lab 4 | STYLE-01, STYLE-02 | Pending |
-| 2 | Dashboard cards are visually consistent with each other (size, padding, radius, number alignment) | STYLE-10 | Pending |
-| 3 | Card numbers align and use one type scale; no card is taller than its neighbour for a different reason | STYLE-10 | Pending |
-| 4 | A `0` metric renders as `0`; no card disappears when empty (FR-17) | STYLE-04, API-38, RESP-04..06 | Pending |
-| 5 | "Needs your attention" card is distinguishable from plain count cards by more than color | STYLE-04 | Pending |
-| 6 | By-IT-Priority strip shows all five buckets including "Not set", each a link | API-31, UI-25, STYLE-04 | Pending |
-| 7 | Urgent list header offers **both** priority drill-down links, matching the count above it | UI-26, API-35 | Pending |
-| 8 | `userCounts` card rendered for Administrator and absent for IT Staff | API-32, UI-27, RESP-07..12 | Pending |
-| 9 | Every dashboard card is a link with an accessible name that includes its number | UI-24 | Pending |
-| 10 | Actions Taken entries show Date/Time, Description, Result, Performed By, Follow-Up, Notes | UI-09, RESP-13..15 | Pending |
-| 11 | Dates and times render in Asia/Bangkok on both dashboards and both Actions Taken views | UI-10, STYLE-09 | Pending |
-| 12 | "Performed By" is read-only text — no picker, no editable affordance | UI-11 | Pending |
-| 13 | No assignee control and no per-action status control exist in either Actions Taken view (FR-24, FR-25) | UI-12, UI-13, API-14, API-15 | Pending |
-| 14 | Requester Actions Taken view has no Record, Edit, or Delete control | UI-15, API-03, API-04, RESP-19..21 | Pending |
-| 15 | Staff Actions Taken empty state is a helpful message, not a bare list of labels | UI-16, RESP-28..30 | Pending |
-| 16 | Follow-Up toggle reveals and requires its note on the same render; toggling off does not destroy a typed note | UI-03 | Pending |
-| 17 | Character counters turn to the error color over 2000 characters | STYLE-07 | Pending |
-| 18 | Save button shows the busy state while in flight and cannot be double-clicked into a second request | UI-04, STYLE-05 | Pending |
-| 19 | A failed save retains every entered field value (FR-21) | UI-05, UI-06, STATE-07..09 | Pending |
-| 20 | A `409` shows a conflict callout with a Refresh action and does not discard typing | UI-07, API-17, STATE-01..03 | Pending |
-| 21 | Gate failure message appears at the status control and names the unmet condition; the status badge does not change | UI-17, API-19, STATE-22..24 | Pending |
-| 22 | Confirmation dialog names the exact transition it is about to apply | UI-19, STATE-25..27 | Pending |
-| 23 | The status dropdown offers only permitted targets for the current status | UI-18, API-23 | Pending |
-| 24 | "Requester indicates resolved" badge is visually distinct from the status badge | STYLE-03, UI-20 | Pending |
-| 25 | Actions Taken list keeps all six fields per entry at 375px with no horizontal scrolling | RESP-13..21 | Pending |
-| 26 | No horizontal scrolling at 375px on any new or changed screen | RESP-01..30 | Pending |
-| 27 | No clipped labels, overlapping callouts, or hidden buttons at any of the three viewports | RESP-01..30, STYLE-08 | Pending |
-| 28 | Keyboard: every card, action Edit button, and form control is reachable in reading order | UI-19, STATE-19..21 | Pending |
-| 29 | Visible focus ring on a card, a row Edit button, and each form field | STYLE-08, STATE-19..21 | Pending |
-| 30 | Focus returns to the trigger after a dialog closes | UI-19, STATE-25..27 | Pending |
-| 31 | Status and priority are legible without color (text present in every badge) | STYLE-02 | Pending |
-| 32 | No uncaught error in the browser console on any new screen, happy path or failure | E2E-06, UI-29 | Pending |
-| 33 | Loading, empty, no-results, and error states each have a real screenshot, not a description | STATE-01..27 | Pending |
-| 34 | All Lab 3 screens still render correctly after the Lab 4 changes | REG-01 | Pending |
+| 1 | Colors match section 1 tokens; no new color introduced in Lab 4 | STYLE-01, STYLE-02 | Pass |
+| 2 | Dashboard cards are visually consistent with each other (size, padding, radius, number alignment) | STYLE-10 | Pass |
+| 3 | Card numbers align and use one type scale; no card is taller than its neighbour for a different reason | STYLE-10 | Pass |
+| 4 | A `0` metric renders as `0`; no card disappears when empty (FR-17) | STYLE-04, API-38, RESP-04..06 | Pass |
+| 5 | "Needs your attention" card is distinguishable from plain count cards by more than color | STYLE-04 | Pass |
+| 6 | By-IT-Priority strip shows all five buckets including "Not set", each a link | API-31, UI-25, STYLE-04 | Pass |
+| 7 | Urgent list header offers **both** priority drill-down links, matching the count above it | UI-26, API-35 | Pass |
+| 8 | `userCounts` card rendered for Administrator and absent for IT Staff | API-32, UI-27, RESP-07..12 | Pass |
+| 9 | Every dashboard card is a link with an accessible name that includes its number | UI-24 | Pass |
+| 10 | Actions Taken entries show Date/Time, Description, Result, Performed By, Follow-Up, Notes | UI-09, RESP-13..15 | Pass |
+| 11 | Dates and times render in Asia/Bangkok on both dashboards and both Actions Taken views | UI-10, STYLE-09 | Pass |
+| 12 | "Performed By" is read-only text — no picker, no editable affordance | UI-11 | Pass |
+| 13 | No assignee control and no per-action status control exist in either Actions Taken view (FR-24, FR-25) | UI-12, UI-13, API-14, API-15 | Pass |
+| 14 | Requester Actions Taken view has no Record, Edit, or Delete control | UI-15, API-03, API-04, RESP-19..21 | Pass |
+| 15 | Staff Actions Taken empty state is a helpful message, not a bare list of labels | UI-16, RESP-28..30 | Pass |
+| 16 | Follow-Up toggle reveals and requires its note on the same render; toggling off does not destroy a typed note | UI-03 | Pass |
+| 17 | Character counters turn to the error color over 2000 characters | STYLE-07 | Pass |
+| 18 | Save button shows the busy state while in flight and cannot be double-clicked into a second request | UI-04, STYLE-05 | Pass |
+| 19 | A failed save retains every entered field value (FR-21) | UI-05, UI-06, STATE-07..09 | Pass |
+| 20 | A `409` shows a conflict callout with a Refresh action and does not discard typing | UI-07, API-17, STATE-01..03 | Pass |
+| 21 | Gate failure message appears at the status control and names the unmet condition; the status badge does not change | UI-17, API-19, STATE-22..24 | Pass |
+| 22 | Confirmation dialog names the exact transition it is about to apply | UI-19, STATE-25..27 | Pass |
+| 23 | The status dropdown offers only permitted targets for the current status | UI-18, API-23 | Pass |
+| 24 | "Requester indicates resolved" badge is visually distinct from the status badge | STYLE-03, UI-20 | Pass |
+| 25 | Actions Taken list keeps all six fields per entry at 375px with no horizontal scrolling | RESP-13..21 | Pass |
+| 26 | No horizontal scrolling at 375px on any new or changed screen | RESP-01..30 | Pass |
+| 27 | No clipped labels, overlapping callouts, or hidden buttons at any of the three viewports | RESP-01..30, STYLE-08 | Pass |
+| 28 | Keyboard: every card, action Edit button, and form control is reachable in reading order | UI-19, STATE-19..21 | Pass |
+| 29 | Visible focus ring on a card, a row Edit button, and each form field | STYLE-08, STATE-19..21 | Pass |
+| 30 | Focus returns to the trigger after a dialog closes | UI-19, STATE-25..27 | Pass |
+| 31 | Status and priority are legible without color (text present in every badge) | STYLE-02 | Pass |
+| 32 | No uncaught error in the browser console on any new screen, happy path or failure | E2E-06, UI-29 | Pass |
+| 33 | Loading, empty, no-results, and error states each have a real screenshot, not a description | STATE-01..27 | Pass |
+| 34 | All Lab 3 screens still render correctly after the Lab 4 changes | REG-01 | Pass |
 
 **Completion rule.** A row is marked `Pass` only when its `Auto` test passes
 **and** a human has looked at the corresponding capture or driven the keyboard.
@@ -590,12 +589,14 @@ of a Lab 4 test rig, not of the Lab 3 screens.
 | v1.2 | 2026-10-24 | **Actions Taken is a list, not a table.** Section 5.3's six-column read mode left each column too narrow in the staff Ticket Detail side column (about 540px at 1440), where the area shares the column with the conversation tabs. Read mode is now one compact entry per action showing the same six fields, and the same markup serves every viewport with only the label column narrowing on mobile. Updated section 5.3, 5.4, section 6 desktop/tablet/mobile rows, section 7's accessible-name rule, section 8 (the construct is now the shared `ActionList` component rather than the inline `ActionTable`), and checklist rows 10, 15, 25, 28. | Approved (student, 2026-10-24) |
 | v1.3 | 2026-10-31 | **Issue 28 (#81) review decisions.** Section 5.2 now describes the Urgent list as a fixed five-row box that scrolls inside itself (a keyboard-focusable, labelled region past five rows), and states that every dashboard list reserves its five-row cap, so loading and loaded layouts match (section 5.1 "no layout shift"). Section 8 records the shared dashboard list components in `DashboardList.tsx` as a deviation from "stay inline". Both were choices made while building Issue 28 and are written down here rather than left as undocumented behavior. | Approved (student, 2026-10-31) |
 | v1.4 | 2026-11-01 | **Mobile tap-target floor is 36px for the whole app.** Section 6, Mobile row: "tap targets ≥44px" becomes "≥36px", measured as rendered height at 375px. Reason: at 44px the pagination bar wrapped onto two lines once more than three page numbers showed; the student chose 36px as the floor everywhere so every screen follows one rule. 36px is still above the WCAG 2.2 AA minimum target size (24px). The Lab 2 and Lab 3 `ui-spec.md` files keep their historical 44px text; for Lab 4 and the shipped app this row wins. Section 9 also lists two state-evidence folders the Issue 29 specs write, `gate-blocked-both-unmet` and `confirm-dialog-open`. | Approved (student, 2026-11-01) |
+| v1.5 | 2026-11-01 | **Issue 30 (#83) visual checklist signed off.** All 34 rows of section 9.1 changed from `Pending` to `Pass` after the student looked at the captures at 1440, 820 and 375, tabbed through the running app, and checked the browser console. Row 34 relies on the Lab 3 `responsive.visual.spec.ts` run recorded in `tests.md` section 6. Section 9 no longer says the screenshot folders are empty. No contract change. | Approved (student, 2026-11-01) |
+| v1.6 | 2026-11-01 | **Navigation table corrected (section 4.1).** The "Existing links" column omitted Create Ticket for IT Staff and Administrator, but Lab 3's `ui-spec.md` role table and `Navbar.tsx` give it to every role. Documentation only; no screen or test changed. The approval footer no longer says nothing has been built. | Approved (student, 2026-11-01) |
 
 ---
 
 *End of UI specification. Changes require student approval and a version bump.*
 
-**Approval:** v1.3 approved by the student on 2026-10-31. v1.2 was approved on
+**Approval:** v1.6 approved by the student on 2026-11-01 (navigation table corrected). v1.5 approved the same day (checklist sign-off). v1.3 approved by the student on 2026-10-31. v1.2 was approved on
 2026-10-24. This approves the
 contract only — no FR, BR, AC, endpoint, screen, or checklist row is verified by
-it, because nothing has been built or run yet.
+it. *Superseded (2026-11-01): the screens were built and the section 9.1 checklist was signed off in v1.5.*

@@ -4,7 +4,7 @@
 | :--- | :--- |
 | **Project** | Tok TickIT — IT Service Desk |
 | **Sprint** | Lab 4: Actions Taken, Ticket Workflow, and Role Dashboards |
-| **Version** | v1.5 (Approved 2026-10-30) |
+| **Version** | v1.6 (Approved 2026-11-01) |
 | **Date** | 2026-10-30 |
 | **Contract source** | `specification.md` v1.3 (FR/BR/AC references below trace to it) |
 | **Predecessor** | `docs/lab-03/api-spec.md` v1.2 — every endpoint not listed in sections 2–5 keeps its Lab 3 shape verbatim |
@@ -775,7 +775,7 @@ likely to disturb.
 | 401 | Every protected endpoint without a session |
 | 403 | Action Taken create/update by a `REQUESTER`; Action Taken list for a foreign Ticket; `GET /api/dashboards/staff` by a `REQUESTER` |
 | 404 | Unknown Ticket or Action Taken; **inactive assignee on `PUT /api/staff/tickets/:id/assign`** (BR-14) |
-| 405 | `DELETE` or `PATCH` on an Action Taken path |
+| 405 | `POST`, `PATCH` or `DELETE` on `/api/actions/:id`; `PATCH` or `DELETE` on `/api/tickets/:id/actions` (section 2.4) |
 | 409 | **Stale `version` on `PUT /api/actions/:id` or `PUT /api/staff/tickets/:id/status`**, with the latest copy in `data`; duplicate email on admin endpoints; last-active-Administrator guard |
 | 500 | Unexpected failure, generic message only |
 
@@ -837,11 +837,12 @@ recorded status, which is what handout section 10 asks for.
 | v1.3 | 2026-10-14 | Section 6 now records that `GET /api/staff/tickets/:id` returns `version` (FR-12) for the status transition, which the table previously implied was unchanged. `GET /api/tickets/:id` stays untouched: the `version` field was removed from the requester select so the requester detail keeps its Lab 3 shape exactly. Contract change approved with Issue 27 (#80). | Approved (student, 2026-10-14) |
 | v1.4 | 2026-10-29 | Section 6's Staff operations row now states explicitly that `claim`, `assign`, `priority`, `resolution-summary`, and `category` stay **unversioned**, because FR-12 scopes the Ticket `version` check to `PUT /api/staff/tickets/:id/status`. This resolves the Issue 27 (#80) acceptance wording that mentioned status/owner/priority: the approved contract keeps owner and priority last-write-wins so their Lab 3 request shape is unchanged, and only the status endpoint plus `PUT /api/actions/:id` are `[versioned]`. No endpoint behavior changed. | Approved (student, 2026-10-29) |
 | v1.5 | 2026-10-30 | **Peer-review clarifications and one validation fix for Issue 27 (#80).** Section 5.1 now distinguishes an **omitted** `version` (last-write-wins) from a present `null` (a non-integer, `400 VALIDATION_ERROR`); the endpoint previously treated `null` as omitted, so this line records a real behavior fix, and `API-44` asserts it. Section 6's Staff operations row now also states that those unversioned writes do not advance `Ticket.version`, making BR-15's status-transition-only counter explicit rather than implied; that part is documentation-only and matches the existing implementation. | Approved (student, 2026-10-30) |
+| v1.6 | 2026-11-01 | **Issue 30 (#83) close-out.** Section 7's `405` row now lists all five methods/paths that section 2.4 and the code reject (it omitted `POST /api/actions/:id`). The approval footer no longer says nothing has been built. No endpoint behaviour changed. | Approved (student, 2026-11-01) |
 
 ---
 
 *End of API specification. Changes require student approval and a version bump.*
 
-**Approval:** v1.5 approved by the student on 2026-10-30. v1.4 was approved on
+**Approval:** v1.6 approved by the student on 2026-11-01. v1.5 approved by the student on 2026-10-30. v1.4 was approved on
 2026-10-29. This approves the contract only — no FR, BR, AC, endpoint, screen, or
-checklist row is verified by it, because nothing has been built or run yet.
+checklist row is verified by it. *Superseded (2026-11-01): every endpoint was built and executed in Issues 25–30; the results are in `tests.md` section 6.*

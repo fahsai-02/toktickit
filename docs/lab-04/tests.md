@@ -4,9 +4,9 @@
 | :--- | :--- |
 | **Project** | Tok TickIT — IT Service Desk |
 | **Sprint** | Lab 4: Actions Taken, Ticket Workflow, and Role Dashboards |
-| **Version** | v1.17 — 2026-11-01 (REG-01 closed with the AD-21 exception; see section 6) — approved by the student, 2026-11-01 |
+| **Version** | v1.20 — 2026-11-01 (B3 document check; see section 8) — approved by the student, 2026-11-01 |
 | **Date** | 2026-11-01 |
-| **Traceability source** | `specification.md` v1.3 AC-01..18 · `api-spec.md` v1.5 · `ui-spec.md` v1.4 |
+| **Traceability source** | `specification.md` v1.5 AC-01..18 · `api-spec.md` v1.6 · `ui-spec.md` v1.6 |
 
 ---
 
@@ -57,6 +57,7 @@ client/tests/lab-04/                       (handout section 12)
   StaffDashboard.test.tsx                  <- handout
   DashboardCards.test.tsx                  + shared card behavior on both dashboards, added
   zen-green-lab4-style.test.tsx            + UI style category, added
+  CreateTicketRoleNavigation.test.tsx      + regression of a Lab 2 screen fixed in Issue 30 (REG-03), added
 e2e/lab-04/                                (handout section 12)
   actions-taken-flow.spec.ts               <- handout: staff flow (E2E-01) and requester read-only flow (E2E-02)
   ticket-resolution.spec.ts                <- handout: gate journey (E2E-03) and Part 6 traceability (E2E-05)
@@ -402,6 +403,7 @@ production hardware.
 | MIG-05 | BR-21, handout section 5.3 | Seed covers **zero / exactly one / multiple** Action Taken | A Ticket with 0 actions, a Ticket with exactly 1, and a Ticket with ≥2 all exist, plus the pair sharing one `actionDate` — counted against `server/src/lib/seedData.ts`, never a literal ticket id or count | `migration-regression.api.test.ts` | Pass |
 | REG-01 | FR-23, AC-17 | Lab 1–3 suites pass unchanged | `cd server && pnpm test`, `cd client && pnpm test`, **and** `pnpm test:e2e` (the Lab 2 + Lab 3 Playwright specs) all green, with no Lab 1–3 test **or spec** edited to accommodate Lab 4 | manual run, recorded in section 6 | **Pass** with recorded exception AD-21 — the 3 Lab 2 E2E files stay skipped on instructor instruction (section 7) |
 | REG-02 | FR-23, AC-17 | `GET /api/health` unchanged | Exactly `{"status":"ok","service":"TokTickIT API"}` — no version, timestamp, or uptime field added | `migration-regression.api.test.ts` | Pass |
+| REG-03 | FR-23, AC-17 | Create Ticket success buttons follow the signed-in role (ui-spec section 4.1) | IT Staff and Administrator: `View ticket` opens `/staff/tickets/:id` and the second button (`go-to-my-queue`) opens `/staff/queue`, with no `go-to-my-tickets`. Requester: unchanged — `/tickets/:id` and `/my-tickets`. Before the fix both buttons sent staff to Requester-only routes, which `RequireRole` bounced to the dashboard. 4 of the 6 cases fail against the old code. No Lab 1–3 test was edited. | `CreateTicketRoleNavigation.test.tsx` | Pass |
 
 > **REG-01 has a rule attached, not just a status.** "Pass unchanged" is the whole
 > point: a green suite that only got green after editing a Lab 3 assertion is a
@@ -449,7 +451,7 @@ present at all".
 | AC-14 | API-13, API-15, UI-13, E2E-05, ui-spec 9.1 item 13 |
 | AC-15 | UI-05, UI-06 |
 | AC-16 | UI-04 |
-| AC-17 | MIG-01, MIG-02, MIG-03, REG-01, REG-02, AUTH-05 |
+| AC-17 | MIG-01, MIG-02, MIG-03, REG-01, REG-02, REG-03, AUTH-05 |
 | AC-18 | RESP-01..30, STYLE-08, STYLE-09, STYLE-10, ui-spec 9.1 (all 34 rows) |
 
 `API-05` was in this table under AC-05 and has been removed. It asserted a staff
@@ -480,7 +482,7 @@ recorded statuses, which is what handout section 10 and grading Part 3 ask for.
 
 Covered by RESP-01..30 (screens), the state captures, and STYLE-08..10 (measured
 rules), with per-item test IDs in the `Auto (test ID)` column of
-`ui-spec.md` section 9.1 — 34 rows, every one currently `Pending`.
+`ui-spec.md` section 9.1 — 34 rows, every one signed off `Pass` by the student on 2026-11-01 (ui-spec v1.5) after looking at the captures, tabbing through the app and checking the console.
 
 Two rows there are **not** photographable and lean on a DOM query instead:
 item 13 (no assignee / per-action status control) is backed by UI-12 and UI-13,
@@ -558,6 +560,14 @@ dashboards of Issue 28 (#81), and the full test and regression run of Issue 29
 | Build | `cd server && pnpm build` and `cd client && pnpm build` | **2026-10-30:** both pass (`cd server` → `tsc` clean; `cd client` → `tsc && vite build` clean, 1878 modules). |
 | Schema | `cd server && pnpm exec prisma validate && pnpm exec prisma migrate status` | **2026-10-29:** schema valid; "Database schema is up to date!" (5 migrations, incl. `20261013193834_lab4_ticket_version`). |
 
+| Server (unit + API) | `cd server && pnpm exec prisma generate && pnpm test` | **2026-11-01 (Issue 30 branch `feature/30-release-polish`, after Issue 29 merged):** 29 files, **376 of 376 tests pass**, seeded dev DB (users 14, tickets 372). |
+| Client (component + style) | `cd client && pnpm test` | **2026-11-01 (same branch):** 26 files, **286 of 286 tests pass** (adds `CreateTicketRoleNavigation.test.tsx`, 6 cases, REG-03). |
+| Build | `cd server && pnpm build` and `cd client && pnpm build` | **2026-11-01 (same branch):** both pass. |
+| E2E (Playwright), all labs | `pnpm test:e2e` | **2026-11-01 (same branch):** 282 tests, **209 passed, 0 failed, 73 skipped** in 12.4 min — 45 are the three `e2e/lab-02` files (AD-21), 28 are the desktop-only and mobile-only skips by design. Screenshots the run rewrote were discarded (`git checkout -- artifacts`) and `cleanup-e2e.ts` restored the dev DB. |
+| Schema | `cd server && pnpm exec prisma validate && pnpm exec prisma migrate status` | **2026-11-01 (same branch):** schema valid; "Database schema is up to date!" (5 migrations). |
+
+> The five rows above are from the Issue 30 branch, not from `main`. The run on `main` after the release PR is recorded in a later amendment with its commit SHA.
+
 **REG-01 — Lab 1–3 tests edited in Issue 28 (#81), with the reason.** Every edit follows from one change: the landing page of each role became the Dashboard (`ui-spec.md` section 4.1; it used to be `/my-tickets` and `/staff/queue`). None loosens an assertion.
 
 | File | What changed |
@@ -592,7 +602,8 @@ Test-run exceptions recorded by Issue 29 (#82):
 - **`E2E-06` console check** ignores only exact, known responses, matched by status **and** URL (`expectedHttpError` in `e2e/lab-04/helpers.ts`): the `GET /api/auth/me` 401 probe before login; `400` on `PUT /api/staff/tickets/:id/status` (the blocked gate); `409` on `PUT /api/actions/:id` (save conflict); `403` on `POST /api/tickets/:id/actions` and `PUT /api/actions/:id` (requester refusal); and, in the stubbed states only, the forced `500` on `POST /api/tickets/:id/actions` and the aborted `GET /api/dashboards/staff`. Any other 4xx/5xx still fails the journey. Re-run 2026-11-01: the four affected specs, 26 desktop tests, all pass.
 - **Mobile tap-target floor is 36px app-wide** (`ui-spec.md` v1.4), lower than the 44px in the Lab 2/3 specs, which are left untouched.
 - **Leftover tickets.** The dev database holds 75 older tickets titled `E2E screen flicker` from before Issue 29; `cleanup-e2e.ts` does not remove them.
-- The screenshots written by the run overwrite `artifacts/lab-03/screenshots/`; they were not committed.
+- The screenshots written by the run overwrite `artifacts/lab-03/screenshots/` and `artifacts/lab-04/screenshots/`; they were not committed.
+- **Issue 30 manual sign-off.** Checklist rows that need a person (screenshots read by eye, keyboard `Tab` order, DevTools console on the interactive Lab 1–3 flows) are recorded in `ui-spec.md` section 9.1, not here. `E2E-06` checks the console only on Lab 4 journeys; Lab 1–3 interactive flows are checked by hand.
 
 Deferred **within** Lab 4:
 
@@ -665,6 +676,9 @@ updates this file together with `specification.md`, `api-spec.md`, and
 | v1.15 | 2026-11-01 | **Issue 29 (#82): suites executed.** Flipped `STYLE-01..11`, `AUTH-02/03`, `A11Y-02/03`, `PERF-01..04`, `E2E-01..06`, `RESP-01..30`, `STATE-01..27` and `REG-01` from `Planned` to `Pass` after real runs, recorded in section 6: server 29 files / 376, client 25 files / 280, both builds clean, `pnpm test:e2e` 209 passed / 0 failed / 73 skipped. Section 5.1 now says the two root scripts exist. Section 6 carries the REG-01 list of Lab 1–3 tests edited in Issue 28; section 7 records the exceptions (Lab 2 E2E skip, stubbed states, `E2E-06` ignores, 36px floor). Also extended `server/prisma/cleanup-e2e.ts` to delete orphaned `e2e.*` Requester rows. | Approved (student, 2026-11-01) |
 | v1.16 | 2026-11-01 | **Issue 29 (#82) review fixes.** (1) `E2E-06`: the blanket "any 4xx" console ignore is replaced by `expectedHttpError(status, urlPattern)`, whitelisting only the exact response each journey provokes (section 7). (2) `REG-01` reopened from `Pass` to `Incomplete`: the three Lab 2 E2E files are skipped, so AC-17 and the "No test skipped" DoD line are not met; the student chose to keep the files and record the gap. | Approved (student, 2026-11-01) |
 | v1.17 | 2026-11-01 | **Review follow-up on REG-01.** Closed `REG-01` as `Pass` with the recorded exception **AD-21** (`specification.md` v1.4): the three obsolete `e2e/lab-02` specs stay skipped because the instructor said to keep previous-lab code, and AC-17 plus the Definition of Done now name them. Section 6 and section 7 reworded to match. No test or code changed. | Approved (student, 2026-11-01) |
+| v1.18 | 2026-11-01 | **Issue 30 (#83) close-out.** Added **REG-03** (`CreateTicketRoleNavigation.test.tsx`, 6 cases): the Create Ticket success buttons sent IT Staff and Administrators to Requester-only routes, now role-aware (no Lab 1–3 test edited; 4 of 6 cases fail against the old code). Recorded the Issue 30 branch runs in section 6 (server 29 files / 376, client 26 files / 286, both builds, `pnpm test:e2e` 209 passed / 0 failed / 73 skipped, Prisma validate and migrate status clean). Traceability source bumped to `specification.md` v1.5. The run on `main` is not recorded yet. | Approved (student, 2026-11-01) |
+| v1.19 | 2026-11-01 | **Visual checklist signed off.** Section 4 now records that all 34 rows of `ui-spec.md` section 9.1 are `Pass` (ui-spec v1.5), and the traceability source is bumped to `ui-spec.md` v1.5. No test, status, or result changed. | Approved (student, 2026-11-01) |
+| v1.20 | 2026-11-01 | **Issue 30 (#83) document check.** Added spec-anchor comments naming `UI-31`, `UI-32`, `UI-33` and `UI-35` in the tests that already prove them (comments only; no assertion changed, including the Lab 3 file `staff-ticket-api.test.tsx`), and `REG-03` in `CreateTicketRoleNavigation.test.tsx`, so each row can be found by ID (repo test rule 9). Traceability source bumped to `api-spec.md` v1.6 and `ui-spec.md` v1.6. No result changed. | Approved (student, 2026-11-01) |
 
 ---
 
