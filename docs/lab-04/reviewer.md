@@ -1,11 +1,11 @@
 # Lab 4 — Peer Review Record
 
 **Author:** Nakagamon Saengdara — 67070501064 — GitHub: @fahsai-02  
-**Peer reviewer (PR #84–#88):** Theeraphat Jaengam — 67070501063 — GitHub: @thrxpt  
+**Peer reviewer (PR #84–#89):** Theeraphat Jaengam — 67070501063 — GitHub: @thrxpt  
 **Reviewer for partner (PR #56–#61):** Nakagamon Saengdara — 67070501064 — GitHub: @fahsai-02  
 **Last verified against the GitHub API:** 2026-11-01
 
-> **Status.** Five pull requests in the first table (#84–#88) are merged into
+> **Status.** Six pull requests in the first table (#84–#89) are merged into
 > `lab4-staging` and verified. In the second table, six pull requests authored by
 > my partner are recorded (five merged, one still open). This file documents the
 > peer review record for Lab 4.

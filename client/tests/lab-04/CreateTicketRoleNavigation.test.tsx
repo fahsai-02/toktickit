@@ -51,7 +51,14 @@ async function createAs(role: api.UserRole) {
   vi.spyOn(api, "fetchRelatedSystems").mockResolvedValue([
     { id: 7, name: "Corporate Laptop", categoryId: 2 },
   ]);
-  vi.spyOn(api, "createTicket").mockResolvedValue(createdTicket);
+  // Stub only the network edge so the real createTicket() runs and the actual
+  // request can be asserted (AGENTS.md test rule 5).
+  const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+    new Response(JSON.stringify({ data: createdTicket }), {
+      status: 201,
+      headers: { "Content-Type": "application/json" },
+    })
+  );
 
   render(
     <AuthProvider>
@@ -75,6 +82,20 @@ async function createAs(role: api.UserRole) {
   });
   fireEvent.click(screen.getByTestId("submit-ticket"));
   await screen.findByText(/Ticket created: TKT-2026-000321/);
+
+  expect(fetchSpy).toHaveBeenCalledTimes(1);
+  const [url, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
+  expect(url).toBe("/api/tickets");
+  expect(init.method).toBe("POST");
+  expect(init.credentials).toBe("include");
+  expect(init.headers).toMatchObject({ "Content-Type": "application/json" });
+  expect(JSON.parse(init.body as string)).toEqual({
+    categoryId: 2,
+    relatedSystemId: 7,
+    requestedPriority: "MEDIUM",
+    summary: "Laptop battery drains quickly",
+    description: "Battery drains within two hours.",
+  });
 }
 
 // REG-03 — docs/lab-04/tests.md section 2 (Migration / Regression); ui-spec.md
