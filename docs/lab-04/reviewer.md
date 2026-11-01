@@ -1,14 +1,14 @@
 # Lab 4 — Peer Review Record
 
 **Author:** Nakagamon Saengdara — 67070501064 — GitHub: @fahsai-02  
-**Peer reviewer (PR #84–#89):** Theeraphat Jaengam — 67070501063 — GitHub: @thrxpt  
-**Reviewer for partner (PR #56–#61):** Nakagamon Saengdara — 67070501064 — GitHub: @fahsai-02  
+**Peer reviewer (PR #84–#90):** Theeraphat Jaengam — 67070501063 — GitHub: @thrxpt  
+**Reviewer for partner (PR #56–#62):** Nakagamon Saengdara — 67070501064 — GitHub: @fahsai-02  
 **Last verified against the GitHub API:** 2026-11-01
 
-> **Status.** Six pull requests in the first table (#84–#89) are merged into
-> `lab4-staging` and verified. In the second table, six pull requests authored by
-> my partner are recorded (five merged, one still open). This file documents the
-> peer review record for Lab 4.
+> **Status.** Seven pull requests in the first table (#84–#90) are merged into
+> `lab4-staging` and verified. In the second table, seven pull requests authored by
+> my partner are recorded (all merged). This file documents the peer review record
+> for Lab 4 and the final release polish.
 
 ## Pull Requests I authored (reviewed by my partner @thrxpt)
 
@@ -20,6 +20,7 @@
 | #87 | feature/27-ticket-workflow-resolution-gate | changes requested 2026-10-29 (3 rounds) → approved 2026-10-30 (merged 2026-10-30) |
 | #88 | feature/28-role-dashboards | changes requested 2026-10-30 (4 rounds) → approved 2026-10-31 (merged 2026-10-31) |
 | #89 | feature/29-comprehensive-testing | changes requested 2026-11-01 → approved 2026-11-01 (merged 2026-11-01) |
+| #90 | feature/30-release-polish | changes requested 2026-11-01 → approved 2026-11-01 (merged 2026-11-01) |
 
 ---
 
@@ -33,6 +34,7 @@
 | #59 | feature/27-actions-taken-ui | commented 2026-10-31 → approved 2026-10-31 (merged 2026-10-31) |
 | #60 | feature/27-role-dashboards | changes requested 2026-10-31 (still open) |
 | #61 | feature/28-ticket-workflow-final | changes requested 2026-10-31 → approved 2026-10-31 (merged 2026-10-31) |
+| #62 | feature/30-final-hardening | commented 2026-11-01 → approved 2026-11-01 (merged 2026-11-01) |
 
 ---
 
@@ -248,6 +250,28 @@ Fixed both findings in commit `eed11a0`. The E2E-06 filters are narrowed to expe
 
 ---
 
+### PR #90 — feature/30-release-polish
+
+**Pull Request URL:** <https://github.com/fahsai-02/toktickit/pull/90>
+
+**PR title on GitHub:** docs(lab-04): release polish, close-out docs & submission prep (#83)
+
+#### Reviewer review (`CHANGES_REQUESTED`, 2026-11-01, @thrxpt)
+
+> The final test/build results from `main` and the nine-part PDF remain outstanding per Issue #83. The docs correctly leave those items unchecked; complete them before closing the issue.
+
+#### Author's response (2026-11-01, @fahsai-02)
+
+Fixed the blocking findings in commit `f71e967`. The navigation test now runs the real `createTicket()` request and asserts its method, URL, credentials, header, and body; the reviewer record now includes PR #89.
+
+#### Reviewer approval (`APPROVED`, 2026-11-01, @thrxpt)
+
+> Both inline findings are fixed in `f71e967`: the navigation test now runs the real `createTicket()` request and asserts its method, URL, credentials, header, and body; the reviewer record now includes PR #89 in the range and count. The final `main` test/build evidence and nine-part PDF are post-merge Issue #83 deliverables.
+
+**Merged into `lab4-staging` 2026-11-01 (#90)** (merge commit `7189afa`, merged by @thrxpt)
+
+---
+
 ## Detail — PRs I reviewed for my partner
 
 ### PR #56 — feature/24-lab4-engineering-contract
@@ -422,6 +446,37 @@ Fixed both blocking findings in commit `cbc9250`. `GET /api/staff/assignees` now
 > Approving for merge into `lab4-staging`.
 
 **Merged into `lab4-staging` 2026-10-31 (#61)** (merged into their fork)
+
+---
+
+### PR #62 — feature/30-final-hardening
+
+**Pull Request URL:** <https://github.com/thrxpt/toktickit/pull/62>
+
+**PR title on GitHub:** feat: harden Lab 4 regression and prepare release (#55)
+
+#### My review (`COMMENTED`, 2026-11-01, @fahsai-02)
+
+> Review summary: the session-only identity and submission-key approach looks sound. Items 1-4 (logout, swallowed server errors, replay ordering, attachment cleanup) are regressions or data-integrity risks and I'd fix them before merge; the rest are smaller follow-ups.
+>
+> The Development Requester path is fully retired. Identity now comes only from the authenticated session (BR-30), and attachment content reads are session-based for every role.
+
+#### Author's response (2026-11-01, @thrxpt)
+
+Fixed all blocking findings in commit `59c15da`. The logout flow now properly clears the session, server errors are surfaced instead of swallowed, and attachment uploads are concurrency-safe.
+
+#### My review (`APPROVED`, 2026-11-01, @fahsai-02)
+
+> LGTM — approving.
+>
+> I checked out the branch and ran the full suite locally: `pnpm test` passes (337 server + 189 client) and `pnpm build` is green. The `submission_keys` migration applies cleanly.
+>
+> - The Development Requester path is fully retired. Identity now comes only from the authenticated session (BR-30).
+> - Idempotency (FR-19) is arbitrated by the unique DB index rather than in-memory state.
+> - Attachment uploads lock the Ticket row to keep the 5-file limit safe under concurrency (BR-35).
+> - The migration is additive and nullable, and the rollback SQL preserves records.
+
+**Merged into `lab4-staging` 2026-11-01 (#62)** (merged into their fork)
 
 ---
 
